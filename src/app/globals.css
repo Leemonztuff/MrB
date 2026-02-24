@@ -1,0 +1,70 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 0%; /* Carbon Black */
+    --foreground: 0 0% 98%; /* Off White */
+
+    --card: 0 0% 8%; /* Dark Smokey Gray */
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 41 47% 57%; /* Mr. Blonde Gold */
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 0 0% 15%; 
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 41 47% 57%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 41 47% 57%;
+    
+    --radius: 0.75rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary/30 selection:text-primary;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-headline tracking-tight text-balance;
+  }
+
+  /* Glassmorphism Effect */
+  .glass {
+    @apply bg-card/80 backdrop-blur-md border border-white/5 shadow-2xl;
+  }
+
+  .fade-in-up {
+    animation: fadeInUp 0.5s ease-out forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "product": {
+    "seed": "product",
+    "width": 48,
+    "height": 48
+  },
+  "product_sm": {
+    "seed": "prod_sm",
+    "width": 40,
+    "height": 40
+  },
+  "product_card": {
+    "seed": "prod_card",
+    "width": 96,
+    "height": 96
+  }
+}
