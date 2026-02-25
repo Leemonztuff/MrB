@@ -75,14 +75,16 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
     return (
         <div className="relative space-y-4">
             {selectedOrderList.length > 0 && (
-                <div className="sticky top-0 z-20 glass p-4 rounded-xl flex items-center justify-between border-primary/20 shadow-2xl animate-in fade-in slide-in-from-top-4">
+                <div className="sticky top-0 z-30 mb-6 glass p-4 rounded-xl flex flex-wrap items-center justify-between border-primary/20 shadow-2xl animate-in fade-in slide-in-from-top-4 gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold">
+                        <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-black">
                             {selectedOrderList.length}
                         </div>
-                        <p className="font-bold text-sm">Preparación de Despacho Masivo</p>
+                        <p className="font-black italic text-sm tracking-tight text-foreground/90 uppercase">Preparación de Despacho Masivo</p>
                     </div>
-                    <ShippingLabelButton orders={selectedOrderList} />
+                    <div className="shrink-0">
+                        <ShippingLabelButton orders={selectedOrderList} />
+                    </div>
                 </div>
             )}
 

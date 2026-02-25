@@ -15,8 +15,8 @@ export function DashboardStats({ stats }: { stats: StatsType }) {
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
             {/* Total Revenue */}
             <Card className="glass overflow-hidden border-primary/10 group hover:border-primary/30 transition-all duration-500">
-                <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
-                    <DollarSign className="h-24 w-24 -mr-8 -mt-8 rotate-12" />
+                <div className="absolute top-0 right-0 p-4 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none">
+                    <DollarSign className="h-16 w-16 -mr-4 -mt-4 rotate-12" />
                 </div>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">
@@ -39,8 +39,8 @@ export function DashboardStats({ stats }: { stats: StatsType }) {
 
             {/* Monthly Sales */}
             <Card className="glass overflow-hidden border-white/5 group hover:border-primary/20 transition-all duration-500">
-                <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
-                    <Package className="h-24 w-24 -mr-8 -mt-8 rotate-12" />
+                <div className="absolute top-0 right-0 p-4 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none">
+                    <Package className="h-16 w-16 -mr-4 -mt-4 rotate-12" />
                 </div>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">
@@ -60,8 +60,8 @@ export function DashboardStats({ stats }: { stats: StatsType }) {
 
             {/* VIP Clients */}
             <Card className="glass overflow-hidden border-white/5 group hover:border-primary/20 transition-all duration-500">
-                <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
-                    <Users className="h-24 w-24 -mr-8 -mt-8 rotate-12" />
+                <div className="absolute top-0 right-0 p-4 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none">
+                    <Users className="h-16 w-16 -mr-4 -mt-4 rotate-12" />
                 </div>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">
@@ -86,8 +86,8 @@ export function DashboardStats({ stats }: { stats: StatsType }) {
                     ? "border-destructive/30 bg-destructive/5 hover:border-destructive/50"
                     : "hover:border-primary/20"
             )}>
-                <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
-                    <AlertCircle className="h-24 w-24 -mr-8 -mt-8 rotate-12" />
+                <div className="absolute top-0 right-0 p-4 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none">
+                    <AlertCircle className="h-16 w-16 -mr-4 -mt-4 rotate-12" />
                 </div>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">
