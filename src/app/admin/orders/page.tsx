@@ -13,22 +13,22 @@ export default async function OrdersHistoryPage({
   searchParams?: Promise<{ status?: string; query?: string }>;
 }) {
   const filters = await searchParams;
-  const { data: orders } = await getOrders({ 
-    status: filters?.status, 
-    query: filters?.query 
+  const { data: orders } = await getOrders({
+    status: filters?.status,
+    query: filters?.query
   });
 
   return (
     <div className="grid gap-4 md:gap-8">
-      <PageHeader 
-        title="Historial de Pedidos" 
-        description="Revisa y gestiona todos los pedidos realizados en el sistema." 
+      <PageHeader
+        title="Historial de Pedidos"
+        description="Revisa y gestiona todos los pedidos realizados en el sistema."
       />
-      
+
       <Card className="glass border-white/5">
         <CardHeader>
-            <CardTitle>Todos los Pedidos</CardTitle>
-            <CardDescription>Busca por cliente o filtra por estado.</CardDescription>
+          <CardTitle>Todos los Pedidos</CardTitle>
+          <CardDescription>Busca por cliente o filtra por estado.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -56,7 +56,9 @@ export default async function OrdersHistoryPage({
                     <TableCell>${order.total_amount.toLocaleString()}</TableCell>
                     <TableCell><OrderStatusBadge status={order.status} /></TableCell>
                     <TableCell className="text-right">
-                      <ShippingLabelButton orders={[{ id: order.id, bundles: 1 }]} />
+                      {order.status === 'armado' && (
+                        <ShippingLabelButton orders={[{ id: order.id, bundles: 1 }]} />
+                      )}
                     </TableCell>
                   </TableRow>
                 ))

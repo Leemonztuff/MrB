@@ -12,7 +12,7 @@ const formatCurrency = (value: number) => {
 
 export function DashboardStats({ stats }: { stats: StatsType }) {
     return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
             <Card className="glass overflow-hidden border-primary/10">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">

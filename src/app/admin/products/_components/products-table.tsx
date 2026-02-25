@@ -51,8 +51,8 @@ import { EntityDialog } from "../../_components/entity-dialog";
 import { productFormConfig } from "./form-config";
 
 interface ProductsTableProps {
-    products: Product[];
-    emptyState: React.ReactNode;
+  products: Product[];
+  emptyState: React.ReactNode;
 }
 
 export default function ProductsTable({ products, emptyState }: ProductsTableProps) {
@@ -99,48 +99,48 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
               <div className="flex-grow">
                 <CardTitle>{product.name}</CardTitle>
                 {product.category && (
-                    <div className="text-sm text-muted-foreground">
-                        <div><Badge variant="outline">{product.category}</Badge></div>
-                    </div>
+                  <div className="text-sm text-muted-foreground">
+                    <div><Badge variant="outline">{product.category}</Badge></div>
+                  </div>
                 )}
               </div>
             </CardHeader>
             <CardContent>
-                <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
+              <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
             </CardContent>
-             <CardFooter className="flex justify-end gap-2">
-                 <EntityDialog formConfig={productFormConfig} entity={product}>
-                    <Button variant="outline" size="sm">
-                      <Edit className="mr-2 h-4 w-4" /> Editar
-                    </Button>
-                  </EntityDialog>
-                   <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                       <Button variant="destructive" size="sm">
-                          <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          ¿Estás seguro?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta acción no se puede deshacer. Esto eliminará permanentemente el producto.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDelete(product.id)}
-                          disabled={isPending}
-                          className="bg-destructive hover:bg-destructive/90"
-                        >
-                          {isPending ? "Eliminando..." : "Eliminar"}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+            <CardFooter className="flex gap-2 p-4 pt-0">
+              <EntityDialog formConfig={productFormConfig} entity={product}>
+                <Button variant="outline" size="lg" className="flex-1 h-12 text-sm font-semibold">
+                  <Edit className="mr-2 h-4 w-4" /> Editar
+                </Button>
+              </EntityDialog>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="lg" className="flex-1 h-12 text-sm font-semibold">
+                    <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      ¿Estás seguro?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta acción no se puede deshacer. Esto eliminará permanentemente el producto.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleDelete(product.id)}
+                      disabled={isPending}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      {isPending ? "Eliminando..." : "Eliminar"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </CardFooter>
           </Card>
         ))}
@@ -177,7 +177,7 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
                     />
                   </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
-                   <TableCell className="text-sm text-muted-foreground truncate max-w-xs">
+                  <TableCell className="text-sm text-muted-foreground truncate max-w-xs">
                     {product.description}
                   </TableCell>
                   <TableCell>

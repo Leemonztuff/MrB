@@ -11,8 +11,9 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { OrderSummary } from "./_components/order-summary";
+import { MobileCartIndicator } from "./_components/mobile-cart-indicator";
 import { Suspense } from "react";
-import type { AgreementPromotion } from "@/types";
+import { AgreementPromotion, ProductWithPrice } from "@/types";
 
 const categoryTranslations: Record<string, string> = {
   "Wax": "Ceras",
@@ -34,7 +35,7 @@ export default async function OrderPage({
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
         <div className="mb-8">
-            <Logo showText={true} logoUrl={null} />
+          <Logo showText={true} logoUrl={null} />
         </div>
         <Card className="max-w-md mt-8">
           <CardHeader>
@@ -63,7 +64,7 @@ export default async function OrderPage({
     if (!translation) {
       return category;
     }
-    
+
     // Explicitly handle the special formats
     if (category === 'Hairstyle') {
       return `Hairstyle / ${translation}`;
@@ -71,7 +72,7 @@ export default async function OrderPage({
     if (category === 'Facial & Beard') {
       return `Facial & Beard / ${translation}`;
     }
-    
+
     // Fallback for other translations
     return translation;
   }
@@ -95,7 +96,7 @@ export default async function OrderPage({
             <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Productos</h2>
             <p className="mt-1 text-lg text-muted-foreground">Ajusta las cantidades que deseas ordenar.</p>
           </div>
-          
+
           {categories.length > 0 ? (
             <Accordion type="multiple" defaultValue={categories} className="w-full space-y-4">
               {categories.map((category) => (
@@ -103,12 +104,12 @@ export default async function OrderPage({
                   <Card>
                     <CardHeader className="p-4">
                       <AccordionTrigger className="p-2 -m-2 text-xl font-bold hover:no-underline">
-                          {formatCategoryTitle(category)}
+                        {formatCategoryTitle(category)}
                       </AccordionTrigger>
                     </CardHeader>
                     <AccordionContent className="px-4 pb-4">
                       <div className="flex flex-col gap-4">
-                        {productsByCategory[category].map((product) => (
+                        {productsByCategory[category].map((product: ProductWithPrice) => (
                           <ProductCard key={product.id} product={product} promotions={promotions} />
                         ))}
                       </div>
@@ -121,21 +122,21 @@ export default async function OrderPage({
             <Card className="mt-6 flex flex-col items-center justify-center py-16 border-dashed">
               <CardHeader className="text-center">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
-                    <Package2 className="h-6 w-6 text-muted-foreground" />
+                  <Package2 className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <CardTitle>No hay productos disponibles</CardTitle>
                 <CardDescription>
-                    Aún no se han asignado productos a este convenio.
+                  Aún no se han asignado productos a este convenio.
                 </CardDescription>
               </CardHeader>
             </Card>
           )}
         </div>
-        
+
         {/* Columna Derecha: Resumen y Sugerencias */}
-        <div className="lg:col-span-1 lg:sticky lg:top-24 space-y-6">
+        <div id="order-summary-container" className="lg:col-span-1 lg:sticky lg:top-24 space-y-6 pb-24 lg:pb-0">
           <Suspense fallback={<div>Cargando resumen...</div>}>
-            <OrderSummary 
+            <OrderSummary
               agreementId={agreement.id}
               clientId={client.id}
               clientName={client.contact_name ?? "Cliente"}
@@ -146,6 +147,7 @@ export default async function OrderPage({
           </Suspense>
         </div>
       </main>
+      <MobileCartIndicator />
     </div>
   );
 }

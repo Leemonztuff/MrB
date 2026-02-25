@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import type { Product, Promotion } from "@/types";
+import type { Product, Promotion, ActionResponse } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { AgreementFormFieldsWrapper } from "../agreements/_components/form-config-wrapper";
@@ -26,7 +26,7 @@ import { AgreementFormFieldsWrapper } from "../agreements/_components/form-confi
 export interface FormConfig<T extends z.ZodType<any, any>> {
   entityName: string;
   schema: T;
-  upsertAction: (payload: any) => Promise<{ data: any; error: any }>;
+  upsertAction: (payload: any) => Promise<ActionResponse<any>>;
   getDefaultValues: (entity?: any) => z.infer<T>;
   renderFields: (form: any, props?: any) => React.ReactNode;
   wrapper?: React.ComponentType<{ children: React.ReactNode }>;
@@ -111,17 +111,17 @@ export function EntityDialog({
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
         <ScrollArea className="h-full w-full">
-            <div className="px-6 pb-6">
-                <FormProvider {...form}>
-                <form
-                    id={`entity-form-${entityName}`}
-                    onSubmit={form.handleSubmit(onSubmit)}
-                    className="space-y-4"
-                >
-                    {renderFormContent()}
-                </form>
-                </FormProvider>
-            </div>
+          <div className="px-6 pb-6">
+            <FormProvider {...form}>
+              <form
+                id={`entity-form-${entityName}`}
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
+                {renderFormContent()}
+              </form>
+            </FormProvider>
+          </div>
         </ScrollArea>
         <DialogFooter className="p-6 pt-2 border-t mt-auto">
           <DialogClose asChild>

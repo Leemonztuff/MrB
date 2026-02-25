@@ -20,55 +20,51 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
+import { OrderStatusBadge } from "@/app/admin/_components/order-status-badge";
+import { ReprintLabelButton } from "@/app/admin/_components/reprint-label-button";
 
 const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
+  return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
 }
-
-const statusMap: Record<Order['status'], { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-    pending: { label: "Pendiente", variant: "destructive" },
-    completed: { label: "Completado", variant: "default" },
-};
-
 
 export function ClientOrders({ orders }: { orders: Order[] }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Historial de Pedidos</CardTitle>
+    <Card className="glass border-white/5 overflow-hidden">
+      <CardHeader className="bg-white/5 pb-4">
+        <CardTitle className="text-sm uppercase tracking-widest">Historial de Pedidos</CardTitle>
         <CardDescription>
-          Un registro de todos los pedidos realizados por este cliente.
+          Registro de todos los envíos y entregas de este cliente.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Pedido ID</TableHead>
+              <TableHead className="pl-6">ID</TableHead>
               <TableHead>Fecha</TableHead>
               <TableHead>Monto</TableHead>
               <TableHead>Estado</TableHead>
+              <TableHead className="text-right pr-6">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {orders.length > 0 ? (
               orders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">#{order.id.slice(-6).toUpperCase()}</TableCell>
+                <TableRow key={order.id} className="hover:bg-white/5 transition-colors">
+                  <TableCell className="font-medium pl-6">#{order.id.slice(-6).toUpperCase()}</TableCell>
                   <TableCell>{formatDate(order.created_at)}</TableCell>
-                  <TableCell>{formatCurrency(order.total_amount)}</TableCell>
+                  <TableCell className="font-bold">{formatCurrency(order.total_amount)}</TableCell>
                   <TableCell>
-                    <div>
-                        <Badge variant={statusMap[order.status].variant}>
-                            {statusMap[order.status].label}
-                        </Badge>
-                    </div>
+                    <OrderStatusBadge status={order.status} />
+                  </TableCell>
+                  <TableCell className="text-right pr-6">
+                    <ReprintLabelButton orderId={order.id} />
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
+                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground italic">
                   Este cliente aún no ha realizado pedidos.
                 </TableCell>
               </TableRow>
@@ -76,9 +72,9 @@ export function ClientOrders({ orders }: { orders: Order[] }) {
           </TableBody>
         </Table>
       </CardContent>
-      <CardFooter>
-        <div className="text-xs text-muted-foreground">
-          Mostrando <strong>{orders.length}</strong> pedidos.
+      <CardFooter className="bg-white/5 py-3 px-6">
+        <div className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
+          Total: {orders.length} pedidos.
         </div>
       </CardFooter>
     </Card>

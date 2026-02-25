@@ -135,7 +135,7 @@ const handleUpsertProduct = async (payload: z.infer<typeof productSchema> & { id
 
     if (uploadError) {
       console.error('Client-side image upload error:', uploadError.message);
-      return { data: null, error: { message: `Error al subir la imagen: ${uploadError.message}` } };
+      return { success: false, data: null, error: { message: `Error al subir la imagen: ${uploadError.message}` } };
     }
 
     const { data: publicUrlData } = supabase.storage

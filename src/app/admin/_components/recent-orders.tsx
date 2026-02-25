@@ -131,32 +131,35 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
                             </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-4 sm:ml-auto">
-                            <div className="flex items-center gap-2 bg-secondary/50 px-3 py-1.5 rounded-lg border border-white/5">
-                                <p className="text-[10px] uppercase font-bold text-muted-foreground">Bultos:</p>
-                                <Input
-                                    type="number"
-                                    min="1"
-                                    className="h-7 w-12 bg-transparent border-none text-xs text-center font-bold p-0 focus-visible:ring-0"
-                                    value={orderBundles[order.id] || 1}
-                                    onChange={(e) => updateBundleCount(order.id, parseInt(e.target.value))}
-                                />
-                            </div>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:ml-auto w-full sm:w-auto mt-2 sm:mt-0 border-t sm:border-none pt-4 sm:pt-0">
+                            <div className="flex items-center justify-between w-full sm:w-auto gap-4">
+                                <div className="flex items-center gap-2 bg-secondary/50 px-3 py-1.5 rounded-lg border border-white/5">
+                                    <p className="text-[10px] uppercase font-bold text-muted-foreground">Bultos:</p>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        className="h-8 w-14 bg-transparent border-none text-sm text-center font-bold p-0 focus-visible:ring-0"
+                                        value={orderBundles[order.id] || 1}
+                                        onChange={(e) => updateBundleCount(order.id, parseInt(e.target.value))}
+                                    />
+                                </div>
 
-                            <div className="text-right min-w-[100px]">
-                                <p className="text-xl font-headline text-primary">{formatCurrency(order.total_amount)}</p>
+                                <div className="text-right">
+                                    <p className="text-[10px] uppercase font-bold text-muted-foreground sm:hidden">Total:</p>
+                                    <p className="text-xl font-headline text-primary">{formatCurrency(order.total_amount)}</p>
+                                </div>
                             </div>
 
                             <Button
                                 variant="default"
-                                size="sm"
-                                className="h-10 px-6 gap-2 font-bold shadow-lg shadow-primary/10 active:scale-95 transition-transform"
+                                size="lg"
+                                className="w-full sm:w-auto h-12 sm:h-10 px-6 gap-2 font-bold shadow-lg shadow-primary/10 active:scale-95 transition-transform"
                                 onClick={() => handleUpdateStatus(order.id, 'transito')}
                                 disabled={isPending}
                             >
-                                <Truck className="h-4 w-4" />
+                                <Truck className="h-5 w-5 sm:h-4 sm:w-4" />
                                 Despachar
-                                <ChevronRight className="h-4 w-4" />
+                                <ChevronRight className="ml-auto h-5 w-5 sm:h-4 sm:w-4" />
                             </Button>
                         </div>
                     </div>
