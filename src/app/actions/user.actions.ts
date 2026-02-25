@@ -67,6 +67,8 @@ export async function getOrderPageData(agreementId: string): Promise<ActionRespo
         const { data: agreement, error: agreementError } = agreementResult;
         if (agreementError || !agreement) throw new Error("Convenio inválido.");
 
+        if (!agreement.price_lists) throw new Error("Este convenio no tiene una lista de precios asignada.");
+
         const { data: priceListItems, error: itemsError } = await supabase
             .from('price_list_items')
             .select('price, volume_price, products(*)')
@@ -113,7 +115,10 @@ export async function submitOrder(payload: {
 }): Promise<ActionResponse<{ orderId: string }>> {
     return handleAction(async () => {
         const supabase = await createServerClient();
+        // Safe access for clientId, defaulting to null if 'generic' or falsy
         const finalClientId = payload.clientId === 'generic' || !payload.clientId ? null : payload.clientId;
+        // Safe access for clientName, defaulting to "Cliente" if falsy
+        const finalClientName = payload.clientName || "Cliente";
 
         const { data: order, error: orderError } = await supabase
             .from('orders')
@@ -122,7 +127,7 @@ export async function submitOrder(payload: {
                 agreement_id: payload.agreementId,
                 total_amount: payload.total,
                 status: 'armado',
-                client_name_cache: payload.clientName,
+                client_name_cache: finalClientName, // Using the safely accessed client name
                 notes: payload.notes || null,
             })
             .select()

@@ -138,8 +138,8 @@ export default async function OrderPage({
           <Suspense fallback={<div>Cargando resumen...</div>}>
             <OrderSummary
               agreementId={agreement.id}
-              clientId={client.id}
-              clientName={client.contact_name ?? "Cliente"}
+              clientId={client?.id ?? "generic"}
+              clientName={client?.contact_name ?? "Cliente"}
               pricesIncludeVat={agreement.price_lists?.prices_include_vat ?? true}
               promotions={promotions}
               vatPercentage={vatPercentage}
