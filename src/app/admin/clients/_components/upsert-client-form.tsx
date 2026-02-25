@@ -47,15 +47,15 @@ const validateCuit = (cuit: string): boolean | number => {
 };
 
 const cuitSchema = z.string().superRefine((cuit, ctx) => {
-    if (!cuit) return;
-    const validationResult = validateCuit(cuit);
-    if (validationResult === true) return;
-    if (typeof validationResult === 'number') {
-        const CUITBase = cuit.slice(0, -1);
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `CUIT inválido. El dígito verificador debería ser ${validationResult}.` });
-    } else {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "CUIT inválido. Debe tener 11 dígitos sin guiones y ser válido." });
-    }
+  if (!cuit) return;
+  const validationResult = validateCuit(cuit);
+  if (validationResult === true) return;
+  if (typeof validationResult === 'number') {
+    const CUITBase = cuit.slice(0, -1);
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: `CUIT inválido. El dígito verificador debería ser ${validationResult}.` });
+  } else {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "CUIT inválido. Debe tener 11 dígitos sin guiones y ser válido." });
+  }
 });
 
 const deliveryDays = [
@@ -68,12 +68,12 @@ const deliveryDays = [
 ];
 
 const generateTimeOptions = () => {
-    const options = [];
-    for (let h = 8; h <= 20; h++) {
-        const hour = h.toString().padStart(2, '0');
-        options.push(`${hour}:00`);
-    }
-    return options;
+  const options = [];
+  for (let h = 8; h <= 20; h++) {
+    const hour = h.toString().padStart(2, '0');
+    options.push(`${hour}:00`);
+  }
+  return options;
 };
 const timeOptions = generateTimeOptions();
 
@@ -86,7 +86,7 @@ const formSchema = z.object({
   fiscal_status: z.string().optional(),
   instagram: z.string().optional(),
   agreement_id: z.string().nullable().optional(),
-  
+
   province: z.string().optional(),
   locality: z.string().optional(),
   street_address: z.string().optional(),
@@ -118,7 +118,7 @@ const getDeliveryParts = (deliveryWindow: string | null) => {
   const parts = deliveryWindow.split(' de ');
   if (parts.length < 2) return { days: [], from: '09:00', to: '18:00' };
   const dayString = parts[0].toLowerCase();
-  
+
   // Corrected logic: filter first, then map.
   const days = deliveryDays
     .filter(day => dayString.includes(day.id.slice(0, 3)))
@@ -162,7 +162,7 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Cli
 
   const watchedProvince = form.watch("province");
   const availableLocalities = watchedProvince ? getLocalitiesByProvince(watchedProvince) : [];
-  
+
   useEffect(() => {
     getAgreements().then(({ data }) => setAgreements(data || []));
   }, []);
@@ -187,132 +187,232 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Cli
 
   return (
     <>
-    <ScrollArea className="h-full w-full">
-      <div className="px-6 pb-6">
-        <Form {...form}>
-          <form id="upsert-client-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField control={form.control} name="contact_name" render={({ field }) => (
-                  <FormItem><FormLabel>Nombre y Apellido</FormLabel><FormControl><Input placeholder="Nombre de contacto" {...field} /></FormControl><FormMessage /></FormItem>
-              )}/>
-              <FormField control={form.control} name="email" render={({ field }) => (
-                  <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="cliente@email.com" {...field} /></FormControl><FormMessage /></FormItem>
-              )}/>
-            </div>
-            
-            <div className="space-y-4 rounded-lg border p-4">
-              <h4 className="font-medium text-base">Información Fiscal y de Contacto</h4>
+      <ScrollArea className="flex-1 w-full bg-white/[0.02]">
+        <div className="p-6">
+          <Form {...form}>
+            <form id="upsert-client-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="fiscal_status" render={({ field }) => (
-                    <FormItem><FormLabel>Condición Fiscal</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione una condición..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Responsable Inscripto">Responsable Inscripto</SelectItem><SelectItem value="Monotributista">Monotributista</SelectItem><SelectItem value="Consumidor Final">Consumidor Final</SelectItem><SelectItem value="Exento">Exento</SelectItem></SelectContent></Select><FormMessage /></FormItem>
-                )}/>
-                <FormField control={form.control} name="cuit" render={({ field }) => (
-                    <FormItem><FormLabel>CUIT</FormLabel><FormControl><Input placeholder="11 dígitos sin guiones" {...field} /></FormControl><FormMessage /></FormItem>
-                )}/>
-                <FormField control={form.control} name="contact_dni" render={({ field }) => (
-                    <FormItem><FormLabel>DNI</FormLabel><FormControl><Input placeholder="Sin puntos" {...field} /></FormControl><FormMessage /></FormItem>
-                )}/>
-                <FormField control={form.control} name="instagram" render={({ field }) => (
-                    <FormItem><FormLabel>Instagram (Opcional)</FormLabel><FormControl><Input placeholder="@usuario" {...field} /></FormControl><FormMessage /></FormItem>
-                )}/>
+                <FormField control={form.control} name="contact_name" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">Nombre y Apellido</FormLabel>
+                    <FormControl><Input placeholder="Nombre de contacto" className="h-12 glass border-white/10 rounded-xl italic font-medium" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="email" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">Email</FormLabel>
+                    <FormControl><Input type="email" placeholder="cliente@email.com" className="h-12 glass border-white/10 rounded-xl italic font-medium" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
               </div>
-            </div>
 
-            <div className="space-y-4 rounded-lg border p-4">
-              <h4 className="font-medium text-base">Dirección de Entrega</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="province" render={({ field }) => (
-                  <FormItem><FormLabel>Provincia</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione una provincia..." /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{provinces.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>
-                )}/>
-                <FormField control={form.control} name="locality" render={({ field }) => (
-                  <FormItem><FormLabel>Localidad</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={!watchedProvince}><FormControl><SelectTrigger><SelectValue placeholder={watchedProvince ? "Seleccione una localidad..." : "Elija provincia"} /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{availableLocalities.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>
-                )}/>
+              <div className="space-y-4 glass border-white/5 p-6 rounded-2xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
+                <h4 className="font-black italic tracking-tighter text-lg mb-4">Información Fiscal</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField control={form.control} name="fiscal_status" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">Condición Fiscal</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="h-12 glass border-white/10 rounded-xl">
+                            <SelectValue placeholder="Seleccione..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="glass border-white/5">
+                          <SelectItem value="Responsable Inscripto">Responsable Inscripto</SelectItem>
+                          <SelectItem value="Monotributista">Monotributista</SelectItem>
+                          <SelectItem value="Consumidor Final">Consumidor Final</SelectItem>
+                          <SelectItem value="Exento">Exento</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="cuit" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">CUIT</FormLabel>
+                      <FormControl><Input placeholder="11 dígitos sin guiones" className="h-12 glass border-white/10 rounded-xl font-medium" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="contact_dni" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">DNI</FormLabel>
+                      <FormControl><Input placeholder="Sin puntos" className="h-12 glass border-white/10 rounded-xl font-medium" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="instagram" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">Instagram (Opcional)</FormLabel>
+                      <FormControl><Input placeholder="@usuario" className="h-12 glass border-white/10 rounded-xl font-medium italic" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-2"><FormField control={form.control} name="street_address" render={({ field }) => (
-                      <FormItem><FormLabel>Calle</FormLabel><FormControl><Input placeholder="Ej: Av. Corrientes" {...field} /></FormControl><FormMessage /></FormItem>
-                  )}/></div>
-                  <div><FormField control={form.control} name="street_number" render={({ field }) => (
-                      <FormItem><FormLabel>Número</FormLabel><FormControl><Input placeholder="Ej: 1234" {...field} /></FormControl><FormMessage /></FormItem>
-                  )}/></div>
-              </div>
-            </div>
 
-            <div className="space-y-4 rounded-lg border p-4">
-              <h4 className="font-medium text-base">Ventana Horaria de Entrega</h4>
-              <FormField control={form.control} name="delivery_days" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Días de Entrega</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center gap-2 pt-2 flex-wrap">
-                      {deliveryDays.map((day) => {
-                        const isSelected = field.value?.includes(day.id);
-                        return (
-                          <Button
-                            key={day.id}
-                            type="button"
-                            variant={isSelected ? "default" : "outline"}
-                            size="sm"
-                            className={cn("h-8 w-8 p-0 rounded-full", isSelected && "shadow-md")}
-                            onClick={() => {
-                              const newValue = isSelected
-                                ? field.value?.filter((d) => d !== day.id)
-                                : [...(field.value || []), day.id];
-                              field.onChange(newValue);
-                            }}
-                          >
-                            {day.label}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </FormControl>
+              <div className="space-y-4 glass border-white/5 p-6 rounded-2xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
+                <h4 className="font-black italic tracking-tighter text-lg mb-4">Dirección de Entrega</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField control={form.control} name="province" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">Provincia</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="h-12 glass border-white/10 rounded-xl">
+                            <SelectValue placeholder="Seleccione..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="glass border-white/5 max-h-60">
+                          <ScrollArea className="h-60">{provinces.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</ScrollArea>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="locality" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">Localidad</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''} disabled={!watchedProvince}>
+                        <FormControl>
+                          <SelectTrigger className="h-12 glass border-white/10 rounded-xl">
+                            <SelectValue placeholder={watchedProvince ? "Localidad..." : "Elija provincia"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="glass border-white/5">
+                          <ScrollArea className="h-60">{availableLocalities.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</ScrollArea>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <FormField control={form.control} name="street_address" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">Calle</FormLabel>
+                        <FormControl><Input placeholder="Ej: Av. Corrientes" className="h-12 glass border-white/10 rounded-xl font-medium" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                  <div>
+                    <FormField control={form.control} name="street_number" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">Número</FormLabel>
+                        <FormControl><Input placeholder="Ej: 1234" className="h-12 glass border-white/10 rounded-xl font-medium" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 glass border-white/5 p-6 rounded-2xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
+                <h4 className="font-black italic tracking-tighter text-lg mb-4">Logística</h4>
+                <FormField control={form.control} name="delivery_days" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">Días de Entrega</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center gap-2 pt-2 flex-wrap">
+                        {deliveryDays.map((day) => {
+                          const isSelected = field.value?.includes(day.id);
+                          return (
+                            <Button
+                              key={day.id}
+                              type="button"
+                              variant={isSelected ? "default" : "outline"}
+                              size="sm"
+                              className={cn(
+                                "h-10 w-10 p-0 rounded-xl font-black transition-all",
+                                isSelected ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "glass border-white/10 opacity-40 hover:opacity-100"
+                              )}
+                              onClick={() => {
+                                const newValue = isSelected
+                                  ? field.value?.filter((d) => d !== day.id)
+                                  : [...(field.value || []), day.id];
+                                field.onChange(newValue);
+                              }}
+                            >
+                              {day.label}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="delivery_time_from" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">Desde</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger className="h-12 glass border-white/10 rounded-xl"><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent className="glass border-white/5">{timeOptions.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="delivery_time_to" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">Hasta</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger className="h-12 glass border-white/10 rounded-xl"><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent className="glass border-white/5">{timeOptions.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+              </div>
+
+              <FormField control={form.control} name="agreement_id" render={({ field }) => (
+                <FormItem className="glass border-white/5 p-6 rounded-2xl relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
+                  <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-2 block">Convenio Comercial</FormLabel>
+                  <Select onValueChange={(v) => field.onChange(v === 'null' ? null : v)} value={field.value || 'null'}>
+                    <FormControl>
+                      <SelectTrigger className="h-12 glass border-white/10 rounded-xl">
+                        <SelectValue placeholder="Seleccione un convenio..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="glass border-white/5">
+                      <SelectItem value="null">Ninguno</SelectItem>
+                      {agreements.map(a => <SelectItem key={a.id} value={a.id}>{a.agreement_name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription className="text-[10px] italic font-medium opacity-60 mt-2">
+                    Opcional. Asigna un convenio comercial a este cliente.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
-              )}/>
-              <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name="delivery_time_from" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Desde</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                          <SelectContent>{timeOptions.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                  )}/>
-                  <FormField control={form.control} name="delivery_time_to" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Hasta</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                          <SelectContent>{timeOptions.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                  )}/>
-              </div>
-            </div>
-
-            <FormField control={form.control} name="agreement_id" render={({ field }) => (
-              <FormItem><FormLabel>Convenio Comercial</FormLabel><Select onValueChange={(v) => field.onChange(v === 'null' ? null : v)} value={field.value || 'null'}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un convenio..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="null">Ninguno</SelectItem>{agreements.map(a => <SelectItem key={a.id} value={a.id}>{a.agreement_name}</SelectItem>)}</SelectContent></Select><FormDescription>Opcional. Asigna un convenio comercial a este cliente.</FormDescription><FormMessage /></FormItem>
-            )}/>
-          </form>
-        </Form>
-      </div>
-    </ScrollArea>
-    <DialogFooter className="p-6 pt-2 border-t">
-        <Button variant="outline" type="button" onClick={onCancel}>
-            Cancelar
+              )} />
+            </form>
+          </Form>
+        </div>
+      </ScrollArea>
+      <DialogFooter className="p-6 pt-4 border-t border-white/5 bg-background flex justify-end gap-3">
+        <Button variant="ghost" type="button" onClick={onCancel} className="h-12 rounded-xl font-black uppercase tracking-widest text-[10px] italic transition-all opacity-60 hover:opacity-100">
+          Cancelar
         </Button>
         <Button
-            type="submit"
-            form="upsert-client-form"
-            disabled={isPending}
+          type="submit"
+          form="upsert-client-form"
+          disabled={isPending}
+          className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20"
         >
-            {isPending ? "Guardando..." : "Guardar Cliente"}
+          {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          {isPending ? "Guardando..." : "Guardar Cliente"}
         </Button>
-    </DialogFooter>
+      </DialogFooter>
     </>
   );
 }

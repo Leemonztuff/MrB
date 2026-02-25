@@ -86,10 +86,13 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className={view === 'manual' ? "sm:max-w-3xl" : "sm:max-w-md"}>
-        <DialogHeader>
-          <DialogTitle>Agregar Nuevo Cliente</DialogTitle>
-          <DialogDescription>
+      <DialogContent className={cn(
+        "grid-rows-[auto_1fr] p-0 overflow-hidden flex flex-col transition-all duration-500 ease-in-out",
+        view === 'manual' ? "sm:max-w-3xl h-[90vh] sm:h-[80vh]" : "sm:max-w-md h-auto"
+      )}>
+        <DialogHeader className="p-6 pb-2">
+          <DialogTitle className="font-black italic tracking-tighter text-2xl">Agregar Nuevo Cliente</DialogTitle>
+          <DialogDescription className="text-xs uppercase font-bold tracking-widest opacity-60">
             {view === 'options' && "Elige cómo deseas agregar un nuevo cliente al sistema."}
             {view === 'invitation_config' && "Configura la invitación antes de generar el enlace."}
             {view === 'link' && "Comparte este enlace con tu cliente para que complete su alta."}
@@ -97,115 +100,118 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
           </DialogDescription>
         </DialogHeader>
 
-        {view === "options" && (
-          <div className="grid grid-cols-1 gap-4 py-4">
-            <Button
-              variant="outline"
-              className="h-24 flex flex-col gap-1 rounded-xl glass border-white/5 hover:bg-white/5"
-              onClick={() => setView('manual')}
-            >
-              <UserPlus className="h-6 w-6 text-primary" />
-              <span className="font-black italic tracking-tighter">Crear Manualmente</span>
-              <span className="text-[10px] uppercase font-bold tracking-widest opacity-60">
-                (Tú cargas todos los datos)
-              </span>
-            </Button>
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {view === "options" && (
+            <div className="grid grid-cols-1 gap-4 p-6">
+              <Button
+                variant="outline"
+                className="h-28 flex flex-col gap-1 rounded-2xl glass border-white/5 hover:bg-white/5 transition-all group"
+                onClick={() => setView('manual')}
+              >
+                <UserPlus className="h-8 w-8 text-primary group-hover:scale-110 transition-transform" />
+                <span className="font-black italic tracking-tighter text-lg">Crear Manualmente</span>
+                <span className="text-[10px] uppercase font-bold tracking-widest opacity-60">
+                  (Tú cargas todos los datos)
+                </span>
+              </Button>
 
-            <Button
-              variant="outline"
-              className="h-24 flex flex-col gap-1 rounded-xl glass border-white/5 hover:bg-white/5"
-              onClick={() => setView('invitation_config')}
-            >
-              <Link2 className="h-6 w-6 text-primary" />
-              <span className="font-black italic tracking-tighter">Generar Enlace de Invitación</span>
-              <span className="text-[10px] uppercase font-bold tracking-widest opacity-60">
-                (El cliente carga sus datos)
-              </span>
-            </Button>
-          </div>
-        )}
+              <Button
+                variant="outline"
+                className="h-28 flex flex-col gap-1 rounded-2xl glass border-white/5 hover:bg-white/5 transition-all group"
+                onClick={() => setView('invitation_config')}
+              >
+                <Link2 className="h-8 w-8 text-primary group-hover:scale-110 transition-transform" />
+                <span className="font-black italic tracking-tighter text-lg">Generar Enlace de Invitación</span>
+                <span className="text-[10px] uppercase font-bold tracking-widest opacity-60">
+                  (El cliente carga sus datos)
+                </span>
+              </Button>
+            </div>
+          )}
 
-        {view === "manual" && (
-          <div className="py-2">
+          {view === "manual" && (
             <UpsertClientForm
               onSuccess={() => {
                 handleOpenChange(false);
               }}
               onCancel={() => setView('options')}
             />
-          </div>
-        )}
+          )}
 
-        {view === "invitation_config" && (
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="client-name" className="text-[10px] font-black uppercase tracking-widest opacity-60">Nombre del Cliente (Opcional)</Label>
-              <Input
-                id="client-name"
-                placeholder="Para identificarlo en la lista"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                className="glass border-white/10 rounded-xl"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="agreement-select" className="text-[10px] font-black uppercase tracking-widest opacity-60">Asignar Convenio (Opcional)</Label>
-              <Select
-                onValueChange={(value) => setSelectedAgreementId(value === 'null' ? null : value)}
-                defaultValue="null"
-              >
-                <SelectTrigger id="agreement-select" className="glass border-white/10 rounded-xl">
-                  <SelectValue placeholder="Selecciona un convenio..." />
-                </SelectTrigger>
-                <SelectContent className="glass border-white/5">
-                  <SelectItem value="null">Ninguno por ahora</SelectItem>
-                  {agreements.map(agreement => (
-                    <SelectItem key={agreement.id} value={agreement.id}>
-                      {agreement.agreement_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-[10px] text-muted-foreground font-medium italic">
-                Si asignas un convenio, el cliente podrá hacer pedidos inmediatamente después de registrarse.
-              </p>
-            </div>
+          {view === "invitation_config" && (
+            <div className="space-y-6 p-6">
+              <div className="space-y-2">
+                <Label htmlFor="client-name" className="text-[10px] font-black uppercase tracking-widest opacity-60">Nombre del Cliente (Opcional)</Label>
+                <Input
+                  id="client-name"
+                  placeholder="Para identificarlo en la lista"
+                  value={clientName}
+                  onChange={(e) => setClientName(e.target.value)}
+                  className="h-12 glass border-white/10 rounded-xl italic font-medium focus:border-primary/50 transition-all placeholder:text-muted-foreground/30"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="agreement-select" className="text-[10px] font-black uppercase tracking-widest opacity-60">Asignar Convenio (Opcional)</Label>
+                <Select
+                  onValueChange={(value) => setSelectedAgreementId(value === 'null' ? null : value)}
+                  defaultValue="null"
+                >
+                  <SelectTrigger id="agreement-select" className="h-12 glass border-white/10 rounded-xl focus:ring-0 focus:ring-offset-0">
+                    <SelectValue placeholder="Selecciona un convenio..." />
+                  </SelectTrigger>
+                  <SelectContent className="glass border-white/5">
+                    <SelectItem value="null">Ninguno por ahora</SelectItem>
+                    {agreements.map(agreement => (
+                      <SelectItem key={agreement.id} value={agreement.id}>
+                        {agreement.agreement_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] text-muted-foreground font-medium italic opacity-60">
+                  Si asignas un convenio, el cliente podrá hacer pedidos inmediatamente después de registrarse.
+                </p>
+              </div>
 
-            <DialogFooter className="!mt-6 gap-3">
-              <Button variant="ghost" onClick={() => setView('options')} className="rounded-xl">Volver</Button>
-              <Button onClick={handleGenerateLink} disabled={isPending} className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl">
-                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generar Enlace"}
-              </Button>
-            </DialogFooter>
-          </div>
-        )}
-
-        {view === "link" && (
-          <div className="space-y-4 py-4">
-            <div className="flex items-center space-x-2">
-              <Input
-                value={generatedLink}
-                readOnly
-                className="glass border-white/10 rounded-xl italic font-medium"
-              />
-              <Button
-                size="icon"
-                className="h-10 w-10 shrink-0 bg-primary hover:bg-primary/90 rounded-xl"
-                onClick={copyToClipboard}
-              >
-                {hasCopied ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
+              <div className="flex flex-col gap-3 pt-4">
+                <Button onClick={handleGenerateLink} disabled={isPending} className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20">
+                  {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generar Enlace"}
+                </Button>
+                <Button variant="ghost" onClick={() => setView('options')} className="h-12 rounded-xl font-black uppercase tracking-widest text-[10px] opacity-60 hover:opacity-100 italic transition-all">Volver</Button>
+              </div>
             </div>
-            <DialogFooter className="!mt-6 gap-3">
-              <Button variant="secondary" onClick={() => setView('invitation_config')} className="glass border-white/5 rounded-xl">Volver</Button>
-              <Button onClick={() => handleOpenChange(false)} className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl">Finalizar</Button>
-            </DialogFooter>
-          </div>
-        )}
+          )}
+
+          {view === "link" && (
+            <div className="space-y-6 p-6">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Enlace de Invitación</Label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    value={generatedLink}
+                    readOnly
+                    className="h-12 glass border-white/10 rounded-xl italic font-medium text-primary"
+                  />
+                  <Button
+                    size="icon"
+                    className="h-12 w-12 shrink-0 bg-primary hover:bg-primary/90 rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-95"
+                    onClick={copyToClipboard}
+                  >
+                    {hasCopied ? (
+                      <Check className="h-5 w-5" />
+                    ) : (
+                      <Copy className="h-5 w-5" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              <div className="flex flex-col gap-3 pt-4">
+                <Button onClick={() => handleOpenChange(false)} className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20">Finalizar</Button>
+                <Button variant="secondary" onClick={() => setView('invitation_config')} className="h-12 glass border-white/5 rounded-xl font-black uppercase tracking-widest text-[10px] italic">Volver</Button>
+              </div>
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
