@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { provinces, getLocalitiesByProvince } from "@/lib/geo-data";
 import { DialogFooter } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 // CUIT Validation Logic
 const validateCuit = (cuit: string): boolean | number => {
