@@ -92,7 +92,7 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
                 {orders.map((order) => (
                     <div
                         key={order.id}
-                        className="group relative glass hover:bg-white/5 transition-all duration-300 p-4 rounded-xl border-white/5 flex flex-col sm:flex-row sm:items-center gap-4"
+                        className="group relative glass hover:bg-white/5 transition-all duration-300 p-4 rounded-xl border-white/5 flex flex-col xl:flex-row xl:items-center gap-4"
                     >
                         <div className="flex items-center gap-4 flex-1 min-w-0">
                             <Checkbox
@@ -102,18 +102,18 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
                             />
 
                             <div className="relative shrink-0">
-                                <Avatar className="h-12 w-12 border-2 border-white/10 group-hover:border-primary/50 transition-colors">
+                                <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-white/10 group-hover:border-primary/50 transition-colors">
                                     <AvatarImage src={`https://avatar.vercel.sh/${order.client_id || 'generic'}.png`} alt="Avatar" />
-                                    <AvatarFallback className="bg-secondary text-primary font-bold">{order.client_name_cache.charAt(0)}</AvatarFallback>
+                                    <AvatarFallback className="bg-secondary text-primary font-bold text-xs sm:text-base">{order.client_name_cache.charAt(0)}</AvatarFallback>
                                 </Avatar>
-                                <div className="absolute -bottom-1 -right-1 p-1 bg-background rounded-full border border-white/10">
-                                    <Clock className="h-3 w-3 text-primary" />
+                                <div className="absolute -bottom-1 -right-1 p-0.5 sm:p-1 bg-background rounded-full border border-white/10 text-primary">
+                                    <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                 </div>
                             </div>
 
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2">
-                                    <p className="font-headline text-lg truncate leading-tight">{order.client_name_cache}</p>
+                                    <p className="font-headline text-base sm:text-lg truncate leading-tight">{order.client_name_cache}</p>
                                     {order.notes && (
                                         <Button
                                             variant="ghost"
@@ -125,7 +125,7 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
                                         </Button>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-2 mt-1">
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
                                     <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded text-muted-foreground font-black tracking-widest uppercase">
                                         #{order.id.slice(-6)}
                                     </span>
@@ -136,10 +136,10 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3 sm:gap-4 sm:ml-auto shrink-0 pt-4 sm:pt-0 border-t sm:border-none border-white/5">
+                        <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 xl:ml-auto shrink-0 pt-3 xl:pt-0 border-t xl:border-none border-white/5 min-w-0">
                             <div className="flex flex-col items-end gap-0.5">
-                                <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/60">Bultos</p>
-                                <div className="flex items-center gap-2 bg-secondary/30 px-2 py-0.5 rounded-lg border border-white/5 focus-within:border-primary/30 transition-colors">
+                                <p className="text-[8px] sm:text-[10px] uppercase font-black tracking-widest text-muted-foreground/60">Bultos</p>
+                                <div className="flex items-center gap-1.5 bg-secondary/30 px-2 py-0.5 rounded-lg border border-white/5 focus-within:border-primary/30 transition-colors">
                                     <Input
                                         type="number"
                                         min="1"
@@ -150,20 +150,20 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
                                 </div>
                             </div>
 
-                            <div className="flex flex-col items-end gap-0.5 min-w-[90px]">
-                                <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/60 text-right">Monto Total</p>
-                                <p className="text-lg font-headline font-black text-primary leading-none">{formatCurrency(order.total_amount)}</p>
+                            <div className="flex flex-col items-end gap-0.5 min-w-[80px] sm:min-w-[90px]">
+                                <p className="text-[8px] sm:text-[10px] uppercase font-black tracking-widest text-muted-foreground/60 text-right">Monto Total</p>
+                                <p className="text-base sm:text-lg font-headline font-black text-primary leading-none truncate w-full text-right">{formatCurrency(order.total_amount)}</p>
                             </div>
 
                             <Button
                                 variant="default"
                                 size="sm"
-                                className="h-10 px-4 gap-2 font-black shadow-lg shadow-primary/10 active:scale-95 transition-all group/btn bg-primary hover:bg-primary/90 rounded-xl"
+                                className="h-9 sm:h-10 px-3 sm:px-4 gap-2 font-black shadow-lg shadow-primary/10 active:scale-95 transition-all group/btn bg-primary hover:bg-primary/90 rounded-xl shrink-0"
                                 onClick={() => handleUpdateStatus(order.id, 'transito')}
                                 disabled={isPending}
                             >
-                                <Truck className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
-                                <span className="hidden lg:inline italic">Despachar</span>
+                                <Truck className="h-4 w-4 group-hover/btn:translate-x-0.5 transition-transform shrink-0" />
+                                <span className="hidden sm:inline italic">Despachar</span>
                             </Button>
                         </div>
                     </div>
