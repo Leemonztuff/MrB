@@ -2,7 +2,7 @@
 
 import { getDashboardData } from "@/app/admin/actions/dashboard.actions";
 import { PageHeader } from "@/components/shared/page-header";
-import { 
+import {
     Card,
     CardContent,
     CardDescription,
@@ -18,40 +18,40 @@ export default async function AdminDashboardPage() {
     const { stats, pendingOrders, pendingClients } = await getDashboardData();
 
     return (
-        <div className="grid flex-1 items-start gap-4 md:gap-8">
+        <div className="grid flex-1 items-start gap-6 md:gap-10 pb-10">
             <PageHeader
                 title="Dashboard"
                 description="Un resumen de la actividad de tu negocio."
             />
-            
+
             <DashboardStats stats={stats as Stats} />
 
-            <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-                <div className="xl:col-span-2 space-y-4">
-                  <Card>
-                      <CardHeader>
-                          <CardTitle>Pedidos Recientes</CardTitle>
-                          <CardDescription>
-                              Pedidos pendientes de cargar en el sistema de gestión.
-                          </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                          <RecentOrders orders={pendingOrders} />
-                      </CardContent>
-                  </Card>
+            <div className="grid gap-6 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 items-start">
+                <div className="xl:col-span-2 space-y-6">
+                    <Card className="glass border-white/5 border-t-primary/20">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-xl font-black italic tracking-tighter">Pedidos Recientes</CardTitle>
+                            <CardDescription className="text-xs uppercase font-bold tracking-widest opacity-60">
+                                Pendientes de despacho y carga
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <RecentOrders orders={pendingOrders} />
+                        </CardContent>
+                    </Card>
                 </div>
-                <div className="space-y-4">
-                  <Card>
-                      <CardHeader>
-                          <CardTitle>Clientes Pendientes</CardTitle>
-                          <CardDescription>
-                              Clientes que completaron el alta y esperan un convenio.
-                          </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <PendingClients clients={pendingClients} />
-                      </CardContent>
-                  </Card>
+                <div className="space-y-6">
+                    <Card className="glass border-white/5 border-t-primary/20">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-xl font-black italic tracking-tighter">Clientes Pendientes</CardTitle>
+                            <CardDescription className="text-xs uppercase font-bold tracking-widest opacity-60">
+                                Esperando asignación de convenio
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <PendingClients clients={pendingClients} />
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </div>
