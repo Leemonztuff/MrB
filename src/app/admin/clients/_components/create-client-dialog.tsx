@@ -23,9 +23,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
+import { UpsertClientForm } from "./upsert-client-form";
+
 export function CreateClientDialog({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [view, setView] = useState<"options" | "invitation_config" | "link">("options");
+  const [view, setView] = useState<"options" | "invitation_config" | "link" | "manual">("options");
   const [agreements, setAgreements] = useState<Agreement[]>([]);
   const [selectedAgreementId, setSelectedAgreementId] = useState<string | null>(null);
   const [clientName, setClientName] = useState("");
@@ -36,7 +38,7 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     if (view === 'invitation_config') {
-        getAgreements().then(({ data }) => setAgreements(data ?? []));
+      getAgreements().then(({ data }) => setAgreements(data ?? []));
     }
   }, [view]);
 
@@ -84,100 +86,111 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={view === 'manual' ? "sm:max-w-3xl" : "sm:max-w-md"}>
         <DialogHeader>
           <DialogTitle>Agregar Nuevo Cliente</DialogTitle>
-           <DialogDescription>
+          <DialogDescription>
             {view === 'options' && "Elige cómo deseas agregar un nuevo cliente al sistema."}
             {view === 'invitation_config' && "Configura la invitación antes de generar el enlace."}
             {view === 'link' && "Comparte este enlace con tu cliente para que complete su alta."}
+            {view === 'manual' && "Completa todos los datos del cliente manualmente."}
           </DialogDescription>
         </DialogHeader>
 
         {view === "options" && (
           <div className="grid grid-cols-1 gap-4 py-4">
-            <UpsertClientDialog client={undefined}>
-              <Button
-                variant="outline"
-                className="h-20 flex flex-col gap-1"
-                onClick={() => setIsOpen(false)} // Close this dialog to open the other
-              >
-                <UserPlus className="h-6 w-6" />
-                <span>Crear Manualmente</span>
-                <span className="text-xs text-muted-foreground">
-                  (Tú cargas todos los datos)
-                </span>
-              </Button>
-            </UpsertClientDialog>
+            <Button
+              variant="outline"
+              className="h-24 flex flex-col gap-1 rounded-xl glass border-white/5 hover:bg-white/5"
+              onClick={() => setView('manual')}
+            >
+              <UserPlus className="h-6 w-6 text-primary" />
+              <span className="font-black italic tracking-tighter">Crear Manualmente</span>
+              <span className="text-[10px] uppercase font-bold tracking-widest opacity-60">
+                (Tú cargas todos los datos)
+              </span>
+            </Button>
 
             <Button
               variant="outline"
-              className="h-20 flex flex-col gap-1"
+              className="h-24 flex flex-col gap-1 rounded-xl glass border-white/5 hover:bg-white/5"
               onClick={() => setView('invitation_config')}
             >
-              <Link2 className="h-6 w-6" />
-              <span>Generar Enlace de Invitación</span>
-              <span className="text-xs text-muted-foreground">
+              <Link2 className="h-6 w-6 text-primary" />
+              <span className="font-black italic tracking-tighter">Generar Enlace de Invitación</span>
+              <span className="text-[10px] uppercase font-bold tracking-widest opacity-60">
                 (El cliente carga sus datos)
               </span>
             </Button>
           </div>
         )}
 
-        {view === "invitation_config" && (
-            <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                    <Label htmlFor="client-name">Nombre del Cliente (Opcional)</Label>
-                    <Input 
-                        id="client-name"
-                        placeholder="Para identificarlo en la lista"
-                        value={clientName}
-                        onChange={(e) => setClientName(e.target.value)}
-                    />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="agreement-select">Asignar Convenio (Opcional)</Label>
-                     <Select 
-                        onValueChange={(value) => setSelectedAgreementId(value === 'null' ? null : value)} 
-                        defaultValue="null"
-                    >
-                        <SelectTrigger id="agreement-select">
-                            <SelectValue placeholder="Selecciona un convenio..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="null">Ninguno por ahora</SelectItem>
-                            {agreements.map(agreement => (
-                                <SelectItem key={agreement.id} value={agreement.id}>
-                                {agreement.agreement_name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                        Si asignas un convenio, el cliente podrá hacer pedidos inmediatamente después de registrarse.
-                    </p>
-                </div>
+        {view === "manual" && (
+          <div className="py-2">
+            <UpsertClientForm
+              onSuccess={() => {
+                handleOpenChange(false);
+              }}
+              onCancel={() => setView('options')}
+            />
+          </div>
+        )}
 
-                <DialogFooter className="!mt-6">
-                    <Button variant="ghost" onClick={() => setView('options')}>Volver</Button>
-                    <Button onClick={handleGenerateLink} disabled={isPending}>
-                        {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generar Enlace"}
-                    </Button>
-                </DialogFooter>
+        {view === "invitation_config" && (
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="client-name" className="text-[10px] font-black uppercase tracking-widest opacity-60">Nombre del Cliente (Opcional)</Label>
+              <Input
+                id="client-name"
+                placeholder="Para identificarlo en la lista"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                className="glass border-white/10 rounded-xl"
+              />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="agreement-select" className="text-[10px] font-black uppercase tracking-widest opacity-60">Asignar Convenio (Opcional)</Label>
+              <Select
+                onValueChange={(value) => setSelectedAgreementId(value === 'null' ? null : value)}
+                defaultValue="null"
+              >
+                <SelectTrigger id="agreement-select" className="glass border-white/10 rounded-xl">
+                  <SelectValue placeholder="Selecciona un convenio..." />
+                </SelectTrigger>
+                <SelectContent className="glass border-white/5">
+                  <SelectItem value="null">Ninguno por ahora</SelectItem>
+                  {agreements.map(agreement => (
+                    <SelectItem key={agreement.id} value={agreement.id}>
+                      {agreement.agreement_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground font-medium italic">
+                Si asignas un convenio, el cliente podrá hacer pedidos inmediatamente después de registrarse.
+              </p>
+            </div>
+
+            <DialogFooter className="!mt-6 gap-3">
+              <Button variant="ghost" onClick={() => setView('options')} className="rounded-xl">Volver</Button>
+              <Button onClick={handleGenerateLink} disabled={isPending} className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl">
+                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generar Enlace"}
+              </Button>
+            </DialogFooter>
+          </div>
         )}
 
         {view === "link" && (
           <div className="space-y-4 py-4">
             <div className="flex items-center space-x-2">
-              <input
+              <Input
                 value={generatedLink}
                 readOnly
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                className="glass border-white/10 rounded-xl italic font-medium"
               />
               <Button
                 size="icon"
-                className="h-10 w-10"
+                className="h-10 w-10 shrink-0 bg-primary hover:bg-primary/90 rounded-xl"
                 onClick={copyToClipboard}
               >
                 {hasCopied ? (
@@ -187,9 +200,9 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
                 )}
               </Button>
             </div>
-            <DialogFooter className="!mt-6">
-                <Button variant="secondary" onClick={() => setView('invitation_config')}>Volver</Button>
-                <Button onClick={() => handleOpenChange(false)}>Finalizar</Button>
+            <DialogFooter className="!mt-6 gap-3">
+              <Button variant="secondary" onClick={() => setView('invitation_config')} className="glass border-white/5 rounded-xl">Volver</Button>
+              <Button onClick={() => handleOpenChange(false)} className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl">Finalizar</Button>
             </DialogFooter>
           </div>
         )}

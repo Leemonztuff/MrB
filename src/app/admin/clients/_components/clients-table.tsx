@@ -250,6 +250,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                           </AssignAgreementDialog>
                           <DropdownMenuSeparator className="bg-white/5" />
                           <DropdownMenuItem
+                            onSelect={(e) => e.preventDefault()}
                             onClick={() => copyToClipboard(orderLink, 'Enlace de pedido copiado!', 'El cliente debe estar activo para tener un enlace de pedido.')}
                             disabled={!orderLink}
                             className="focus:bg-white/5 cursor-pointer font-bold py-2"
@@ -258,6 +259,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                             Copiar Link Pedido
                           </DropdownMenuItem>
                           <DropdownMenuItem
+                            onSelect={(e) => e.preventDefault()}
                             onClick={() => copyToClipboard(onboardingLink, 'Enlace de alta copiado!')}
                             disabled={client.status !== 'pending_onboarding' || !isClient}
                             className="focus:bg-white/5 cursor-pointer font-bold py-2"
