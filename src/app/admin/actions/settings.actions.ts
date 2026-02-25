@@ -9,7 +9,7 @@ import type { AppSettings } from "@/types";
 export async function getSettings(): Promise<AppSettings> {
     const supabase = await getSupabaseClientWithAuth();
     const { data, error } = await supabase.from('app_settings').select('key, value');
-    
+
     if (error) {
         console.error("getSettings error:", error.message);
         return { whatsapp_number: "", vat_percentage: 21, logo_url: null };
@@ -38,7 +38,7 @@ export async function getPublicWhatsappNumber(): Promise<string> {
         .select('value')
         .eq('key', 'whatsapp_number')
         .single();
-    
+
     if (error || !data) {
         console.error("getPublicWhatsappNumber error:", error?.message);
         return "";
@@ -57,7 +57,7 @@ export async function getPublicLogoUrl(): Promise<string | null> {
         .select('value')
         .eq('key', 'logo_url')
         .single();
-    
+
     if (error || !data) {
         // This is not a critical error, so we don't log it.
         // It's normal for the logo not to be configured.
@@ -69,7 +69,7 @@ export async function getPublicLogoUrl(): Promise<string | null> {
 
 export async function updateSettings(formData: FormData): Promise<{ error?: string }> {
     const supabase = await getSupabaseClientWithAuth();
-    
+
     const whatsapp_number = formData.get('whatsapp_number') as string;
     const vat_percentage = formData.get('vat_percentage') as string;
 
@@ -79,7 +79,7 @@ export async function updateSettings(formData: FormData): Promise<{ error?: stri
     ];
 
     const { error } = await supabase.from('app_settings').upsert(settingsToUpsert, { onConflict: 'key' });
-    
+
     if (error) {
         console.error("updateSettings error:", error.message);
         return { error: "No se pudo guardar la configuración." };
@@ -88,7 +88,7 @@ export async function updateSettings(formData: FormData): Promise<{ error?: stri
     revalidatePath('/admin', 'layout');
     revalidatePath('/login');
     revalidatePath('/signup');
-    
+
     return {};
 }
 
@@ -110,7 +110,7 @@ export async function updateLogo(formData: FormData): Promise<{ error?: string }
             cacheControl: '3600',
             upsert: true,
         });
-    
+
     if (uploadError) {
         console.error("Logo upload error:", uploadError.message);
         return { error: "No se pudo subir el nuevo logo." };
@@ -118,7 +118,7 @@ export async function updateLogo(formData: FormData): Promise<{ error?: string }
 
     const { data: publicUrlData } = supabase.storage.from('app_assets').getPublicUrl(filePath);
     const logoUrl = `${publicUrlData.publicUrl}?t=${new Date().getTime()}`; // Cache-busting
-    
+
     const { error: dbError } = await supabase.from('app_settings').upsert(
         { key: 'logo_url', value: logoUrl },
         { onConflict: 'key' }
@@ -137,15 +137,15 @@ export async function updateLogo(formData: FormData): Promise<{ error?: string }
 
 export async function deleteLogo(): Promise<{ error?: string }> {
     const supabase = await getSupabaseClientWithAuth();
-    
-    const { error } = await supabase.from('app_settings').upsert(
-        { key: 'logo_url', value: null },
-        { onConflict: 'key' }
-    );
+
+    const { error } = await supabase
+        .from('app_settings')
+        .delete()
+        .eq('key', 'logo_url');
 
     if (error) {
         console.error("deleteLogo error:", error.message);
-        return { error: "No se pudo eliminar el logo." };
+        return { error: "No se pudo eliminar el logo de la base de datos." };
     }
 
     // Optional: Also delete the file from storage if desired

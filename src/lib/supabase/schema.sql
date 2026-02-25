@@ -128,7 +128,7 @@ CREATE TABLE public.order_items (
 
 CREATE TABLE public.app_settings (
     key text PRIMARY KEY,
-    value jsonb NOT NULL,
+    value jsonb,
     updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
