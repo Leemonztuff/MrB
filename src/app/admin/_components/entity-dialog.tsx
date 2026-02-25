@@ -35,7 +35,7 @@ export interface FormConfig<T extends z.ZodType<any, any>> {
 interface EntityDialogProps {
   children: React.ReactElement;
   formConfig: FormConfig<any>;
-  entity?: Product | Promotion;
+  entity?: any;
 }
 
 export function EntityDialog({

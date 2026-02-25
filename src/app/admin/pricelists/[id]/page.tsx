@@ -18,9 +18,10 @@ import { priceListFormConfig } from "../_components/form-config";
 export default async function PriceListDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const { data: priceList, error } = await getPriceListById(params.id);
+  const { id } = await params;
+  const { data: priceList, error } = await getPriceListById(id);
 
   if (error || !priceList) {
     return (
@@ -51,36 +52,36 @@ export default async function PriceListDetailPage({
           </Link>
         </Button>
         <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">{priceList.name}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{priceList.name}</h1>
         </div>
         <div className="ml-auto flex items-center gap-2">
-            <EntityDialog formConfig={priceListFormConfig} entity={priceList}>
-                <Button size="sm" variant="outline" className="h-8 gap-1">
-                    <Edit className="h-3.5 w-3.5" />
-                    <span>Editar Detalles</span>
-                </Button>
-            </EntityDialog>
+          <EntityDialog formConfig={priceListFormConfig} entity={priceList}>
+            <Button size="sm" variant="outline" className="h-8 gap-1">
+              <Edit className="h-3.5 w-3.5" />
+              <span>Editar Detalles</span>
+            </Button>
+          </EntityDialog>
         </div>
       </div>
-        <Card>
+      <Card>
         <CardHeader className="flex flex-row items-center">
-            <div className="flex-grow">
+          <div className="flex-grow">
             <CardTitle>Productos en la Lista</CardTitle>
             <CardDescription>
-                Gestiona los productos y sus precios para esta lista.
+              Gestiona los productos y sus precios para esta lista.
             </CardDescription>
-            </div>
-            <AssignProductToPriceListDialog priceListId={priceList.id}>
-                <Button size="sm" className="h-8 gap-1">
-                    <PlusCircle className="h-3.5 w-3.5" />
-                    <span>Asignar Productos</span>
-                </Button>
-            </AssignProductToPriceListDialog>
+          </div>
+          <AssignProductToPriceListDialog priceListId={priceList.id}>
+            <Button size="sm" className="h-8 gap-1">
+              <PlusCircle className="h-3.5 w-3.5" />
+              <span>Asignar Productos</span>
+            </Button>
+          </AssignProductToPriceListDialog>
         </CardHeader>
         <CardContent>
-            <PriceListProductsTable items={priceList.price_list_items} priceListId={priceList.id} />
+          <PriceListProductsTable items={priceList.price_list_items} priceListId={priceList.id} />
         </CardContent>
-        </Card>
+      </Card>
     </div>
   );
 }

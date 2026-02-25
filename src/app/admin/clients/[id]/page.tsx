@@ -16,35 +16,36 @@ const ClientDetailsLoader = dynamic(
 );
 
 function ClientDetailsSkeleton() {
-    return (
-        <div className="grid flex-1 items-start gap-4 md:gap-8">
-            <div className="flex items-center gap-4">
-                <Skeleton className="h-7 w-7 rounded-full" />
-                <Skeleton className="h-7 w-48" />
-            </div>
-            <Skeleton className="h-64 w-full" />
-            <div className="grid gap-4 md:grid-cols-3">
-                <Skeleton className="h-24" />
-                <Skeleton className="h-24" />
-                <Skeleton className="h-24" />
-            </div>
-            <div className="grid gap-4 md:grid-cols-3 md:gap-8">
-                <Skeleton className="h-96 md:col-span-2" />
-                <Skeleton className="h-96 md:col-span-1" />
-            </div>
-        </div>
-    );
+  return (
+    <div className="grid flex-1 items-start gap-4 md:gap-8">
+      <div className="flex items-center gap-4">
+        <Skeleton className="h-7 w-7 rounded-full" />
+        <Skeleton className="h-7 w-48" />
+      </div>
+      <Skeleton className="h-64 w-full" />
+      <div className="grid gap-4 md:grid-cols-3">
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+      </div>
+      <div className="grid gap-4 md:grid-cols-3 md:gap-8">
+        <Skeleton className="h-96 md:col-span-2" />
+        <Skeleton className="h-96 md:col-span-1" />
+      </div>
+    </div>
+  );
 }
 
 export default async function ClientDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const [clientResult, statsResult, ordersResult] = await Promise.all([
-    getClientById(params.id),
-    getClientStats(params.id),
-    getClientOrders(params.id)
+    getClientById(id),
+    getClientStats(id),
+    getClientOrders(id)
   ]);
 
   if (clientResult.error || !clientResult.data) {
@@ -65,15 +66,15 @@ export default async function ClientDetailPage({
       </div>
     );
   }
-  
+
   const client = clientResult.data;
-  const stats = statsResult.data;
+  const stats = statsResult.data ?? null;
   const orders = ordersResult;
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
       <Suspense fallback={<ClientDetailsSkeleton />}>
-        <ClientDetailsLoader 
+        <ClientDetailsLoader
           client={client}
           stats={stats}
           orders={orders}

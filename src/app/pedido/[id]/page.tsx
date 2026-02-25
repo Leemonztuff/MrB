@@ -13,6 +13,7 @@ import {
 import { OrderSummary } from "./_components/order-summary";
 import { MobileCartIndicator } from "./_components/mobile-cart-indicator";
 import { Suspense } from "react";
+import { Button } from "@/components/ui/button";
 import { AgreementPromotion, ProductWithPrice } from "@/types";
 
 const categoryTranslations: Record<string, string> = {
@@ -34,30 +35,20 @@ export default async function OrderPage({
   if (error || !data) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
-        <div className="mb-8">
-          <Logo showText={true} logoUrl={null} />
-        </div>
-        <Card className="max-w-md mt-8">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-center gap-2 text-destructive">
-              <AlertTriangle />
-              Error
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg text-muted-foreground">{error?.message || "Algo salió mal."}</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Por favor, contacta al administrador o solicita un nuevo enlace.
-            </p>
-          </CardContent>
-        </Card>
+        <h1 className="mb-4 text-2xl font-bold">Error al cargar el portal</h1>
+        <p className="mb-8 text-muted-foreground">
+          {error?.message || "No se pudo encontrar la información necesaria para este pedido."}
+        </p>
+        <Button asChild>
+          <a href="/">Volver al inicio</a>
+        </Button>
       </div>
     );
   }
 
   const { agreement, client, productsByCategory, vatPercentage, logoUrl } = data;
   const categories = Object.keys(productsByCategory);
-  const promotions = agreement.agreement_promotions.map((ap: AgreementPromotion) => ap.promotions);
+  const promotions = (agreement.agreement_promotions || []).map((ap: AgreementPromotion) => ap.promotions);
 
   const formatCategoryTitle = (category: string) => {
     const translation = categoryTranslations[category];
