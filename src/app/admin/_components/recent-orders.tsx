@@ -136,35 +136,34 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-6 sm:ml-auto shrink-0 pt-4 sm:pt-0 border-t sm:border-none border-white/5">
-                            <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center gap-3 sm:gap-4 sm:ml-auto shrink-0 pt-4 sm:pt-0 border-t sm:border-none border-white/5">
+                            <div className="flex flex-col items-end gap-0.5">
                                 <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/60">Bultos</p>
-                                <div className="flex items-center gap-2 bg-secondary/30 px-2 py-1 rounded-lg border border-white/5 focus-within:border-primary/30 transition-colors">
+                                <div className="flex items-center gap-2 bg-secondary/30 px-2 py-0.5 rounded-lg border border-white/5 focus-within:border-primary/30 transition-colors">
                                     <Input
                                         type="number"
                                         min="1"
-                                        className="h-6 w-10 bg-transparent border-none text-sm text-center font-black p-0 focus-visible:ring-0"
+                                        className="h-6 w-10 bg-transparent border-none text-xs text-center font-black p-0 focus-visible:ring-0"
                                         value={orderBundles[order.id] || 1}
                                         onChange={(e) => updateBundleCount(order.id, parseInt(e.target.value))}
                                     />
                                 </div>
                             </div>
 
-                            <div className="flex flex-col items-end gap-1 min-w-[100px]">
+                            <div className="flex flex-col items-end gap-0.5 min-w-[90px]">
                                 <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/60 text-right">Monto Total</p>
-                                <p className="text-xl font-headline font-black text-primary leading-none">{formatCurrency(order.total_amount)}</p>
+                                <p className="text-lg font-headline font-black text-primary leading-none">{formatCurrency(order.total_amount)}</p>
                             </div>
 
                             <Button
                                 variant="default"
-                                size="lg"
-                                className="h-12 w-12 sm:w-auto sm:h-12 px-0 sm:px-6 gap-2 font-black shadow-lg shadow-primary/10 active:scale-95 transition-all group/btn bg-primary hover:bg-primary/90"
+                                size="sm"
+                                className="h-10 px-4 gap-2 font-black shadow-lg shadow-primary/10 active:scale-95 transition-all group/btn bg-primary hover:bg-primary/90 rounded-xl"
                                 onClick={() => handleUpdateStatus(order.id, 'transito')}
                                 disabled={isPending}
                             >
-                                <Truck className="h-5 w-5 sm:h-4 sm:w-4 group-hover/btn:translate-x-1 transition-transform" />
-                                <span className="hidden sm:inline italic">Despachar</span>
-                                <ChevronRight className="hidden sm:inline h-4 w-4 opacity-50" />
+                                <Truck className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                                <span className="hidden lg:inline italic">Despachar</span>
                             </Button>
                         </div>
                     </div>
