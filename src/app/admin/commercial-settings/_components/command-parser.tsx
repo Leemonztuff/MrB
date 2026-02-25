@@ -33,17 +33,17 @@ export function CommandParser() {
 
         let upsertPromise;
         const entityName = result.entity;
-        
+
         switch (entityName) {
           case 'promotion':
             upsertPromise = upsertPromotion(result.data);
             break;
           case 'pricelist':
-             // The AI flow returns the full data object, which might include fields
-             // not directly in the pricelists table schema (like base_price_list_name).
-             // The `upsertPriceList` action is designed to handle this,
-             // we just need to pass the data as is.
-             upsertPromise = upsertPriceList(result.data);
+            // The AI flow returns the full data object, which might include fields
+            // not directly in the pricelists table schema (like base_price_list_name).
+            // The `upsertPriceList` action is designed to handle this,
+            // we just need to pass the data as is.
+            upsertPromise = upsertPriceList(result.data);
             break;
           case 'sales_condition':
             upsertPromise = upsertSalesCondition(result.data);
@@ -82,13 +82,13 @@ export function CommandParser() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="relative flex-1"
+      className="relative flex-1 group"
     >
-      <Command className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      <Command className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
       <Input
         type="text"
         placeholder='Crear promo 2x1 en Ceras o "nueva lista con 10% off sobre..."'
-        className="w-full rounded-lg bg-background pl-8"
+        className="w-full h-12 rounded-xl glass border-white/10 focus:border-primary/50 pl-10 pr-12 text-sm italic font-medium placeholder:text-muted-foreground/30 transition-all"
         value={command}
         onChange={(e) => setCommand(e.target.value)}
         disabled={isPending}
@@ -96,7 +96,7 @@ export function CommandParser() {
       <Button
         type="submit"
         size="icon"
-        className="absolute right-1 top-1 h-7 w-7"
+        className="absolute right-1.5 top-1.5 h-9 w-9 rounded-lg shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground transition-all"
         disabled={isPending || !command.trim()}
       >
         {isPending ? (

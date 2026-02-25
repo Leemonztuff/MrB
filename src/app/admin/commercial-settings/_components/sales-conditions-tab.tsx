@@ -18,7 +18,7 @@ export default async function SalesConditionsTab() {
   const { data: salesConditions, error } = await getSalesConditions();
 
   if (error) {
-    return <p className="text-destructive">{error.message}</p>;
+    return <p className="text-destructive">{(error as any).message}</p>;
   }
 
   const emptyState = (
@@ -37,26 +37,26 @@ export default async function SalesConditionsTab() {
   );
 
   return (
-    <Card>
-       <CardHeader>
-        <div className="flex items-center">
-            <div className="flex-grow">
-                <CardTitle>Condiciones de Venta</CardTitle>
-                <CardDescription>
-                   Gestiona las condiciones comerciales como plazos de pago, descuentos y financiación.
-                </CardDescription>
-            </div>
-            <EntityDialog formConfig={salesConditionFormConfig}>
-                <Button size="sm" className="h-8 gap-1">
-                <PlusCircle className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    Crear Condición
-                </span>
-                </Button>
-            </EntityDialog>
+    <Card className="glass border-white/5 overflow-hidden">
+      <CardHeader className="pb-4">
+        <div className="flex items-center gap-4">
+          <div className="flex-grow">
+            <CardTitle className="text-xl font-black italic tracking-tighter">Condiciones de Venta</CardTitle>
+            <CardDescription className="text-xs uppercase font-bold tracking-widest opacity-60">
+              Plazos, financiación y logística.
+            </CardDescription>
+          </div>
+          <EntityDialog formConfig={salesConditionFormConfig}>
+            <Button size="sm" className="h-10 gap-2 font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground">
+              <PlusCircle className="h-4 w-4" />
+              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap italic">
+                Crear Condición
+              </span>
+            </Button>
+          </EntityDialog>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0 sm:px-0">
         <SalesConditionsTable
           salesConditions={salesConditions ?? []}
           emptyState={emptyState}

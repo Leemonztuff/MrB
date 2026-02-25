@@ -66,8 +66,8 @@ const formatRule = (rules: any): string => {
 };
 
 interface PromotionsTableProps {
-    promotions: Promotion[];
-    emptyState: React.ReactNode;
+  promotions: Promotion[];
+  emptyState: React.ReactNode;
 }
 
 export default function PromotionsTable({ promotions, emptyState }: PromotionsTableProps) {
@@ -95,126 +95,129 @@ export default function PromotionsTable({ promotions, emptyState }: PromotionsTa
   if (promotions.length === 0) {
     return <>{emptyState}</>;
   }
-  
+
   return (
     <>
       {/* Mobile View */}
-      <div className="grid gap-4 sm:hidden">
+      <div className="grid gap-3 sm:hidden">
         {promotions.map((promotion) => (
-          <Card key={promotion.id}>
-            <CardHeader>
-              <CardTitle>{promotion.name}</CardTitle>
-              <CardDescription>{promotion.description}</CardDescription>
+          <Card key={promotion.id} className="glass border-white/5 hover:bg-white/5 transition-all duration-300">
+            <CardHeader className="pb-3 text-center">
+              <CardTitle className="text-xl font-black italic tracking-tighter leading-none">{promotion.name}</CardTitle>
+              <CardDescription className="text-[10px] uppercase font-bold tracking-widest opacity-60">{promotion.description}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-sm bg-muted/50 p-3 rounded-md">
-                  <p className="font-semibold text-foreground">Regla Aplicada:</p>
-                  <p className="text-muted-foreground">{formatRule(promotion.rules)}</p>
+            <CardContent className="pb-4">
+              <div className="text-[10px] bg-white/5 p-4 rounded-xl border border-white/10 text-center">
+                <p className="font-black uppercase tracking-widest text-primary mb-1">Regla Aplicada</p>
+                <p className="text-muted-foreground font-medium italic">{formatRule(promotion.rules)}</p>
               </div>
             </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-                <EntityDialog formConfig={promotionFormConfig} entity={promotion}>
-                  <Button variant="outline" size="sm"><Edit className="mr-2 h-4 w-4"/> Editar</Button>
-                </EntityDialog>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                     <Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4"/> Eliminar</Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        ¿Estás seguro?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Esta acción no se puede deshacer. Esto eliminará permanentemente la promoción.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => handleDelete(promotion.id)}
-                        disabled={isPending}
-                        className="bg-destructive hover:bg-destructive/90"
-                      >
-                        {isPending ? "Eliminando..." : "Eliminar"}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+            <CardFooter className="flex justify-center gap-3 p-4 pt-0">
+              <EntityDialog formConfig={promotionFormConfig} entity={promotion}>
+                <Button variant="secondary" size="sm" className="h-10 px-6 text-[10px] font-black uppercase tracking-widest rounded-xl bg-white/5 border-white/5 hover:bg-white/10">
+                  <Edit className="mr-2 h-3.5 w-3.5" /> Editar
+                </Button>
+              </EntityDialog>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-10 px-6 text-[10px] font-black uppercase tracking-widest text-destructive/70 hover:text-destructive hover:bg-destructive/5 rounded-xl">
+                    <Trash2 className="mr-2 h-3.5 w-3.5" /> Eliminar
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="glass border-white/5">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="font-black italic">¿Estás seguro?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-sm">
+                      Esta acción no se puede deshacer. Esto eliminará permanentemente la promoción.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="rounded-xl border-white/5">Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleDelete(promotion.id)}
+                      disabled={isPending}
+                      className="bg-destructive hover:bg-destructive/90 rounded-xl"
+                    >
+                      {isPending ? "Eliminando..." : "Eliminar"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </CardFooter>
           </Card>
         ))}
       </div>
 
       {/* Desktop View */}
-      
-        <div className="p-0">
+      <div className="hidden sm:block">
+        <div className="p-0 glass border-white/5 rounded-xl overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Descripción</TableHead>
-                <TableHead>Regla</TableHead>
-                <TableHead>Creada</TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
+              <TableRow className="border-white/5 hover:bg-transparent">
+                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 pl-6">Nombre</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Descripción</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Regla</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Creada el</TableHead>
+                <TableHead className="text-right pr-6">
+                  <span className="sr-only">Acciones</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {promotions.map((promotion) => (
-                <TableRow key={promotion.id}>
-                  <TableCell className="font-medium">{promotion.name}</TableCell>
-                  <TableCell>
+                <TableRow key={promotion.id} className="border-white/5 hover:bg-white/5 transition-colors group">
+                  <TableCell className="pl-6 py-4 font-black italic tracking-tighter text-base group-hover:text-primary transition-colors">{promotion.name}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground font-medium italic truncate max-w-[200px]">
                     {promotion.description}
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                      {formatRule(promotion.rules)}
+                  <TableCell className="text-[10px] font-black uppercase tracking-widest text-primary/80">
+                    {formatRule(promotion.rules)}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
                     {formatDate(promotion.created_at)}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right pr-6">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                        <Button aria-haspopup="true" size="icon" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary transition-all">
                           <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
+                          <span className="sr-only">Menú</span>
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                      <DropdownMenuContent align="end" className="glass border-white/5 min-w-[160px]">
+                        <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Acciones</DropdownMenuLabel>
                         <EntityDialog formConfig={promotionFormConfig} entity={promotion}>
-                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="focus:bg-white/5 cursor-pointer font-bold py-2">
+                            <Edit className="mr-2 h-4 w-4 text-primary" />
                             Editar
                           </DropdownMenuItem>
                         </EntityDialog>
-                        <DropdownMenuSeparator />
+                        <DropdownMenuSeparator className="bg-white/5" />
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <DropdownMenuItem
-                              className="text-destructive"
+                              className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer font-bold py-2"
                               onSelect={(e) => e.preventDefault()}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Eliminar
                             </DropdownMenuItem>
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
+                          <AlertDialogContent className="glass border-white/5">
                             <AlertDialogHeader>
-                              <AlertDialogTitle>
+                              <AlertDialogTitle className="font-black italic">
                                 ¿Estás seguro?
                               </AlertDialogTitle>
-                              <AlertDialogDescription>
+                              <AlertDialogDescription className="text-sm">
                                 Esta acción no se puede deshacer. Esto eliminará permanentemente la promoción.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogCancel className="rounded-xl border-white/5">Cancelar</AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={() => handleDelete(promotion.id)}
                                 disabled={isPending}
-                                className="bg-destructive hover:bg-destructive/90"
+                                className="bg-destructive hover:bg-destructive/90 rounded-xl"
                               >
                                 {isPending ? "Eliminando..." : "Eliminar"}
                               </AlertDialogAction>
@@ -229,11 +232,11 @@ export default function PromotionsTable({ promotions, emptyState }: PromotionsTa
             </TableBody>
           </Table>
         </div>
-        <div className="text-xs text-muted-foreground pt-4">
-          Mostrando <strong>{promotions.length}</strong> de{" "}
-          <strong>{promotions.length}</strong> promociones
+        <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 px-6 py-4">
+          Mostrando <strong className="text-foreground">{promotions.length}</strong> de{" "}
+          <strong className="text-foreground">{promotions.length}</strong> promociones
         </div>
-      
+      </div>
     </>
   );
 }

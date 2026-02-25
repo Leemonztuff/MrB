@@ -78,30 +78,30 @@ export default async function AdminLayout({
   );
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <aside className="fixed inset-y-0 left-0 z-10 hidden w-16 flex-col border-r bg-background sm:flex">
-        <nav className="flex flex-col items-center gap-4 px-2 py-5">
-           <Link
+    <div className="flex min-h-screen w-full flex-col bg-background/95">
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-20 flex-col glass border-r-0 sm:flex shadow-none">
+        <nav className="flex flex-col items-center gap-6 px-2 py-8">
+          <Link
             href="/admin"
-            className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full text-lg font-semibold"
+            className="group flex h-12 w-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-primary/10 transition-all hover:bg-primary/20 active:scale-95"
           >
             <Logo logoUrl={logo_url} />
             <span className="sr-only">MR. BLONDE</span>
           </Link>
           <AppNav isMobile={false} stats={stats as DashboardStats} />
         </nav>
-        <nav className="mt-auto flex flex-col items-center gap-4 px-2 py-5">
+        <nav className="mt-auto flex flex-col items-center gap-6 px-2 py-8">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
-                    href="/admin/settings"
-                    className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                    )}
-                    >
-                    <Settings className="h-5 w-5" />
-                    <span className="sr-only">Configuración</span>
+                  href="/admin/settings"
+                  className={cn(
+                    "flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-all hover:text-primary hover:bg-primary/5 active:scale-95"
+                  )}
+                >
+                  <Settings className="h-5 w-5" />
+                  <span className="sr-only">Configuración</span>
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">Configuración</TooltipContent>
@@ -112,7 +112,7 @@ export default async function AdminLayout({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                    className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-all hover:text-destructive hover:bg-destructive/5 active:scale-95"
                   >
                     <LogOut className="h-5 w-5" />
                     <span className="sr-only">Cerrar Sesión</span>
@@ -124,55 +124,55 @@ export default async function AdminLayout({
           </TooltipProvider>
         </nav>
       </aside>
-      <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-16">
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-            <div className="sm:hidden">
-              <Link href="/admin" className="flex items-center gap-2 text-lg font-semibold">
-                <Logo logoUrl={logo_url} showText={true} />
-              </Link>
-            </div>
-             <div className="ml-auto flex items-center gap-4">
-                 <Notifications notifications={notifications} />
-                 <Sheet>
-                    <SheetTrigger asChild>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="shrink-0 sm:hidden"
-                    >
-                        <Menu className="h-5 w-5" />
-                        <span className="sr-only">Toggle navigation menu</span>
-                    </Button>
-                    </SheetTrigger>
-                    <SheetContent side="right" className="pt-16">
-                      <SheetHeader>
-                        <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
-                        <SheetDescription className="sr-only">Navegación principal de la aplicación para dispositivos móviles.</SheetDescription>
-                      </SheetHeader>
-                      <nav className="grid gap-6 text-base font-medium">
-                          <AppNav isMobile={true} stats={stats as DashboardStats} />
-                      </nav>
-                      <div className="absolute bottom-4 left-4 right-4 grid gap-4">
-                        <Link
-                            href="/admin/settings"
-                            className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
-                          >
-                            <Settings className="h-5 w-5" />
-                            Configuración
-                        </Link>
-                        <form action={logout}>
-                            <button className="w-full flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground">
-                                <LogOut className="h-5 w-5" />
-                                Cerrar Sesión
-                            </button>
-                        </form>
-                      </div>
-                    </SheetContent>
-                </Sheet>
-            </div>
+      <div className="flex flex-col sm:gap-4 sm:pl-20">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 glass border-b-0 border-white/5 px-4 sm:static sm:h-auto sm:bg-transparent sm:px-8 sm:py-6 sm:backdrop-blur-none">
+          <div className="sm:hidden">
+            <Link href="/admin" className="flex items-center gap-2 text-lg font-semibold">
+              <Logo logoUrl={logo_url} showText={true} />
+            </Link>
+          </div>
+          <div className="ml-auto flex items-center gap-4">
+            <Notifications notifications={notifications} />
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0 sm:hidden"
+                >
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Toggle navigation menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="pt-16">
+                <SheetHeader>
+                  <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
+                  <SheetDescription className="sr-only">Navegación principal de la aplicación para dispositivos móviles.</SheetDescription>
+                </SheetHeader>
+                <nav className="grid gap-6 text-base font-medium">
+                  <AppNav isMobile={true} stats={stats as DashboardStats} />
+                </nav>
+                <div className="absolute bottom-4 left-4 right-4 grid gap-4">
+                  <Link
+                    href="/admin/settings"
+                    className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <Settings className="h-5 w-5" />
+                    Configuración
+                  </Link>
+                  <form action={logout}>
+                    <button className="w-full flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground">
+                      <LogOut className="h-5 w-5" />
+                      Cerrar Sesión
+                    </button>
+                  </form>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </header>
         <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 pb-24 sm:pb-4">
-            {children}
+          {children}
         </main>
       </div>
     </div>

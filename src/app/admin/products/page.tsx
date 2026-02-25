@@ -15,6 +15,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/types";
 
 export default async function ProductsPage() {
@@ -54,14 +55,14 @@ export default async function ProductsPage() {
     <div className="grid flex-1 items-start gap-4 md:gap-8">
       <PageHeader
         title="Productos"
-        description="Gestiona tu catálogo de productos y su inventario."
+        description="Gestión pro de catálogo e inventario."
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <ImportProductsDialog />
           <EntityDialog formConfig={productFormConfig}>
-            <Button size="sm" className="h-8 gap-1">
-              <PlusCircle className="h-3.5 w-3.5" />
-              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+            <Button size="sm" className="h-10 gap-2 font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground">
+              <PlusCircle className="h-4 w-4" />
+              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap italic">
                 Agregar Producto
               </span>
             </Button>
@@ -81,13 +82,19 @@ export default async function ProductsPage() {
               value={category}
               className="border-none"
             >
-              <Card>
-                <CardHeader className="p-4">
-                  <AccordionTrigger className="p-2 -m-2 text-xl font-bold hover:no-underline">
-                    {category}
+              <Card className="glass border-white/5 overflow-hidden">
+                <CardHeader className="p-0">
+                  <AccordionTrigger className="px-6 py-4 text-xl font-black italic tracking-tighter hover:no-underline hover:bg-white/5 transition-colors group">
+                    <div className="flex items-center gap-3">
+                      <span className="text-primary group-hover:scale-110 transition-transform">#</span>
+                      {category}
+                      <Badge variant="outline" className="ml-2 text-[10px] font-black tracking-widest bg-primary/5 border-primary/20 text-primary">
+                        {productsByCategory[category].length}
+                      </Badge>
+                    </div>
                   </AccordionTrigger>
                 </CardHeader>
-                <AccordionContent className="px-0 pb-0">
+                <AccordionContent className="p-0 border-t border-white/5 bg-black/20">
                   <ProductsTable
                     products={productsByCategory[category]}
                     emptyState={<></>}

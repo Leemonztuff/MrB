@@ -21,12 +21,12 @@ export function SearchClients() {
   }, 300);
 
   return (
-    <div className="relative flex-1">
-      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+    <div className="relative flex-1 group">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
       <Input
         type="search"
-        placeholder="Buscar por nombre, CUIT o dirección..."
-        className="w-full rounded-lg bg-background pl-8"
+        placeholder="Buscar por nombre, CUIT..."
+        className="w-full h-10 rounded-xl bg-secondary/30 border-white/5 pl-10 focus-visible:ring-1 focus-visible:ring-primary/30 transition-all font-medium placeholder:font-normal placeholder:italic text-sm"
         onChange={(e) => handleSearch(e.target.value)}
         defaultValue={searchParams.get('query')?.toString()}
       />
