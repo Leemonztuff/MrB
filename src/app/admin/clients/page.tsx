@@ -11,9 +11,10 @@ import { SearchClients } from "./_components/search-clients";
 export default async function ClientsPage({
   searchParams,
 }: {
-  searchParams?: { query?: string };
+  searchParams: Promise<{ query?: string }>;
 }) {
-  const query = searchParams?.query || "";
+  const { query: queryParam } = await searchParams;
+  const query = queryParam || "";
   const { data: clients, error } = await getClients(query);
 
   if (error) {
@@ -27,19 +28,19 @@ export default async function ClientsPage({
       title="No se encontraron clientes"
       description="No hay clientes que coincidan con tu búsqueda. Intenta con otro término o crea un cliente nuevo."
     >
-        <CreateClientButton />
+      <CreateClientButton />
     </EmptyState>
   );
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
-       <PageHeader
+      <PageHeader
         title="Clientes"
         description="Gestiona tus clientes, asígnales convenios y genera enlaces de alta."
       >
         <div className="flex items-center gap-2">
-            <SearchClients />
-            <CreateClientButton />
+          <SearchClients />
+          <CreateClientButton />
         </div>
       </PageHeader>
       <ClientsTable clients={clients ?? []} emptyState={emptyState} />
