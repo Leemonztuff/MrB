@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { formatCuit, unformatCuit } from '@/lib/formatters';
+import type { AuthState } from '@/types';
 
 const portalLoginSchema = z.object({
     cuit: z.string().min(11, 'CUIT debe tener 11 dígitos'),
@@ -26,8 +26,6 @@ function SubmitButton() {
         </Button>
     );
 }
-
-import type { AuthState } from '@/types';
 
 export default function PortalLoginPage() {
     const [state, action] = useFormState<AuthState | null, FormData>(loginPortal, null);
@@ -53,64 +51,62 @@ export default function PortalLoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-            <Card className="w-full max-w-md">
-                <CardHeader className="text-center">
-                    <CardTitle className="text-2xl">Portal de Cliente</CardTitle>
-                    <CardDescription>
-                        Ingresá tu CUIT y token para acceder a tu cuenta
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Form {...form}>
-                        <form action={action} className="space-y-4">
-                            <FormField
-                                control={form.control}
-                                name="cuit"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>CUIT</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                placeholder="20-31895155-2"
-                                                onChange={handleCuitChange}
-                                                onBlur={handleCuitBlur}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="token"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Token (6 dígitos)</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                placeholder="203189"
-                                                maxLength={6}
-                                                type="password"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                        <p className="text-xs text-muted-foreground">
-                                            Por defecto son los primeros 6 dígitos del CUIT
-                                        </p>
-                                    </FormItem>
-                                )}
-                            />
-                            {state && state.error && (
-                                <p className="text-sm text-red-500">{state.error.message}</p>
+        <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+                <CardTitle className="text-2xl">Portal de Cliente</CardTitle>
+                <CardDescription>
+                    Ingresá tu CUIT y token para acceder a tu cuenta
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Form {...form}>
+                    <form action={action} className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="cuit"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>CUIT</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            {...field}
+                                            placeholder="20-31895155-2"
+                                            onChange={handleCuitChange}
+                                            onBlur={handleCuitBlur}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
                             )}
-                            <SubmitButton />
-                        </form>
-                    </Form>
-                </CardContent>
-            </Card>
-        </div>
+                        />
+                        <FormField
+                            control={form.control}
+                            name="token"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Token (6 dígitos)</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            {...field}
+                                            placeholder="203189"
+                                            maxLength={6}
+                                            type="password"
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                    <p className="text-xs text-muted-foreground">
+                                        Por defecto son los primeros 6 dígitos del CUIT
+                                    </p>
+                                </FormItem>
+                            )}
+                        />
+                        {state && state.error && (
+                            <p className="text-sm text-red-500">{state.error.message}</p>
+                        )}
+                        <SubmitButton />
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
     );
 }
