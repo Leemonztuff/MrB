@@ -178,8 +178,11 @@ export async function submitOnboardingForm(payload: any): Promise<ActionResponse
             status: newStatus
         };
 
-        if (data.cuit && data.cuit.length >= 6) {
-            updateData.portal_token = data.cuit.slice(0, 6);
+        if (data.cuit) {
+            const cleanCuit = data.cuit.replace(/[^0-9]/g, '');
+            if (cleanCuit.length >= 6) {
+                updateData.portal_token = cleanCuit.slice(0, 6);
+            }
         }
 
         const { error } = await supabase

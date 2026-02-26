@@ -104,8 +104,11 @@ export async function upsertClient(
 
     if (!id) {
       finalPayload.onboarding_token = crypto.randomUUID();
-      if (clientData.cuit && clientData.cuit.length >= 6) {
-        finalPayload.portal_token = clientData.cuit.slice(0, 6);
+      if (clientData.cuit) {
+        const cleanCuit = clientData.cuit.replace(/[^0-9]/g, '');
+        if (cleanCuit.length >= 6) {
+          finalPayload.portal_token = cleanCuit.slice(0, 6);
+        }
       }
     }
 

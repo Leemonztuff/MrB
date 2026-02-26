@@ -60,7 +60,7 @@ export async function loginPortal(prevState: AuthState | null, formData: FormDat
         return { error: { message: 'Token incorrecto.' } };
     }
 
-    if (client.status !== 'active') {
+    if (!['active', 'pending_agreement'].includes(client.status)) {
         return { error: { message: `Tu cuenta está en estado: ${client.status}. Contactá al administrador.` } };
     }
 

@@ -22,7 +22,10 @@ export default async function PortalLayout({
         { href: '/portal/orders', label: 'Mis Pedidos', icon: Package },
     ];
 
-    if (client.agreement_id) {
+    const isActive = client.status === 'active';
+    const canOrder = isActive && client.agreement_id;
+
+    if (canOrder) {
         navItems.push({ 
             href: `/pedido/${client.agreement_id}`, 
             label: 'Catálogo', 
