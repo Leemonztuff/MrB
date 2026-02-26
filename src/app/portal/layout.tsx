@@ -12,7 +12,7 @@ export default async function PortalLayout({
     const client = await getPortalClient();
 
     if (!client) {
-        redirect('/portal/login');
+        redirect('/portal-cliente/login');
     }
 
     return (

@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
   // Rutas públicas sin autenticación
   const isOnboardingRoute = pathname.startsWith('/onboarding');
   const isOrderRoute = pathname.startsWith('/pedido');
-  const isPortalRoute = pathname.startsWith('/portal');
+  const isPortalRoute = pathname.startsWith('/portal') || pathname.startsWith('/portal-cliente');
   const isPublicRoute = ['/login', '/signup'].includes(pathname);
 
   // Estas rutas son siempre públicas

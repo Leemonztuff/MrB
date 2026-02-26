@@ -55,7 +55,7 @@ export async function loginPortal(prevState: AuthState | null, formData: FormDat
 export async function logoutPortal() {
     const cookieStore = await cookies();
     cookieStore.delete('portal_client_id');
-    redirect('/portal/login');
+    redirect('/portal-cliente/login');
 }
 
 export async function getPortalClient() {
