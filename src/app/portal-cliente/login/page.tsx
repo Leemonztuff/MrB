@@ -23,14 +23,7 @@ function SubmitButton() {
     const { pending } = useFormStatus();
     return (
         <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? (
-                <span className="flex items-center gap-2">
-                    <span className="animate-spin">⏳</span>
-                    Ingresando...
-                </span>
-            ) : (
-                'Ingresar'
-            )}
+            {pending ? 'Ingresando...' : 'Ingresar'}
         </Button>
     );
 }
@@ -41,7 +34,7 @@ export default function PortalLoginPage() {
     const form = useForm<PortalLoginForm>({
         resolver: zodResolver(portalLoginSchema),
         defaultValues: {
-            cuid: '',
+            cuit: '',
             token: '',
         },
     });
@@ -59,17 +52,17 @@ export default function PortalLoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
             <div className="w-full max-w-md space-y-8">
                 <div className="text-center">
-                    <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-                        <span className="text-white font-bold text-2xl">MB</span>
+                    <div className="mx-auto w-20 h-20 bg-primary rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-primary/20">
+                        <span className="text-primary-foreground font-bold text-3xl">MB</span>
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-900">Mr. Blonde</h1>
-                    <p className="text-gray-500 mt-2">Portal de Cliente</p>
+                    <h1 className="text-3xl font-bold">Mr. Blonde</h1>
+                    <p className="text-muted-foreground mt-2">Portal de Cliente</p>
                 </div>
 
-                <Card className="shadow-xl border-0">
+                <Card className="glass shadow-2xl">
                     <CardHeader className="space-y-1 text-center pb-4">
                         <CardTitle className="text-xl">Iniciar Sesión</CardTitle>
                         <CardDescription>
@@ -127,7 +120,7 @@ export default function PortalLoginPage() {
                                     )}
                                 />
                                 {state && state.error && (
-                                    <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+                                    <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
                                         {state.error.message}
                                     </div>
                                 )}
@@ -137,7 +130,7 @@ export default function PortalLoginPage() {
                     </CardContent>
                 </Card>
 
-                <p className="text-center text-sm text-gray-500">
+                <p className="text-center text-sm text-muted-foreground">
                     ¿Necesitás ayuda? Contactá al administrador
                 </p>
             </div>

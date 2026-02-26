@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Mail, MapPin, FileText, Calendar, ShoppingCart, ArrowRight } from 'lucide-react';
+import { Mail, MapPin, FileText, Calendar, ShoppingCart, ArrowRight, User as UserIcon } from 'lucide-react';
 
 export default async function PortalPage() {
     const client = await getPortalClient();
@@ -24,8 +24,8 @@ export default async function PortalPage() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Bienvenido, {client.contact_name}</h2>
-                    <p className="text-gray-500">Gestiona tu información y pedidos desde aquí</p>
+                    <h2 className="text-2xl font-bold">Bienvenido, {client.contact_name}</h2>
+                    <p className="text-muted-foreground">Gestiona tu información y pedidos desde aquí</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Badge variant={client.status === 'active' ? 'default' : 'secondary'} className="text-sm px-3 py-1">
@@ -36,10 +36,10 @@ export default async function PortalPage() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {infoCards.map((card) => (
-                    <Card key={card.label} className="hover:shadow-md transition-shadow">
+                    <Card key={card.label} className="glass hover:border-primary/30 transition-colors">
                         <CardHeader className="pb-2 flex flex-row items-center gap-2">
-                            <card.icon className="h-4 w-4 text-gray-400" />
-                            <CardTitle className="text-sm font-medium text-gray-500">{card.label}</CardTitle>
+                            <card.icon className="h-4 w-4 text-primary" />
+                            <CardTitle className="text-sm font-medium text-muted-foreground">{card.label}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <p className="text-lg font-semibold truncate" title={card.value}>{card.value}</p>
@@ -49,7 +49,7 @@ export default async function PortalPage() {
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-                <Card className="hover:shadow-md transition-shadow">
+                <Card className="glass hover:border-primary/30 transition-colors">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <ShoppingCart className="h-5 w-5 text-primary" />
@@ -68,14 +68,14 @@ export default async function PortalPage() {
                                 </Link>
                             </Button>
                         ) : (
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted-foreground">
                                 Contactá al administrador para que te asigne un convenio.
                             </p>
                         )}
                     </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-md transition-shadow">
+                <Card className="glass hover:border-primary/30 transition-colors">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <FileText className="h-5 w-5 text-primary" />
@@ -85,7 +85,7 @@ export default async function PortalPage() {
                     <CardContent className="space-y-2">
                         <Button variant="outline" className="w-full justify-start" asChild>
                             <Link href="/portal/profile">
-                                <Mail className="h-4 w-4 mr-2" />
+                                <UserIcon className="h-4 w-4 mr-2" />
                                 Editar Mi Perfil
                             </Link>
                         </Button>
@@ -100,9 +100,9 @@ export default async function PortalPage() {
             </div>
 
             {client.status !== 'active' && (
-                <Card className="border-yellow-200 bg-yellow-50">
+                <Card className="border-yellow-600/50 bg-yellow-900/20">
                     <CardContent className="py-4">
-                        <p className="text-yellow-800 text-center">
+                        <p className="text-yellow-500 text-center">
                             Tu cuenta está pendiente de activación. Contactá al administrador para más información.
                         </p>
                     </CardContent>
