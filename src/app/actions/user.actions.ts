@@ -158,6 +158,14 @@ export async function submitOnboardingForm(payload: any): Promise<ActionResponse
         const address = formatAddress(data);
         const delivery_window = formatDeliveryWindow(data);
 
+        const clientBeforeUpdate = await supabase
+            .from('clients')
+            .select('agreement_id')
+            .eq('onboarding_token', onboarding_token)
+            .single();
+
+        const newStatus = clientBeforeUpdate.data?.agreement_id ? 'active' : 'pending_agreement';
+
         const updateData: any = {
             contact_name: data.contact_name,
             contact_dni: data.contact_dni,
@@ -167,7 +175,7 @@ export async function submitOnboardingForm(payload: any): Promise<ActionResponse
             address,
             delivery_window,
             instagram: data.instagram,
-            status: 'pending_agreement'
+            status: newStatus
         };
 
         if (data.cuit && data.cuit.length >= 6) {

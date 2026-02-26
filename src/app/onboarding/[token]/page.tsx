@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getPublicLogoUrl } from "@/app/admin/actions/settings.actions";
 
-export default async function OnboardingPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ success?: string }> }) {
+export default async function OnboardingPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ success?: string; agreement?: string }> }) {
   const { token } = await params;
-  const { success } = await searchParams;
+  const { success, agreement } = await searchParams;
   const { data: client, error } = await getOnboardingClient(token);
   const logo_url = await getPublicLogoUrl();
+  const agreementId = agreement || client?.agreement_id;
 
   if (success === 'true' && client && client.status === 'pending_agreement') {
     return (
@@ -33,6 +34,37 @@ export default async function OnboardingPage({ params, searchParams }: { params:
             </p>
             <div className="space-y-2">
               <p className="text-sm font-medium">Mientras tanto, podés acceder al Portal de Cliente:</p>
+              <Button asChild variant="outline" className="w-full">
+                <Link href="/portal/login">Ir al Portal</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (success === 'true' && client && client.status === 'active') {
+    return (
+       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
+        <Logo showText={true} logoUrl={logo_url}/>
+        <Card className="max-w-md mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-center gap-2 text-primary">
+              <CheckCircle />
+              ¡Registro Completado!
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">
+              ¡Bienvenido! Tu cuenta está activa y lista para realizar pedidos.
+            </p>
+            <div className="space-y-2">
+              {agreementId && (
+                <Button asChild className="w-full">
+                  <Link href={`/pedido/${agreementId}`}>Ir al Catálogo</Link>
+                </Button>
+              )}
               <Button asChild variant="outline" className="w-full">
                 <Link href="/portal/login">Ir al Portal</Link>
               </Button>
