@@ -98,15 +98,19 @@ export async function upsertClient(
     if (address) finalPayload.address = address;
     if (delivery_window) finalPayload.delivery_window = delivery_window;
 
+    if (finalPayload.agreement_id === '') {
+      finalPayload.agreement_id = null;
+    }
+
     if (!id) {
-      finalPayload.status = clientData.agreement_id ? 'active' : 'pending_agreement';
       finalPayload.onboarding_token = crypto.randomUUID();
       if (clientData.cuit && clientData.cuit.length >= 6) {
         finalPayload.portal_token = clientData.cuit.slice(0, 6);
       }
     }
 
-    // Validation
+    finalPayload.status = finalPayload.agreement_id ? 'active' : 'pending_agreement';
+
     const validated = clientSchema.parse(finalPayload);
 
     const result = await upsertEntity('clients', validated, [
