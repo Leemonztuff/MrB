@@ -83,8 +83,8 @@ export default function PortalOrdersPage() {
                 quantity: item.quantity,
             }));
         
-        localStorage.setItem('repeat_order', JSON.stringify(items));
-        router.push(`/pedido/${ordersData.agreementId}`);
+        const encodedItems = encodeURIComponent(JSON.stringify(items));
+        router.push(`/pedido/${ordersData.agreementId}?repeat=${encodedItems}`);
     }
 
     if (isLoading) {

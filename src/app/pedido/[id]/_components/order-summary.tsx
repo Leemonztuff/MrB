@@ -216,6 +216,27 @@ export function OrderSummary({
     }
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const repeatParam = params.get('repeat');
+    if (repeatParam) {
+      try {
+        const parsedItems = JSON.parse(decodeURIComponent(repeatParam));
+        if (Array.isArray(parsedItems) && parsedItems.length > 0) {
+          const { addItem } = useCartStore.getState();
+          parsedItems.forEach((item: any) => {
+            if (item.product && item.quantity) {
+              addItem(item.product, item.quantity);
+            }
+          });
+          window.history.replaceState({}, '', window.location.pathname);
+        }
+      } catch (e) {
+        console.error('Error loading repeat order from URL:', e);
+      }
+    }
+  }, []);
+
 
   const handleSend = () => {
     if (items.length === 0) {
