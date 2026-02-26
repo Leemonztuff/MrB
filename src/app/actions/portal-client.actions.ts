@@ -139,7 +139,7 @@ export async function getClientOrders(): Promise<ActionResponse<any>> {
 
         return {
             success: true,
-            data: orders || [],
+            data: { orders: orders || [], agreementId: client.agreement_id },
         };
     } catch (error) {
         console.error('Error getting orders:', error);

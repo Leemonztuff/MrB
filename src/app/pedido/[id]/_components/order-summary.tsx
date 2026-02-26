@@ -10,12 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Gift, Truck, Percent } from "lucide-react";
+import { ArrowRight, Gift, Truck, Percent, CheckCircle, Home, Package } from "lucide-react";
 import { submitOrder } from "@/app/actions/user.actions";
 import { getPublicWhatsappNumber } from "@/app/admin/actions/settings.actions";
 import type { Promotion } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import Link from "next/link";
 
 function formatWhatsAppMessage(
   clientName: string,
@@ -185,6 +186,7 @@ export function OrderSummary({
   const [isPending, startTransition] = useTransition();
   const [notes, setNotes] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [orderSent, setOrderSent] = useState(false);
 
   useEffect(() => {
     getPublicWhatsappNumber().then(setWhatsappNumber);
@@ -251,6 +253,7 @@ export function OrderSummary({
 
       clearCart();
       setNotes("");
+      setOrderSent(true);
       toast({
         title: "Pedido enviado!",
         description: "Tu pedido se ha registrado y enviado por WhatsApp.",
@@ -260,6 +263,41 @@ export function OrderSummary({
 
   const hasItems = items.length > 0;
   const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
+
+  if (orderSent) {
+    return (
+      <Card className="glass border-white/5 overflow-hidden border-primary/30">
+        <CardHeader className="pb-4 text-center">
+          <div className="flex justify-center mb-4">
+            <div className="bg-primary/20 p-4 rounded-full">
+              <CheckCircle className="h-12 w-12 text-primary" />
+            </div>
+          </div>
+          <CardTitle className="text-xl font-black italic tracking-tighter text-primary">¡Pedido Enviado!</CardTitle>
+          <CardDescription className="text-xs uppercase font-bold tracking-widest opacity-60">
+            Tu pedido fue registrado correctamente
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-center text-muted-foreground">
+            También puedes ver el historial de tus pedidos y gestionar tu perfil desde el portal de cliente.
+          </p>
+          <div className="space-y-2 pt-4">
+            <Button asChild className="w-full">
+              <Link href="/portal">
+                <Home className="h-4 w-4 mr-2" />
+                Ir al Portal de Cliente
+              </Link>
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => setOrderSent(false)}>
+              <Package className="h-4 w-4 mr-2" />
+              Hacer Otro Pedido
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="glass border-white/5 overflow-hidden">

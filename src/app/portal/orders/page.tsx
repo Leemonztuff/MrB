@@ -13,6 +13,7 @@ interface OrderItem {
     id: string;
     quantity: number;
     price_per_unit: number;
+    product_id?: string;
     products?: {
         name: string;
         category: string | null;
@@ -26,6 +27,11 @@ interface Order {
     status: 'armado' | 'transito' | 'entregado';
     notes: string | null;
     order_items: OrderItem[];
+}
+
+interface OrdersData {
+    orders: Order[];
+    agreementId: string | null;
 }
 
 const statusLabels: Record<string, string> = {
@@ -42,7 +48,7 @@ const statusColors: Record<string, string> = {
 
 export default function PortalOrdersPage() {
     const router = useRouter();
-    const [orders, setOrders] = useState<Order[]>([]);
+    const [ordersData, setOrdersData] = useState<OrdersData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -55,7 +61,7 @@ export default function PortalOrdersPage() {
             const response = await fetch('/api/portal/orders');
             if (response.ok) {
                 const data = await response.json();
-                setOrders(data);
+                setOrdersData(data);
             }
         } catch (error) {
             console.error('Error loading orders:', error);
@@ -65,33 +71,39 @@ export default function PortalOrdersPage() {
     }
 
     function repeatOrder(order: Order) {
+        if (!ordersData?.agreementId) {
+            return;
+        }
+        
         const items = order.order_items
             .filter(item => item.products)
             .map(item => ({
-                productId: (item as any).product_id,
+                productId: item.product_id,
                 product: item.products!,
                 quantity: item.quantity,
             }));
         
         localStorage.setItem('repeat_order', JSON.stringify(items));
-        router.push(`/pedido/${(orders[0] as any)?.client?.agreement_id || ''}`);
+        router.push(`/pedido/${ordersData.agreementId}`);
     }
 
     if (isLoading) {
         return <div className="flex items-center justify-center h-64">Cargando...</div>;
     }
 
+    const orders = ordersData?.orders || [];
+
     if (orders.length === 0) {
         return (
             <div className="space-y-6">
                 <div>
                     <h2 className="text-2xl font-bold">Mis Pedidos</h2>
-                    <p className="text-gray-500">Historial de tus pedidos</p>
+                    <p className="text-muted-foreground">Historial de tus pedidos</p>
                 </div>
                 <Card>
                     <CardContent className="py-12 text-center">
-                        <p className="text-gray-500 mb-4">No tenés pedidos realizados</p>
-                        <p className="text-sm text-gray-400">Hacé tu primer pedido a través del enlace que te proporcionó el administrador</p>
+                        <p className="text-muted-foreground mb-4">No tenés pedidos realizados</p>
+                        <p className="text-sm text-muted-foreground/60">Hacé tu primer pedido a través del enlace que te proporcionó el administrador</p>
                     </CardContent>
                 </Card>
             </div>
@@ -102,16 +114,16 @@ export default function PortalOrdersPage() {
         <div className="space-y-6">
             <div>
                 <h2 className="text-2xl font-bold">Mis Pedidos</h2>
-                <p className="text-gray-500">Historial de tus pedidos ({orders.length})</p>
+                <p className="text-muted-foreground">Historial de tus pedidos ({orders.length})</p>
             </div>
 
             <div className="space-y-4">
                 {orders.map((order) => (
-                    <Card key={order.id}>
+                    <Card key={order.id} className="glass hover:border-primary/30 transition-colors">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="font-mono text-sm text-gray-500">
+                                    <p className="font-mono text-sm text-muted-foreground">
                                         {format(new Date(order.created_at), "dd MMM yyyy, HH:mm", { locale: es })}
                                     </p>
                                 </div>
@@ -126,7 +138,7 @@ export default function PortalOrdersPage() {
                                     <p className="text-lg font-semibold">
                                         {formatCurrency(order.total_amount)}
                                     </p>
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-sm text-muted-foreground">
                                         {order.order_items.length} producto{order.order_items.length !== 1 ? 's' : ''}
                                     </p>
                                 </div>
@@ -140,7 +152,7 @@ export default function PortalOrdersPage() {
                             </div>
 
                             {selectedOrder?.id === order.id && (
-                                <div className="mt-4 pt-4 border-t">
+                                <div className="mt-4 pt-4 border-t border-white/10">
                                     <h4 className="font-medium mb-2">Productos:</h4>
                                     <ul className="space-y-1">
                                         {order.order_items.map((item) => (
@@ -148,24 +160,26 @@ export default function PortalOrdersPage() {
                                                 <span>
                                                     {item.products?.name || 'Producto'}
                                                 </span>
-                                                <span className="text-gray-500">
+                                                <span className="text-muted-foreground">
                                                     x{item.quantity} = {formatCurrency(item.price_per_unit * item.quantity)}
                                                 </span>
                                             </li>
                                         ))}
                                     </ul>
                                     {order.notes && (
-                                        <div className="mt-3 pt-3 border-t">
-                                            <p className="text-sm text-gray-500">
+                                        <div className="mt-3 pt-3 border-t border-white/10">
+                                            <p className="text-sm text-muted-foreground">
                                                 <span className="font-medium">Notas:</span> {order.notes}
                                             </p>
                                         </div>
                                     )}
-                                    <div className="mt-4">
-                                        <Button onClick={() => repeatOrder(order)}>
-                                            Repetir Pedido
-                                        </Button>
-                                    </div>
+                                    {ordersData?.agreementId && (
+                                        <div className="mt-4">
+                                            <Button onClick={() => repeatOrder(order)} className="w-full">
+                                                Repetir Pedido
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </CardContent>
