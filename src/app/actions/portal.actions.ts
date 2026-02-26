@@ -30,15 +30,27 @@ export async function loginPortal(prevState: AuthState | null, formData: FormDat
         .from('clients')
         .select('*')
         .eq('cuit', cleanCuit)
-        .eq('portal_token', token)
         .maybeSingle();
 
-    if (error || !client) {
-        return { error: { message: 'CUIT o token incorrectos.' } };
+    if (error) {
+        console.error('Portal login error:', error);
+        return { error: { message: 'Error al iniciar sesión. Intentalo de nuevo.' } };
+    }
+
+    if (!client) {
+        return { error: { message: 'No existe un cliente con ese CUIT.' } };
+    }
+
+    if (!client.portal_token) {
+        return { error: { message: 'Tu cuenta no tiene token de portal configurado. Contactá al administrador.' } };
+    }
+
+    if (client.portal_token !== token) {
+        return { error: { message: 'Token incorrecto.' } };
     }
 
     if (client.status !== 'active') {
-        return { error: { message: 'Tu cuenta no está activa. Contactá al administrador.' } };
+        return { error: { message: `Tu cuenta está en estado: ${client.status}. Contactá al administrador.` } };
     }
 
     const cookieStore = await cookies();
@@ -76,7 +88,7 @@ export async function getPortalClient() {
 export async function requirePortalAuth() {
     const client = await getPortalClient();
     if (!client) {
-        redirect('/portal/login');
+        redirect('/portal-cliente/login');
     }
     return client;
 }
