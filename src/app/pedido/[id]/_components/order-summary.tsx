@@ -196,6 +196,26 @@ export function OrderSummary({
     setAgreement(agreementId, pricesIncludeVat, promotions, vatPercentage);
   }, [agreementId, pricesIncludeVat, promotions, vatPercentage, setAgreement]);
 
+  useEffect(() => {
+    const storedOrder = localStorage.getItem('repeat_order');
+    if (storedOrder) {
+      try {
+        const parsedItems = JSON.parse(storedOrder);
+        if (Array.isArray(parsedItems) && parsedItems.length > 0) {
+          const { addItem } = useCartStore.getState();
+          parsedItems.forEach((item: any) => {
+            if (item.product && item.quantity) {
+              addItem(item.product, item.quantity);
+            }
+          });
+          localStorage.removeItem('repeat_order');
+        }
+      } catch (e) {
+        console.error('Error loading repeat order:', e);
+      }
+    }
+  }, []);
+
 
   const handleSend = () => {
     if (items.length === 0) {
