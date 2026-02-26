@@ -61,13 +61,15 @@ export async function getClientById(
 
 export async function createClientForInvitation(payload: { name: string | null; agreementId: string | null }): Promise<ActionResponse<Pick<Client, "id" | "onboarding_token">>> {
   const placeholderName = payload.name || `Cliente Pendiente - ${new Date().toISOString()}`;
-
-  return await upsertEntity("clients", {
+  
+  const createData: any = {
     status: 'pending_onboarding',
     onboarding_token: crypto.randomUUID(),
     contact_name: placeholderName,
     agreement_id: payload.agreementId,
-  }, ["/admin/clients"]);
+  };
+
+  return await upsertEntity("clients", createData, ["/admin/clients"]);
 }
 
 export async function upsertClient(
