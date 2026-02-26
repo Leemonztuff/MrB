@@ -23,8 +23,9 @@ export default {
     extend: {
       // Typography
       fontFamily: {
-        body: ["var(--font-body)"],
-        headline: ["var(--font-headline)"],
+        body: ["var(--font-century-gothic)"],
+        headline: ["var(--font-century-gothic)"],
+        "century-gothic": ["var(--font-century-gothic)"],
       },
 
       // Colors (mapped to CSS variables for theme flexibility)
