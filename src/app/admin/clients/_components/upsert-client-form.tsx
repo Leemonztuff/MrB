@@ -196,7 +196,7 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Cli
                 <FormField control={form.control} name="contact_name" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">Nombre y Apellido</FormLabel>
-                    <FormControl><Input placeholder="Nombre de contacto" className="h-12 glass border-white/10 rounded-xl italic font-medium" {...field} /></FormControl>
+                    <FormControl><Input placeholder="NOMBRE DE CONTACTO" className="h-12 glass border-white/10 rounded-xl font-medium uppercase" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />

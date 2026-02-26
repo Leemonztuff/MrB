@@ -92,6 +92,7 @@ export async function upsertClient(
     const finalPayload: any = {
       ...clientData,
       id: id || undefined,
+      contact_name: clientData.contact_name?.toUpperCase(),
     };
 
     if (address) finalPayload.address = address;

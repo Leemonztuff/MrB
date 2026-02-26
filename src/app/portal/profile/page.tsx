@@ -231,8 +231,9 @@ export default function PortalProfilePage() {
                                     <Label htmlFor="contact_name">Nombre de Contacto</Label>
                                     <Input
                                         id="contact_name"
+                                        className="uppercase"
                                         value={formData.contact_name}
-                                        onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
+                                        onChange={(e) => setFormData({ ...formData, contact_name: e.target.value.toUpperCase() })}
                                     />
                                 </div>
                                 <div className="space-y-2">

@@ -167,7 +167,7 @@ export async function submitOnboardingForm(payload: any): Promise<ActionResponse
         const newStatus = clientBeforeUpdate.data?.agreement_id ? 'active' : 'pending_agreement';
 
         const updateData: any = {
-            contact_name: data.contact_name,
+            contact_name: data.contact_name?.toUpperCase(),
             contact_dni: data.contact_dni,
             email: data.email,
             cuit: data.cuit,
