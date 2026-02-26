@@ -196,53 +196,40 @@ export function OrderSummary({
     setAgreement(agreementId, pricesIncludeVat, promotions, vatPercentage);
   }, [agreementId, pricesIncludeVat, promotions, vatPercentage, setAgreement]);
 
-  useEffect(() => {
-    const storedOrder = localStorage.getItem('repeat_order');
-    if (storedOrder) {
-      try {
-        const parsedItems = JSON.parse(storedOrder);
-        if (Array.isArray(parsedItems) && parsedItems.length > 0) {
-          const { addItem } = useCartStore.getState();
-          parsedItems.forEach((item: any) => {
-            if (item.product && item.quantity) {
-              addItem(item.product, item.quantity);
-            }
-          });
-          localStorage.removeItem('repeat_order');
-        }
-      } catch (e) {
-        console.error('Error loading repeat order:', e);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
+  const loadRepeatOrder = async () => {
     const params = new URLSearchParams(window.location.search);
-    const repeatParam = params.get('repeat');
-    if (repeatParam) {
-      try {
-        const parsedItems = JSON.parse(decodeURIComponent(repeatParam));
-        if (Array.isArray(parsedItems) && parsedItems.length > 0) {
-          const checkAndLoad = () => {
-            const { addItem, pricesIncludeVat, vatPercentage } = useCartStore.getState();
-            if (!pricesIncludeVat || !vatPercentage) {
-              setTimeout(checkAndLoad, 300);
-              return;
-            }
-            parsedItems.forEach((item: any) => {
-              if (item.product && item.quantity) {
-                addItem(item.product, item.quantity);
+    const repeatOrderId = params.get('repeat_order');
+    
+    if (!repeatOrderId) return;
+
+    const checkAndLoad = () => {
+      const state = useCartStore.getState();
+      if (!state.pricesIncludeVat || !state.vatPercentage) {
+        setTimeout(checkAndLoad, 300);
+        return;
+      }
+
+      fetch(`/api/portal/orders/${repeatOrderId}`)
+        .then(res => res.json())
+        .then(order => {
+          if (order && order.order_items) {
+            order.order_items.forEach((item: any) => {
+              if (item.products && item.quantity) {
+                state.addItem(item.products, item.quantity);
               }
             });
-            const cleanUrl = window.location.pathname;
-            window.history.replaceState({}, '', cleanUrl);
-          };
-          checkAndLoad();
-        }
-      } catch (e) {
-        console.error('Error loading repeat order from URL:', e);
-      }
-    }
+          }
+        })
+        .catch(err => console.error('Error loading repeat order:', err));
+      
+      window.history.replaceState({}, '', window.location.pathname);
+    };
+
+    checkAndLoad();
+  };
+
+  useEffect(() => {
+    loadRepeatOrder();
   }, []);
 
 

@@ -75,16 +75,7 @@ export default function PortalOrdersPage() {
             return;
         }
         
-        const items = order.order_items
-            .filter(item => item.products)
-            .map(item => ({
-                productId: item.product_id,
-                product: item.products!,
-                quantity: item.quantity,
-            }));
-        
-        const encodedItems = encodeURIComponent(JSON.stringify(items));
-        router.push(`/pedido/${ordersData.agreementId}?repeat=${encodedItems}`);
+        router.push(`/pedido/${ordersData.agreementId}?repeat_order=${order.id}`);
     }
 
     if (isLoading) {
