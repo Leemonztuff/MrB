@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 type Notification = {
     id: string;
-    type: 'order' | 'client' | 'overdue';
+    type: 'order' | 'client' | 'overdue' | 'change';
     title: string;
     description: string;
     createdAt: Date;
@@ -43,6 +43,12 @@ const getNotificationConfig = (notification: Notification) => {
                 icon: Clock,
                 href: `/admin`, // Could link to a specific "overdue" page later
                 bgColorClass: "bg-amber-500",
+            };
+        case 'change':
+            return {
+                icon: UserPlus,
+                href: `/admin/clients?filter=pending-changes`,
+                bgColorClass: "bg-purple-500",
             };
         default:
             return {

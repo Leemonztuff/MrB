@@ -74,6 +74,7 @@ export type Client = {
     address: string | null;
     status: 'pending_onboarding' | 'pending_agreement' | 'active' | 'archived';
     onboarding_token: string | null;
+    portal_token: string | null;
     agreement_id: string | null;
     delivery_window: string | null;
     instagram?: string | null;
@@ -89,6 +90,18 @@ export type ClientStats = {
     total_spent: number;
     total_orders: number;
     average_order_value: number;
+}
+
+export type PendingChange = {
+    id: string;
+    client_id: string;
+    change_type: 'contact_name' | 'email' | 'cuit' | 'address' | 'delivery_window' | 'instagram' | 'contact_dni' | 'fiscal_status';
+    old_value: string | null;
+    new_value: string | null;
+    status: 'pending' | 'approved' | 'rejected';
+    created_at: string;
+    resolved_at: string | null;
+    resolved_by: string | null;
 }
 
 export type DashboardStats = {

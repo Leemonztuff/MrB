@@ -25,7 +25,8 @@ import type { DashboardStats } from "@/types";
 const createNotifications = (
   pendingOrdersCount: number,
   pendingClientsCount: number,
-  overdueOrdersCount: number
+  overdueOrdersCount: number,
+  pendingChangesCount: number
 ) => {
   const notifications = [];
 
@@ -59,6 +60,16 @@ const createNotifications = (
     });
   }
 
+  if (pendingChangesCount > 0) {
+    notifications.push({
+      id: "pending-changes",
+      type: "change" as const,
+      title: `${pendingChangesCount} Cambio(s) de Cliente(s)`,
+      description: "Clientes esperan aprobación de cambios en su perfil.",
+      createdAt: new Date(),
+    });
+  }
+
   return notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 };
 
@@ -67,14 +78,15 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { pending_orders_count, pending_clients_count, overdue_orders_count } = await getNotificationData();
+  const { pending_orders_count, pending_clients_count, overdue_orders_count, pending_changes_count } = await getNotificationData();
   const { stats } = await getDashboardData();
   const { logo_url } = await getSettings();
 
   const notifications = createNotifications(
     pending_orders_count,
     pending_clients_count,
-    overdue_orders_count
+    overdue_orders_count,
+    pending_changes_count
   );
 
   return (

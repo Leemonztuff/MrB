@@ -55,3 +55,18 @@ export function formatDate(dateString: string | Date): string {
         day: 'numeric'
     });
 }
+
+/**
+ * Formats a CUIT number with dashes (ej: 20-31895155-2)
+ */
+export function formatCuit(cuit: string | null | undefined): string {
+    if (!cuit || cuit.length !== 11) return '';
+    return `${cuit.slice(0, 2)}-${cuit.slice(2, 10)}-${cuit.slice(10)}`;
+}
+
+/**
+ * Removes dashes from a formatted CUIT
+ */
+export function unformatCuit(cuit: string): string {
+    return cuit.replace(/-/g, '');
+}

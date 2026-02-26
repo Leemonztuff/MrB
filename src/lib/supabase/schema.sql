@@ -22,11 +22,13 @@ DROP TABLE IF EXISTS public.app_settings CASCADE;
 DROP TYPE IF EXISTS public.order_status CASCADE;
 DROP TYPE IF EXISTS public.client_status CASCADE;
 DROP TYPE IF EXISTS public.client_type CASCADE;
+DROP TYPE IF EXISTS public.change_type CASCADE;
 
 -- 2. TYPES
 CREATE TYPE public.order_status AS ENUM ('armado', 'transito', 'entregado');
 CREATE TYPE public.client_status AS ENUM ('pending_onboarding', 'pending_agreement', 'active', 'archived');
 CREATE TYPE public.client_type AS ENUM ('barberia', 'distribuidor', 'especial');
+CREATE TYPE public.change_type AS ENUM ('contact_name', 'email', 'cuit', 'address', 'delivery_window', 'instagram', 'contact_dni', 'fiscal_status');
 
 -- 3. TABLES
 CREATE TABLE public.products (
@@ -103,6 +105,7 @@ CREATE TABLE public.clients (
     instagram text,
     status public.client_status NOT NULL DEFAULT 'pending_onboarding',
     onboarding_token uuid,
+    portal_token text,
     agreement_id uuid REFERENCES public.agreements(id) ON DELETE SET NULL,
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -124,6 +127,18 @@ CREATE TABLE public.order_items (
     product_id uuid REFERENCES public.products(id) ON DELETE SET NULL,
     quantity integer NOT NULL DEFAULT 1,
     price_per_unit numeric NOT NULL DEFAULT 0
+);
+
+CREATE TABLE public.pending_changes (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id uuid REFERENCES public.clients(id) ON DELETE CASCADE,
+    change_type public.change_type NOT NULL,
+    old_value text,
+    new_value text,
+    status text NOT NULL DEFAULT 'pending',
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    resolved_at timestamp with time zone,
+    resolved_by uuid
 );
 
 CREATE TABLE public.app_settings (
@@ -232,6 +247,9 @@ CREATE POLICY "Allow read for anonymous" ON public.order_items FOR SELECT USING 
 
 CREATE POLICY "Allow all for authenticated" ON public.app_settings FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow read for anonymous" ON public.app_settings FOR SELECT USING (true);
+
+ALTER TABLE public.pending_changes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow read/insert for portal" ON public.pending_changes FOR ALL USING (true);
 
 -- 7. INITIAL SETTINGS
 INSERT INTO public.app_settings (key, value) VALUES ('vat_percentage', '21'::jsonb) ON CONFLICT (key) DO NOTHING;

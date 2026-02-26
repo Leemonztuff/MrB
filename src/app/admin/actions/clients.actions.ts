@@ -100,6 +100,9 @@ export async function upsertClient(
     if (!id) {
       finalPayload.status = clientData.agreement_id ? 'active' : 'pending_agreement';
       finalPayload.onboarding_token = crypto.randomUUID();
+      if (clientData.cuit && clientData.cuit.length >= 6) {
+        finalPayload.portal_token = clientData.cuit.slice(0, 6);
+      }
     }
 
     // Validation
@@ -231,4 +234,63 @@ export async function geocodeAddressAndSave(clientId: string, address: string): 
     if (updateError) throw updateError;
     return { latitude: lat, longitude: lng };
   }, [`/admin/clients/${clientId}`]);
+}
+
+export async function getPendingChanges(): Promise<ActionResponse<any[]>> {
+  return handleAction(async () => {
+    const supabase = await getSupabaseClientWithAuth();
+    
+    const { data, error } = await supabase
+      .from('pending_changes')
+      .select('*, clients(contact_name, email, cuit)')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  });
+}
+
+export async function approveChange(changeId: string): Promise<ActionResponse<null>> {
+  return handleAction(async () => {
+    const supabase = await getSupabaseClientWithAuth();
+    
+    const { data: change, error: fetchError } = await supabase
+      .from('pending_changes')
+      .select('*')
+      .eq('id', changeId)
+      .single();
+
+    if (fetchError || !change) throw new Error('Cambio no encontrado');
+    
+    const { error: updateError } = await supabase
+      .from('clients')
+      .update({ [change.change_type]: change.new_value })
+      .eq('id', change.client_id);
+
+    if (updateError) throw updateError;
+
+    const { error: statusError } = await supabase
+      .from('pending_changes')
+      .update({ status: 'approved', resolved_at: new Date().toISOString() })
+      .eq('id', changeId);
+
+    if (statusError) throw statusError;
+
+    return null;
+  }, ['/admin/clients']);
+}
+
+export async function rejectChange(changeId: string): Promise<ActionResponse<null>> {
+  return handleAction(async () => {
+    const supabase = await getSupabaseClientWithAuth();
+    
+    const { error } = await supabase
+      .from('pending_changes')
+      .update({ status: 'rejected', resolved_at: new Date().toISOString() })
+      .eq('id', changeId);
+
+    if (error) throw error;
+    return null;
+  }, ['/admin/clients']);
 }

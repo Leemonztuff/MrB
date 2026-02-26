@@ -46,12 +46,18 @@ export async function getNotificationData(): Promise<{
     pending_orders_count: number;
     pending_clients_count: number;
     overdue_orders_count: number;
+    pending_changes_count: number;
     error: any;
 }> {
     const supabase = await getSupabaseClientWithAuth();
-    const { data, error } = await supabase
+    const { data: rpcData, error } = await supabase
         .rpc('get_notification_counts')
         .single();
+    
+    const { count: pendingChangesCount } = await supabase
+        .from('pending_changes')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
     
     if (error) {
         console.error("getNotificationData error:", error.message);
@@ -59,11 +65,20 @@ export async function getNotificationData(): Promise<{
             pending_orders_count: 0,
             pending_clients_count: 0,
             overdue_orders_count: 0,
+            pending_changes_count: 0,
             error
         };
     }
     
-    return { ...data, error: null };
+    const data = rpcData as { pending_orders_count?: number; pending_clients_count?: number; overdue_orders_count?: number } | null;
+    
+    return { 
+        pending_orders_count: data?.pending_orders_count || 0,
+        pending_clients_count: data?.pending_clients_count || 0,
+        overdue_orders_count: data?.overdue_orders_count || 0,
+        pending_changes_count: pendingChangesCount || 0, 
+        error: null 
+    };
 }
 
 // --- Individual Actions (still used elsewhere) ---
