@@ -163,8 +163,7 @@ export function OnboardingForm({ client }: { client: Client }) {
           title: "¡Formulario enviado con éxito!",
           description: "Tus datos fueron guardados. Pronto recibirás tu enlace para pedidos.",
         });
-        // Refresh the page to show the "already registered" message
-        router.refresh();
+        router.push(`/onboarding/${client.onboarding_token}?success=true`);
       }
     });
   };

@@ -7,10 +7,41 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getPublicLogoUrl } from "@/app/admin/actions/settings.actions";
 
-export default async function OnboardingPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function OnboardingPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ success?: string }> }) {
   const { token } = await params;
+  const { success } = await searchParams;
   const { data: client, error } = await getOnboardingClient(token);
   const logo_url = await getPublicLogoUrl();
+
+  if (success === 'true' && client && client.status === 'pending_agreement') {
+    return (
+       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
+        <Logo showText={true} logoUrl={logo_url}/>
+        <Card className="max-w-md mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-center gap-2 text-primary">
+              <CheckCircle />
+              ¡Registro Completado!
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">
+              Tus datos fueron guardados correctamente. Un administrador revisará tu solicitud y te asignará un convenio pronto.
+            </p>
+            <p className="text-sm text-muted-foreground mb-6">
+              Recibirás una notificación cuando tu cuenta esté activa.
+            </p>
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Mientras tanto, podés acceder al Portal de Cliente:</p>
+              <Button asChild variant="outline" className="w-full">
+                <Link href="/portal/login">Ir al Portal</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   if (error || !client) {
     return (
@@ -33,6 +64,30 @@ export default async function OnboardingPage({ params }: { params: Promise<{ tok
     );
   }
 
+  if (client.status === 'pending_agreement') {
+    return (
+       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
+        <Logo showText={true} logoUrl={logo_url}/>
+        <Card className="max-w-md mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-center gap-2 text-primary">
+              <CheckCircle />
+              ¡Registro Completado!
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">
+              Tus datos fueron guardados correctamente. Un administrador revisará tu solicitud y te asignará un convenio pronto.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Recibirás una notificación cuando tu cuenta esté activa.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   if (client.status !== 'pending_onboarding') {
     return (
        <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
@@ -46,10 +101,14 @@ export default async function OnboardingPage({ params }: { params: Promise<{ tok
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">Tus datos ya fueron completados con éxito.</p>
-            {client.agreement_id && (
+            {client.agreement_id ? (
               <Button asChild className="w-full">
                 <Link href={`/pedido/${client.agreement_id}`}>Ir al Catálogo</Link>
               </Button>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Contactá al administrador para más información.
+              </p>
             )}
           </CardContent>
         </Card>

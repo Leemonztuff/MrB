@@ -158,7 +158,7 @@ export async function submitOnboardingForm(payload: any): Promise<ActionResponse
         const address = formatAddress(data);
         const delivery_window = formatDeliveryWindow(data);
 
-        const updateData = {
+        const updateData: any = {
             contact_name: data.contact_name,
             contact_dni: data.contact_dni,
             email: data.email,
@@ -169,6 +169,10 @@ export async function submitOnboardingForm(payload: any): Promise<ActionResponse
             instagram: data.instagram,
             status: 'pending_agreement'
         };
+
+        if (data.cuit && data.cuit.length >= 6) {
+            updateData.portal_token = data.cuit.slice(0, 6);
+        }
 
         const { error } = await supabase
             .from('clients')
