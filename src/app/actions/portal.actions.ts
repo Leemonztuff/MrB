@@ -42,7 +42,18 @@ export async function loginPortal(prevState: AuthState | null, formData: FormDat
     }
 
     if (!client.portal_token) {
-        return { error: { message: 'Tu cuenta no tiene token de portal configurado. Contactá al administrador.' } };
+        const newToken = cleanCuit.slice(0, 6);
+        const { error: updateError } = await supabase
+            .from('clients')
+            .update({ portal_token: newToken })
+            .eq('id', client.id);
+        
+        if (updateError) {
+            console.error('Error generating token:', updateError);
+            return { error: { message: 'Error al configurar el token. Intentalo de nuevo.' } };
+        }
+        
+        client.portal_token = newToken;
     }
 
     if (client.portal_token !== token) {
