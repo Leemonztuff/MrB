@@ -14,29 +14,21 @@ export function ShippingLabelButton({ orders }: { orders: { id: string, bundles:
   const handlePrint = async () => {
     setLoading(true);
     try {
-      // AUTOMACIÓN: Marcar pedidos como 'transito' (Despachado en el Badge)
-      const orderIds = orders.map(o => o.id);
-      const { error } = await bulkUpdateOrderStatus(orderIds, 'transito');
-
-      if (error) {
-        toast({
-          title: "Advertencia",
-          description: "Los rótulos se abrirán, pero no pudimos actualizar el estado de los pedidos.",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Pedidos Despachados",
-          description: `${orderIds.length} pedidos marcados como despachados.`,
-        });
-      }
-
       const data = JSON.stringify(orders);
       // Abrir la página de impresión en una nueva pestaña
       window.open(`/admin/imprimir/rotulos?data=${encodeURIComponent(data)}`, '_blank');
 
+      toast({
+        title: "Rótulos Generados",
+        description: `Se han preparado ${orders.length} rótulos para impresión.`,
+      });
     } catch (err) {
       console.error("Error triggering print flow:", err);
+      toast({
+        title: "Error",
+        description: "No se pudo generar el flujo de impresión.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -44,14 +36,14 @@ export function ShippingLabelButton({ orders }: { orders: { id: string, bundles:
 
   return (
     <Button
-      variant="default"
+      variant="outline"
       size="sm"
       onClick={handlePrint}
       disabled={loading}
-      className="gap-2 shadow-lg shadow-primary/20"
+      className="gap-2 glass border-white/10 hover:bg-white/5 transition-all"
     >
       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
-      {loading ? "Despachando..." : `Preparar Despacho (${orders.reduce((acc, o) => acc + o.bundles, 0)} bultos)`}
+      {loading ? "Generando..." : `Generar Rótulos (${orders.reduce((acc, o) => acc + o.bundles, 0)} bultos)`}
     </Button>
   );
 }

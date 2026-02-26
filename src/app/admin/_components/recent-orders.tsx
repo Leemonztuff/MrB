@@ -6,7 +6,7 @@ import type { Order } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { StickyNote, ChevronRight, Package, Truck, Clock } from "lucide-react";
-import { updateOrderStatus } from "@/app/admin/actions/orders.actions";
+import { updateOrderStatus, bulkUpdateOrderStatus } from "@/app/admin/actions/orders.actions";
 import { useToast } from "@/hooks/use-toast";
 import { OrderNoteWidget } from "./order-note-widget";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { ShippingLabelButton } from "./shipping-label-button";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { Printer } from "lucide-react";
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
@@ -45,6 +46,27 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
         });
     }
 
+    const confirmBatchDispatch = () => {
+        const orderIds = selectedOrderList.map(o => o.id);
+        startTransition(async () => {
+            const { error } = await bulkUpdateOrderStatus(orderIds, 'transito');
+            if (error) {
+                toast({ title: "Error", description: "No se pudieron despachar los pedidos.", variant: "destructive" });
+            } else {
+                setOrders(current => current.filter(o => !orderIds.includes(o.id)));
+                setSelectedOrders({});
+                toast({
+                    title: "Despacho Confirmado",
+                    description: `${orderIds.length} pedidos han sido marcados como despachados.`
+                });
+            }
+        });
+    }
+
+    const selectedOrderList = Object.entries(selectedOrders)
+        .filter(([_, isSelected]) => isSelected)
+        .map(([id, _]) => ({ id, bundles: orderBundles[id] || 1 }));
+
     const toggleSelection = (orderId: string) => {
         setSelectedOrders(prev => ({ ...prev, [orderId]: !prev[orderId] }));
         if (!orderBundles[orderId]) {
@@ -56,22 +78,6 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
         setOrderBundles(prev => ({ ...prev, [orderId]: Math.max(1, count) }));
     };
 
-    const selectedOrderList = Object.entries(selectedOrders)
-        .filter(([_, isSelected]) => isSelected)
-        .map(([id, _]) => ({ id, bundles: orderBundles[id] || 1 }));
-
-    if (orders.length === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed rounded-xl bg-card/30">
-                <div className="p-4 bg-muted rounded-full mb-4">
-                    <Package className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <p className="text-muted-foreground font-medium">No hay pedidos pendientes de despacho.</p>
-                <p className="text-sm text-muted-foreground/60">Los pedidos "Armados" aparecerán aquí para su despacho.</p>
-            </div>
-        )
-    }
-
     return (
         <div className="relative space-y-4">
             {selectedOrderList.length > 0 && (
@@ -80,10 +86,18 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
                         <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-black">
                             {selectedOrderList.length}
                         </div>
-                        <p className="font-black italic text-sm tracking-tight text-foreground/90 uppercase">Preparación de Despacho Masivo</p>
+                        <p className="font-black italic text-sm tracking-tight text-foreground/90 uppercase">Gestión de Despacho Masivo</p>
                     </div>
-                    <div className="shrink-0">
+                    <div className="flex items-center gap-2">
                         <ShippingLabelButton orders={selectedOrderList} />
+                        <Button
+                            onClick={confirmBatchDispatch}
+                            disabled={isPending}
+                            className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 h-9"
+                        >
+                            <Truck className="h-4 w-4" />
+                            Confirmar Despacho
+                        </Button>
                     </div>
                 </div>
             )}
@@ -136,35 +150,50 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 xl:ml-auto shrink-0 pt-3 xl:pt-0 border-t xl:border-none border-white/5 min-w-0">
+                        <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 xl:ml-auto shrink-0 pt-3 xl:pt-0 border-t xl:border-none border-white/5 min-w-0">
                             <div className="flex flex-col items-end gap-0.5">
                                 <p className="text-[8px] sm:text-[10px] uppercase font-black tracking-widest text-muted-foreground/60">Bultos</p>
                                 <div className="flex items-center gap-1.5 bg-secondary/30 px-2 py-0.5 rounded-lg border border-white/5 focus-within:border-primary/30 transition-colors">
                                     <Input
                                         type="number"
                                         min="1"
-                                        className="h-6 w-10 bg-transparent border-none text-xs text-center font-black p-0 focus-visible:ring-0"
+                                        className="h-6 w-8 sm:w-10 bg-transparent border-none text-[10px] sm:text-xs text-center font-black p-0 focus-visible:ring-0"
                                         value={orderBundles[order.id] || 1}
                                         onChange={(e) => updateBundleCount(order.id, parseInt(e.target.value))}
                                     />
                                 </div>
                             </div>
 
-                            <div className="flex flex-col items-end gap-0.5 min-w-[80px] sm:min-w-[90px]">
-                                <p className="text-[8px] sm:text-[10px] uppercase font-black tracking-widest text-muted-foreground/60 text-right">Monto Total</p>
-                                <p className="text-base sm:text-lg font-headline font-black text-primary leading-none truncate w-full text-right">{formatCurrency(order.total_amount)}</p>
+                            <div className="flex flex-col items-end gap-0.5 min-w-[70px] sm:min-w-[90px]">
+                                <p className="text-[8px] sm:text-[10px] uppercase font-black tracking-widest text-muted-foreground/60 text-right">Monto</p>
+                                <p className="text-sm sm:text-base font-headline font-black text-primary leading-none truncate w-full text-right">{formatCurrency(order.total_amount)}</p>
                             </div>
 
-                            <Button
-                                variant="default"
-                                size="sm"
-                                className="h-9 sm:h-10 px-3 sm:px-4 gap-2 font-black shadow-lg shadow-primary/10 active:scale-95 transition-all group/btn bg-primary hover:bg-primary/90 rounded-xl shrink-0"
-                                onClick={() => handleUpdateStatus(order.id, 'transito')}
-                                disabled={isPending}
-                            >
-                                <Truck className="h-4 w-4 group-hover/btn:translate-x-0.5 transition-transform shrink-0" />
-                                <span className="hidden sm:inline italic">Despachar</span>
-                            </Button>
+                            <div className="flex items-center gap-1.5">
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-9 w-9 sm:h-10 sm:w-10 glass border-white/10 hover:bg-white/5 rounded-xl transition-all"
+                                    title="Generar Rótulo"
+                                    onClick={() => {
+                                        const data = JSON.stringify([{ id: order.id, bundles: orderBundles[order.id] || 1 }]);
+                                        window.open(`/admin/imprimir/rotulos?data=${encodeURIComponent(data)}`, '_blank');
+                                    }}
+                                >
+                                    <Printer className="h-4 w-4" />
+                                </Button>
+
+                                <Button
+                                    variant="default"
+                                    size="sm"
+                                    className="h-9 sm:h-10 px-3 sm:px-4 gap-2 font-black shadow-lg shadow-primary/10 active:scale-95 transition-all group/btn bg-primary hover:bg-primary/90 rounded-xl shrink-0"
+                                    onClick={() => handleUpdateStatus(order.id, 'transito')}
+                                    disabled={isPending}
+                                >
+                                    <Truck className="h-4 w-4 group-hover/btn:translate-x-0.5 transition-transform shrink-0" />
+                                    <span className="hidden sm:inline italic">Despachar</span>
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 ))}
