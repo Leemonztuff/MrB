@@ -43,7 +43,7 @@ export function CommandParser() {
             // not directly in the pricelists table schema (like base_price_list_name).
             // The `upsertPriceList` action is designed to handle this,
             // we just need to pass the data as is.
-            upsertPromise = upsertPriceList(result.data);
+            upsertPromise = upsertPriceList({ ...result.data, prices_include_vat: true });
             break;
           case 'sales_condition':
             upsertPromise = upsertSalesCondition(result.data);

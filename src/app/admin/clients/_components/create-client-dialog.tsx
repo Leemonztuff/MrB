@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 
 import { UpsertClientForm } from "./upsert-client-form";
+import { cn } from "@/lib/utils";
 
 export function CreateClientDialog({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
