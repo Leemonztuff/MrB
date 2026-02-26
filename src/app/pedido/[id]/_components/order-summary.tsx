@@ -223,13 +223,21 @@ export function OrderSummary({
       try {
         const parsedItems = JSON.parse(decodeURIComponent(repeatParam));
         if (Array.isArray(parsedItems) && parsedItems.length > 0) {
-          const { addItem } = useCartStore.getState();
-          parsedItems.forEach((item: any) => {
-            if (item.product && item.quantity) {
-              addItem(item.product, item.quantity);
+          const checkAndLoad = () => {
+            const { addItem, pricesIncludeVat, vatPercentage } = useCartStore.getState();
+            if (!pricesIncludeVat || !vatPercentage) {
+              setTimeout(checkAndLoad, 300);
+              return;
             }
-          });
-          window.history.replaceState({}, '', window.location.pathname);
+            parsedItems.forEach((item: any) => {
+              if (item.product && item.quantity) {
+                addItem(item.product, item.quantity);
+              }
+            });
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, '', cleanUrl);
+          };
+          checkAndLoad();
         }
       } catch (e) {
         console.error('Error loading repeat order from URL:', e);
