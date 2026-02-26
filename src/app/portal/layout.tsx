@@ -1,14 +1,19 @@
 import Link from 'next/link';
-import { requirePortalAuth, logoutPortal } from '@/app/actions/portal.actions';
+import { getPortalClient, logoutPortal } from '@/app/actions/portal.actions';
 import { Button } from '@/components/ui/button';
 import { formatCuit } from '@/lib/formatters';
+import { redirect } from 'next/navigation';
 
 export default async function PortalLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const client = await requirePortalAuth();
+    const client = await getPortalClient();
+
+    if (!client) {
+        redirect('/portal/login');
+    }
 
     return (
         <div className="min-h-screen bg-gray-50">
