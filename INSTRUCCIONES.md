@@ -4,7 +4,7 @@ Este documento contiene las instrucciones para configurar y poner en marcha la a
 
 ## 1. Configuración de Variables de Entorno
 
-Antes de nada, crea un archivo llamado `.env.local` en la raíz del proyecto. Copia el contenido del archivo `.env` (que está vacío) y rellénalo con las siguientes claves de tu proyecto de Supabase:
+Antes de nada, crea un archivo llamado `.env.local` en la raíz del proyecto. Copia el contenido del archivo `.env.example` y rellénalo con las siguientes claves de tu proyecto de Supabase:
 
 ```bash
 # Variables de Supabase (las encuentras en Project Settings > API)
