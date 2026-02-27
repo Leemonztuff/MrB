@@ -123,7 +123,7 @@ export async function getPortalClient() {
     const supabase = await createClient();
     const { data: client, error } = await supabase
         .from('clients')
-        .select('*, agreements(*)')
+        .select('*, agreements:agreements(id, agreement_name)')
         .eq('id', clientId)
         .maybeSingle();
 
