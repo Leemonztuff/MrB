@@ -36,10 +36,12 @@ export default function PortalPage() {
         return res.json();
       })
       .then(data => {
-        setClient(data);
+        console.log('Client data:', data);
+        setClient(data.client);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('Auth error:', err);
         router.push('/portal-cliente/login');
       });
   }, [router]);
