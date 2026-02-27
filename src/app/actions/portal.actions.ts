@@ -5,6 +5,28 @@ import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { unformatCuit } from '@/lib/formatters';
 import type { AuthState } from '@/types';
+import { createHash } from 'crypto';
+
+const COOKIE_SECRET = process.env.COOKIE_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret-change-me';
+
+function signCookie(value: string): string {
+    const hmac = createHash('sha256');
+    hmac.update(value + COOKIE_SECRET);
+    return `${value}.${hmac.digest('hex').slice(0, 16)}`;
+}
+
+function verifyAndExtractSignedCookie(signedValue: string): string | null {
+    const parts = signedValue.split('.');
+    if (parts.length !== 2) return null;
+    
+    const [value, signature] = parts;
+    const expectedSignature = createHash('sha256')
+        .update(value + COOKIE_SECRET)
+        .digest('hex')
+        .slice(0, 16);
+    
+    return signature === expectedSignature ? value : null;
+}
 
 export async function loginPortal(prevState: AuthState | null, formData: FormData): Promise<AuthState | null> {
     const cuit = formData.get('cuit') as string;
@@ -65,7 +87,8 @@ export async function loginPortal(prevState: AuthState | null, formData: FormDat
     }
 
     const cookieStore = await cookies();
-    cookieStore.set('portal_client_id', client.id, {
+    const signedValue = signCookie(client.id);
+    cookieStore.set('portal_client_id', signedValue, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -83,8 +106,14 @@ export async function logoutPortal() {
 
 export async function getPortalClient() {
     const cookieStore = await cookies();
-    const clientId = cookieStore.get('portal_client_id')?.value;
-    if (!clientId) return null;
+    const signedValue = cookieStore.get('portal_client_id')?.value;
+    if (!signedValue) return null;
+
+    const clientId = verifyAndExtractSignedCookie(signedValue);
+    if (!clientId) {
+        cookieStore.delete('portal_client_id');
+        return null;
+    }
 
     const supabase = await createClient();
     const { data: client } = await supabase

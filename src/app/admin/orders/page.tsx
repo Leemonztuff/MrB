@@ -13,10 +13,11 @@ export default async function OrdersHistoryPage({
   searchParams?: Promise<{ status?: string; query?: string }>;
 }) {
   const filters = await searchParams;
-  const { data: orders } = await getOrders({
+  const { data: result } = await getOrders({
     status: filters?.status,
     query: filters?.query
   });
+  const orders = result?.orders || [];
 
   return (
     <div className="grid gap-4 md:gap-8">
