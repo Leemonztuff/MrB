@@ -15,6 +15,7 @@ import { MobileCartIndicator } from "./_components/mobile-cart-indicator";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { AgreementPromotion, ProductWithPrice } from "@/types";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const categoryTranslations: Record<string, string> = {
   "Wax": "Ceras",
@@ -71,12 +72,15 @@ export default async function OrderPage({
 
   return (
     <div className="min-h-screen bg-transparent">
-      <header className="sticky top-0 z-40 glass border-b border-white/5 backdrop-blur-md">
+      <header className="sticky top-0 z-40 glass border-b border-white/5 dark:border-white/5 backdrop-blur-md">
         <div className="container mx-auto flex h-20 items-center justify-between px-6">
           <Logo showText={true} logoUrl={logoUrl} />
-          <div className="text-right">
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <div className="text-right">
             <p className="text-sm font-black italic tracking-tighter text-foreground">{client?.contact_name ?? "Cliente"}</p>
             <p className="text-[10px] uppercase font-black tracking-widest text-primary/70">{agreement.agreement_name}</p>
+          </div>
           </div>
         </div>
       </header>

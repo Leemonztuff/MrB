@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Mail, MapPin, FileText, Calendar, ShoppingCart, ArrowRight, User as UserIcon } from 'lucide-react';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default async function PortalPage() {
     const client = await getPortalClient();
@@ -22,6 +23,9 @@ export default async function PortalPage() {
 
     return (
         <div className="space-y-6">
+            <div className="flex items-center justify-end">
+                <ThemeToggle />
+            </div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-bold">Bienvenido, {client.contact_name}</h2>

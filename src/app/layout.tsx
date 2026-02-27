@@ -5,6 +5,7 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import localFont from 'next/font/local';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const centuryGothic = localFont({
   src: [
@@ -62,7 +63,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="dark" style={{ colorScheme: "dark" }} suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <body
         className={cn(
           "font-century-gothic antialiased min-h-screen bg-background",
@@ -70,10 +71,12 @@ export default function RootLayout({
         )}
         suppressHydrationWarning={true}
       >
-        <ErrorBoundary>
-          {children}
-        </ErrorBoundary>
-        <Toaster />
+        <ThemeProvider>
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
