@@ -23,6 +23,7 @@ import { getSettings } from "@/app/admin/actions/settings.actions";
 import { AppNav } from "./_components/app-nav";
 import type { DashboardStats } from "@/types";
 import { PageLoader } from "@/components/loading";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const createNotifications = (
   pendingOrdersCount: number,
@@ -146,6 +147,7 @@ export default async function AdminLayout({
             </Link>
           </div>
           <div className="ml-auto flex items-center gap-4">
+            <ThemeToggle />
             <Notifications notifications={notifications} />
             <Sheet>
               <SheetTrigger asChild>

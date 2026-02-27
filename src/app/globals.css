@@ -36,6 +36,37 @@
     --radius: 0.75rem;
   }
 
+  /* Light Mode - Cream & Coral */
+  .light {
+    --background: 40 33% 94%; /* Cream */
+    --foreground: 0 0% 10%; /* Almost Black */
+
+    --card: 0 0% 100%; /* White */
+    --card-foreground: 0 0% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+
+    --primary: 11 80% 57%; /* Coral Red */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 92%; /* Light Silver */
+    --secondary-foreground: 0 0% 10%;
+
+    --muted: 0 0% 90%; /* Light Gray */
+    --muted-foreground: 0 0% 40%; /* Medium Gray */
+
+    --accent: 11 80% 57%; /* Coral Red */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 85%; /* Silver */
+    --input: 0 0% 85%;
+    --ring: 11 80% 57%; /* Coral Red */
+  }
+
   * {
     @apply border-border;
   }
@@ -48,9 +79,14 @@
     @apply font-headline tracking-tight text-balance;
   }
 
-  /* Glassmorphism Effect */
+  /* Glassmorphism Effect - Dark Mode */
   .glass {
     @apply bg-card/80 backdrop-blur-md border border-white/5 shadow-2xl;
+  }
+
+  /* Glassmorphism Effect - Light Mode */
+  .light .glass {
+    @apply bg-card/90 backdrop-blur-md border-black/10 shadow-lg;
   }
 
   .fade-in-up {
