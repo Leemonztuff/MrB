@@ -1,6 +1,5 @@
 
 import type { NextConfig } from 'next';
-import { withSentryConfig } from '@sentry/nextjs';
 
 const nextConfig: NextConfig = {
   typescript: {
@@ -77,13 +76,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-const sentryWebpackPluginOptions = {
-  org: process.env.SENTRY_ORG,
-  project: 'blonde-orders',
-  silent: true,
-  widenClientFileUpload: true,
-  hideSourceMaps: true,
-  disableLogger: true,
-};
-
-export default withSentryConfig(nextConfig, sentryWebpackPluginOptions);
+export default nextConfig;
