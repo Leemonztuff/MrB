@@ -107,20 +107,30 @@ export async function logoutPortal() {
 export async function getPortalClient() {
     const cookieStore = await cookies();
     const signedValue = cookieStore.get('portal_client_id')?.value;
-    if (!signedValue) return null;
+    
+    if (!signedValue) {
+        console.log('No portal_client_id cookie found');
+        return null;
+    }
 
     const clientId = verifyAndExtractSignedCookie(signedValue);
     if (!clientId) {
+        console.log('Failed to verify signed cookie:', signedValue);
         cookieStore.delete('portal_client_id');
         return null;
     }
 
     const supabase = await createClient();
-    const { data: client } = await supabase
+    const { data: client, error } = await supabase
         .from('clients')
         .select('*, agreements(*)')
         .eq('id', clientId)
         .maybeSingle();
+
+    if (error) {
+        console.error('Error fetching client:', error);
+        return null;
+    }
 
     return client;
 }

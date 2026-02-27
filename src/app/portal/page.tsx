@@ -9,7 +9,13 @@ import { Mail, MapPin, FileText, Calendar, ShoppingCart, ArrowRight, User as Use
 import { ThemeToggle } from '@/components/theme-toggle';
 
 export default async function PortalPage() {
-    const client = await getPortalClient();
+    let client;
+    try {
+        client = await getPortalClient();
+    } catch (error) {
+        console.error('Error getting portal client:', error);
+        redirect('/portal-cliente/login');
+    }
 
     if (!client) {
         redirect('/portal-cliente/login');
