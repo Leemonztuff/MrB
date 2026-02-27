@@ -194,7 +194,7 @@ export function OrderSummary({
   }, []);
 
   useEffect(() => {
-    setAgreement(agreementId, pricesIncludeVat, promotions, vatPercentage, salesConditions || []);
+    setAgreement(agreementId, pricesIncludeVat, promotions, vatPercentage, salesConditions ?? []);
   }, [agreementId, pricesIncludeVat, promotions, vatPercentage, salesConditions, setAgreement]);
 
   const loadRepeatOrder = async () => {

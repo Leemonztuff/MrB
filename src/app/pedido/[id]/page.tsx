@@ -48,7 +48,7 @@ export default async function OrderPage({
     );
   }
 
-  const { agreement, client, productsByCategory, vatPercentage, logoUrl, salesConditions } = data;
+  const { agreement, client, productsByCategory, vatPercentage, logoUrl, salesConditions = [] } = data;
   const categories = Object.keys(productsByCategory);
   const promotions = (agreement.agreement_promotions || []).map((ap: AgreementPromotion) => ap.promotions);
 
