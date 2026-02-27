@@ -81,7 +81,7 @@ export default function PortalLayout({
         { href: '/portal/orders', label: 'Mis Pedidos', icon: Package },
     ];
 
-    const isActive = client.status?.toLowerCase() === 'active';
+    const isActive = !client.status || client.status?.toLowerCase() === 'active' || client.status?.toLowerCase() === 'activo';
     const canOrder = isActive && client.agreement_id;
 
     if (canOrder) {

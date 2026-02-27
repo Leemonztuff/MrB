@@ -147,7 +147,7 @@ export default function PortalPage() {
         </Card>
       </div>
 
-      {client.status?.toLowerCase() !== 'active' && (
+      {client.status && client.status.toLowerCase() !== 'active' && client.status.toLowerCase() !== 'activo' && (
         <Card className="border-yellow-600/50 bg-yellow-900/20">
           <CardContent className="py-4">
             <p className="text-yellow-500 text-center">
