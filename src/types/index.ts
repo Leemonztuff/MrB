@@ -70,6 +70,7 @@ export type Client = {
     id: string;
     contact_name: string | null;
     email: string | null;
+    phone: string | null;
     cuit: string | null;
     address: string | null;
     status: 'pending_onboarding' | 'pending_agreement' | 'active' | 'archived';

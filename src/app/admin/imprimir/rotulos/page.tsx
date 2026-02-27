@@ -19,11 +19,14 @@ interface OrderData {
     client_name_cache: string;
     notes: string | null;
     order_items: any[];
+    bundleIdx?: number;
+    totalBundles?: number;
     clients: {
         contact_name: string | null;
         address: string | null;
         delivery_window: string | null;
-        phone?: string | null;
+        phone: string | null;
+        email: string | null;
     } | null;
 }
 
@@ -44,12 +47,9 @@ function LabelsPrintContent() {
                 const selections: { id: string; bundles: number }[] = JSON.parse(dataParam);
                 const { data: orders, error } = await getOrdersBatch(selections.map(o => o.id));
                 
-                const settingsResult = await getSettings();
-                if (settingsResult.success && settingsResult.data) {
-                    const logoSetting = settingsResult.data.find((s: any) => s.key === 'logo_url');
-                    if (logoSetting?.value) {
-                        setLogoUrl(logoSetting.value);
-                    }
+                const settings = await getSettings();
+                if (settings.logo_url) {
+                    setLogoUrl(settings.logo_url);
                 }
 
                 if (error || !orders) throw new Error("Error fetching orders");
@@ -359,20 +359,19 @@ function LabelsPrintContent() {
                                 )}
                                 
                                 <div className="contact-info">
-                                    <strong>Cliente:</strong> {label.clients?.contact_name || 'N/A'}
+                                    <strong>Contacto:</strong> {label.clients?.phone || label.clients?.email || 'No disponible'}
                                 </div>
                             </div>
                             
                             <div className="label-sidebar">
                                 <div className="qr-section">
-                                    <img
-                                        className="qr-img"
-                                        width={140}
-                                        height={140}
-                                        unoptimized
-                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${origin}/api/pedido/confirmar/${label.id}`)}`}
-                                        alt="QR de Conformidad"
-                                    />
+                                        <img
+                                            className="qr-img"
+                                            width={140}
+                                            height={140}
+                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${origin}/api/pedido/confirmar/${label.id}`)}`}
+                                            alt="QR de Conformidad"
+                                        />
                                     <div className="qr-text">ESCANEAR PARA CONFORMAR</div>
                                 </div>
                                 
