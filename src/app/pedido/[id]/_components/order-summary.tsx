@@ -217,7 +217,12 @@ export function OrderSummary({
           if (order && order.order_items) {
             order.order_items.forEach((item: any) => {
               if (item.products && item.quantity) {
-                state.addItem(item.products, item.quantity);
+                const productWithPrice = {
+                  ...item.products,
+                  price: item.price_per_unit ?? 0,
+                  volume_price: null
+                };
+                state.addItem(productWithPrice, item.quantity);
               }
             });
           }

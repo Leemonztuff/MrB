@@ -183,14 +183,17 @@ export const calculateCartTotals = (
 ) => {
     const totalItems = items.reduce((total, item) => total + item.quantity, 0);
     const isVolumePricingActive = totalItems >= VOLUME_THRESHOLD;
-    const vatRate = vatPercentage / 100;
+    const vatRate = (vatPercentage ?? 21) / 100;
 
     let subtotal = 0;
 
     items.forEach(item => {
-        const basePrice = (isVolumePricingActive && item.product.volume_price != null && item.product.volume_price < item.product.price)
-            ? item.product.volume_price
-            : item.product.price;
+        const productPrice = item.product.price ?? 0;
+        const productVolumePrice = item.product.volume_price ?? null;
+        
+        const basePrice = (isVolumePricingActive && productVolumePrice != null && productVolumePrice < productPrice)
+            ? productVolumePrice
+            : productPrice;
 
         if (pricesIncludeVat) {
             const singleItemSubtotal = basePrice / (1 + vatRate);
@@ -203,12 +206,12 @@ export const calculateCartTotals = (
 
     const { appliedPromotions, bonusInfo, discountPercentage } = calculatePromotions(items, subtotal, promotions);
 
-    const discountApplied = subtotal * (discountPercentage / 100);
+    const discountApplied = subtotal * ((discountPercentage ?? 0) / 100);
     const subtotalWithPromos = subtotal - discountApplied;
     
     const { appliedConditions, discountFromConditions } = calculateSalesConditions(subtotal, salesConditions);
     
-    const subtotalWithDiscount = subtotalWithPromos - discountFromConditions;
+    const subtotalWithDiscount = subtotalWithPromos - (discountFromConditions ?? 0);
     const vatAmount = subtotalWithDiscount * vatRate;
     const totalPrice = subtotalWithDiscount + vatAmount;
 
