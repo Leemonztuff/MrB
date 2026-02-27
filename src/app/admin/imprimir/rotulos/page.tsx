@@ -3,6 +3,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { getOrdersBatch } from "@/app/admin/actions/orders.actions";
 import { Logo } from "@/app/logo";
 import { Loader2 } from "lucide-react";
@@ -122,8 +123,11 @@ function LabelsPrintContent() {
                                 </div>
                             </div>
                             <div className="label-right">
-                                <img
+                                <Image
                                     className="qr-img"
+                                    width={120}
+                                    height={120}
+                                    unoptimized
                                     src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${origin}/api/pedido/confirmar/${label.id}`)}`}
                                     alt="QR"
                                 />

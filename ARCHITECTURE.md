@@ -118,3 +118,80 @@ Existen dos maneras de crear un cliente:
     -   El cliente revisa el `OrderSummary`.
     -   Al hacer clic en "Enviar", la `server action` `submitOrder` guarda el pedido en la base de datos.
     -   Luego, la función `formatWhatsAppMessage` construye un texto pre-formateado y abre la URL de WhatsApp para enviar el pedido al número de la empresa.
+
+## 4. Seguridad y Producción
+
+### Middleware de Seguridad
+El archivo `middleware.ts` implementa múltiples capas de seguridad:
+
+- **Headers de Protección**: X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy
+- **Validación JWT**: Verificación de tokens en cada request
+- **Rate Limiting**: Límites por IP para prevenir ataques de fuerza bruta
+- **CSRF Protection**: Validación de origen en requests POST/PUT/DELETE
+
+### Rate Limiting
+Located in `src/lib/rate-limiter.ts`:
+
+- `authLimiter`: 10 requests/15min para rutas de autenticación
+- `apiLimiter`: 100 requests/1min para APIs
+- `orderLimiter`: 20 requests/1min para pedidos
+
+### Error Handling
+- **Error Boundary**: Componente en `src/components/error-boundary.tsx`
+- **Global Error**: Página en `src/app/global-error.tsx`
+- **Logger**: Sistema de logging estructurado en `src/lib/logger.ts`
+- **404 Personalizado**: Página en `src/app/not-found.tsx`
+
+### Monitoring
+- **Health Check**: Endpoint en `/api/health` para verificación de estado
+- **Sentry Integration**: Error tracking configurado en `sentry.client.config.ts`
+- **Logging**: Sistema estructurado con niveles (debug, info, warn, error)
+
+## 5. Testing
+
+### Configuración Jest
+- **Config**: `jest.config.js`
+- **Setup**: `jest.setup.ts`
+- **Tests**: Ubicados en `src/lib/__tests__/`
+
+### Ejecución de Tests
+```bash
+npm test              # Ejecutar tests
+npm run test:watch   # Modo watch
+npm run test:coverage # Con cobertura
+```
+
+## 6. CI/CD
+
+### Pipeline GitHub Actions
+Ubicado en `.github/workflows/ci-cd.yml`:
+
+1. **Lint & Type Check**: ESLint y TypeScript
+2. **Unit Tests**: Jest con cobertura
+3. **Build**: Compilación Next.js
+4. **Deploy**: Staging (develop) y Production (main)
+
+### Secrets Requeridos
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `VERCEL_TOKEN` (para deploy)
+- `SENTRY_ORG` y `SENTRY_PROJECT` (para sourcemaps)
+
+## 7. Variables de Entorno
+
+Ver `.env.example` para las variables requeridas:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_APP_URL=
+```
+
+## 8. Optimizaciones de Performance
+
+- **Images**: Formatos AVIF/WebP configurados en `next.config.ts`
+- **Fonts**: Display swap, preload, fallback configurados
+- **Code Splitting**: Dynamic imports para componentes pesados
+- **Suspense**: Loading states en rutas del admin

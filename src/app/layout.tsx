@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
 import { cn } from '@/lib/utils';
 import localFont from 'next/font/local';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 const centuryGothic = localFont({
   src: [
@@ -23,14 +24,35 @@ const centuryGothic = localFont({
     { path: './fonts/century-gothic-paneuropean/CenturyGothicPaneuropeanBlackItalic.ttf', weight: '900', style: 'italic' },
   ],
   variable: '--font-century-gothic',
+  display: 'swap',
+  preload: true,
+  fallback: ['system-ui', 'sans-serif'],
 });
 
 
 export const metadata: Metadata = {
-  title: 'Blonde Orders',
-  description: 'Modern Order Management',
+  title: {
+    default: 'Blonde Orders | Gestión de Pedidos',
+    template: '%s | Blonde Orders',
+  },
+  description: 'Sistema moderno de gestión de pedidos para negocios',
+  keywords: ['pedidos', 'gestión', 'negocios', 'comercio'],
+  authors: [{ name: 'Mr. Blonde' }],
+  creator: 'Mr. Blonde',
+  openGraph: {
+    type: 'website',
+    locale: 'es_AR',
+    title: 'Blonde Orders',
+    description: 'Sistema moderno de gestión de pedidos',
+    siteName: 'Blonde Orders',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Blonde Orders',
+    description: 'Sistema moderno de gestión de pedidos',
+  },
   icons: {
-    icon: [], // Explicitly setting icons to an empty array
+    icon: [],
   },
 };
 
@@ -48,7 +70,9 @@ export default function RootLayout({
         )}
         suppressHydrationWarning={true}
       >
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
         <Toaster />
       </body>
     </html>

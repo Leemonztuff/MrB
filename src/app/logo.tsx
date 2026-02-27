@@ -21,10 +21,16 @@ export function Logo({
 
   const IconOrLogo = () => {
     if (logoUrl) {
-      // Using fill and object-contain makes the logo "smart" and "adaptable".
-      // It will scale down to fit the container while maintaining its aspect ratio,
-      // without being cropped, regardless of the original image's dimensions.
-      return <Image src={logoUrl} alt="App Logo" fill className="object-contain p-1" />;
+      return (
+        <Image 
+          src={logoUrl} 
+          alt="App Logo" 
+          fill 
+          className="object-contain p-1"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          priority={showText}
+        />
+      );
     }
     return <Atom className="h-5 w-5" />;
   };

@@ -1,5 +1,6 @@
 
 import Link from "next/link";
+import { Suspense } from "react";
 import {
   LogOut,
   Settings,
@@ -21,6 +22,7 @@ import { getNotificationData, getDashboardData } from "@/app/admin/actions/dashb
 import { getSettings } from "@/app/admin/actions/settings.actions";
 import { AppNav } from "./_components/app-nav";
 import type { DashboardStats } from "@/types";
+import { PageLoader } from "@/components/loading";
 
 const createNotifications = (
   pendingOrdersCount: number,
@@ -184,7 +186,9 @@ export default async function AdminLayout({
           </div>
         </header>
         <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 pb-24 sm:pb-4">
-          {children}
+          <Suspense fallback={<PageLoader />}>
+            {children}
+          </Suspense>
         </main>
       </div>
     </div>
