@@ -1,4 +1,5 @@
 import { getPortalClient } from '@/app/actions/portal.actions';
+import { redirect } from 'next/navigation';
 import { formatCuit, formatDate } from '@/lib/formatters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +12,7 @@ export default async function PortalPage() {
     const client = await getPortalClient();
 
     if (!client) {
-        return null;
+        redirect('/portal-cliente/login');
     }
 
     const infoCards = [
