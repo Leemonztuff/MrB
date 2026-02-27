@@ -1,19 +1,60 @@
+'use client';
+
 import Link from 'next/link';
-import { getPortalClient, logoutPortal } from '@/app/actions/portal.actions';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { formatCuit } from '@/lib/formatters';
-import { redirect } from 'next/navigation';
 import { User, Package, ShoppingCart, LogOut } from 'lucide-react';
 
-export default async function PortalLayout({
+interface Client {
+  id: string;
+  contact_name: string | null;
+  email: string | null;
+  address: string | null;
+  created_at: string;
+  status: string;
+  agreement_id: string | null;
+  agreements?: { agreement_name: string } | null;
+  cuit: string | null;
+}
+
+export default function PortalLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const client = await getPortalClient();
+    const router = useRouter();
+    const [client, setClient] = useState<Client | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch('/api/portal/client')
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Not authenticated');
+                }
+                return res.json();
+            })
+            .then(data => {
+                setClient(data.client);
+                setLoading(false);
+            })
+            .catch(() => {
+                router.push('/portal-cliente/login');
+            });
+    }, [router]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-pulse">Cargando...</div>
+            </div>
+        );
+    }
 
     if (!client) {
-        redirect('/portal-cliente/login');
+        return null;
     }
 
     const navItems = [
@@ -55,12 +96,12 @@ export default async function PortalLayout({
                                 <span className="text-muted-foreground">|</span>
                                 <span className="text-muted-foreground">{formatCuit(client.cuit)}</span>
                             </div>
-                            <form action={logoutPortal}>
-                                <Button variant="ghost" size="sm" type="submit" className="text-muted-foreground hover:text-destructive">
+                            <Link href="/api/portal/logout" className="text-muted-foreground hover:text-destructive">
+                                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
                                     <LogOut className="h-4 w-4 mr-1" />
                                     <span className="hidden sm:inline">Salir</span>
                                 </Button>
-                            </form>
+                            </Link>
                         </div>
                     </div>
                 </div>
