@@ -30,7 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { getUnassignedProducts, assignMultipleProductsToAgreement } from "@/app/actions/admin.actions";
+import { getUnassignedProducts, assignMultipleProductsToAgreement } from "@/app/admin/actions/agreements.actions";
 import type { Product } from "@/types";
 import { getImageUrl } from "@/lib/placeholder-images";
 import { Badge } from "@/components/ui/badge";

@@ -111,9 +111,9 @@ export function AssignProductToPriceListDialog({
   
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setValue('product_ids', products.map(p => p.id));
+      setValue('product_ids', products.map(p => p.id) as any);
     } else {
-      setValue('product_ids', []);
+      setValue('product_ids', [] as any);
     }
   };
   

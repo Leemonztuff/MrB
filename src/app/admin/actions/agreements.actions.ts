@@ -189,3 +189,66 @@ export async function unassignSalesConditionFromAgreement(payload: { agreement_i
         return null;
     }, [`/admin/agreements/${payload.agreement_id}`]);
 }
+
+// --- Product Assignment ---
+
+export async function getUnassignedProducts(agreementId: string): Promise<ActionResponse<any[]>> {
+    return handleAction(async () => {
+        const supabase = await getSupabaseClientWithAuth();
+        const { data: agreement, error: agreementError } = await supabase
+            .from('agreements')
+            .select('price_list_id')
+            .eq('id', agreementId)
+            .single();
+
+        if (agreementError) throw agreementError;
+        if (!agreement?.price_list_id) return [];
+
+        const { data: assigned, error: assignedError } = await supabase
+            .from('price_list_products')
+            .select('product_id')
+            .eq('price_list_id', agreement.price_list_id);
+
+        if (assignedError) throw assignedError;
+
+        const assignedIds = assigned?.map(p => p.product_id) || [];
+        const query = supabase.from('products').select('*').order('name');
+
+        if (assignedIds.length > 0) {
+            query.not('id', 'in', `(${assignedIds.join(',')})`);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return data || [];
+    });
+}
+
+export async function assignMultipleProductsToAgreement(payload: {
+    agreement_id: string;
+    product_ids: string[];
+}): Promise<ActionResponse<null>> {
+    return handleAction(async () => {
+        const supabase = await getSupabaseClientWithAuth();
+        
+        const { data: agreement, error: agreementError } = await supabase
+            .from('agreements')
+            .select('price_list_id')
+            .eq('id', payload.agreement_id)
+            .single();
+
+        if (agreementError) throw agreementError;
+        if (!agreement?.price_list_id) throw new Error('Agreement has no price list');
+
+        const productsToInsert = payload.product_ids.map(productId => ({
+            price_list_id: agreement.price_list_id,
+            product_id: productId,
+            price: 0,
+            volume_price: null,
+        }));
+
+        const { error } = await supabase.from('price_list_products').insert(productsToInsert);
+        if (error) throw error;
+        return null;
+    }, [`/admin/agreements/${payload.agreement_id}`]);
+}

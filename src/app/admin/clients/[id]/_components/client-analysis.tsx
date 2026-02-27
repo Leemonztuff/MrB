@@ -60,7 +60,7 @@ export function ClientAnalysis({ clientId }: { clientId: string }) {
                 setError(result.error.message);
                 toast({ title: "Error en el Análisis", description: result.error.message, variant: "destructive" });
             } else {
-                setAnalysis(result.data);
+                setAnalysis(result.data ?? null);
             }
         });
     }

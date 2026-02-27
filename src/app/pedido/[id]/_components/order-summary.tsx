@@ -173,6 +173,7 @@ export function OrderSummary({
   pricesIncludeVat,
   promotions,
   vatPercentage,
+  salesConditions,
 }: {
   agreementId: string;
   clientId: string;
@@ -180,7 +181,7 @@ export function OrderSummary({
   pricesIncludeVat: boolean;
   promotions: Promotion[];
   vatPercentage: number;
-  salesConditions?: SalesCondition[];
+  salesConditions: SalesCondition[];
 }) {
   const { items, totalItems, subtotal, subtotalWithDiscount, discountApplied, discountFromConditions, vatAmount, totalPrice, clearCart, setAgreement, appliedPromotions, appliedConditions, bonusInfo } = useCartStore();
   const { toast } = useToast();
