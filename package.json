@@ -6,10 +6,7 @@
     "dev": "next dev -p 9003",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "lint": "next lint"
   },
   "dependencies": {
     "@genkit-ai/google-genai": "1.28.0",
@@ -51,14 +48,9 @@
   },
   "devDependencies": {
     "@sentry/cli": "^2.31.0",
-    "@testing-library/jest-dom": "^6.4.2",
-    "@testing-library/react": "^14.2.1",
-    "@testing-library/user-event": "^14.5.2",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
