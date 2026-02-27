@@ -60,7 +60,7 @@ export async function getOrderPageData(agreementId: string): Promise<ActionRespo
     return handleAction(async () => {
         const supabase = await createServerClient();
         const [agreementResult, settingsResult] = await Promise.all([
-            supabase.from('agreements').select('*, agreement_promotions(promotions(*)), price_lists(*)').eq('id', agreementId).maybeSingle(),
+            supabase.from('agreements').select('*, agreement_promotions(promotions(*)), agreement_sales_conditions(sales_conditions(*)), price_lists(*)').eq('id', agreementId).maybeSingle(),
             supabase.from('app_settings').select('key, value')
         ]);
 
@@ -95,12 +95,15 @@ export async function getOrderPageData(agreementId: string): Promise<ActionRespo
 
         const { data: client } = await supabase.from('clients').select('*').eq('agreement_id', agreementId).maybeSingle();
 
+        const salesConditions = agreement.agreement_sales_conditions?.map((asc: any) => asc.sales_conditions).filter(Boolean) || [];
+
         return {
             agreement,
             client,
             productsByCategory,
             vatPercentage: settings.vat_percentage || 21,
-            logoUrl: settings.logo_url
+            logoUrl: settings.logo_url,
+            salesConditions
         };
     });
 }

@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Gift, Truck, Percent, CheckCircle, Home, Package } from "lucide-react";
 import { submitOrder } from "@/app/actions/user.actions";
 import { getPublicWhatsappNumber } from "@/app/admin/actions/settings.actions";
-import type { Promotion } from "@/types";
+import type { Promotion, SalesCondition } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
@@ -180,8 +180,9 @@ export function OrderSummary({
   pricesIncludeVat: boolean;
   promotions: Promotion[];
   vatPercentage: number;
+  salesConditions?: SalesCondition[];
 }) {
-  const { items, totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, clearCart, setAgreement, appliedPromotions, bonusInfo } = useCartStore();
+  const { items, totalItems, subtotal, subtotalWithDiscount, discountApplied, discountFromConditions, vatAmount, totalPrice, clearCart, setAgreement, appliedPromotions, appliedConditions, bonusInfo } = useCartStore();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [notes, setNotes] = useState("");
@@ -193,8 +194,8 @@ export function OrderSummary({
   }, []);
 
   useEffect(() => {
-    setAgreement(agreementId, pricesIncludeVat, promotions, vatPercentage);
-  }, [agreementId, pricesIncludeVat, promotions, vatPercentage, setAgreement]);
+    setAgreement(agreementId, pricesIncludeVat, promotions, vatPercentage, salesConditions || []);
+  }, [agreementId, pricesIncludeVat, promotions, vatPercentage, salesConditions, setAgreement]);
 
   const loadRepeatOrder = async () => {
     const params = new URLSearchParams(window.location.search);
@@ -351,8 +352,22 @@ export function OrderSummary({
               </div>
               {discountApplied > 0 && (
                 <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-destructive/70">Descuento aplicado</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-destructive/70">Descuento promociones</span>
                   <span className="font-black text-destructive">-{formatCurrency(discountApplied)}</span>
+                </div>
+              )}
+              {discountFromConditions > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-green-400/70">Descuento condiciones</span>
+                  <span className="font-black text-green-400">-{formatCurrency(discountFromConditions)}</span>
+                </div>
+              )}
+              {appliedConditions.length > 0 && (
+                <div className="flex flex-col gap-1 py-2 bg-green-500/10 rounded-lg px-3 border border-green-500/20">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-green-400/70">Condiciones aplicadas:</span>
+                  {appliedConditions.map((condition: any) => (
+                    <span key={condition.id} className="text-xs text-green-300/80">{condition.description}</span>
+                  ))}
                 </div>
               )}
               <div className="flex justify-between items-center">

@@ -3,10 +3,11 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { ProductWithPrice, Promotion, CartItem as CartItemType } from "@/types";
+import type { ProductWithPrice, Promotion, CartItem as CartItemType, SalesCondition } from "@/types";
 import {
   calculateCartTotals,
-  BonusInfo
+  BonusInfo,
+  AppliedSalesCondition
 } from "@/lib/logic/cart-calculations";
 
 type CartState = {
@@ -15,16 +16,19 @@ type CartState = {
   subtotal: number;
   subtotalWithDiscount: number;
   discountApplied: number;
+  discountFromConditions: number;
   vatAmount: number;
   totalPrice: number;
   isVolumePricingActive: boolean;
   promotions: Promotion[];
   appliedPromotions: Promotion[];
+  salesConditions: SalesCondition[];
+  appliedConditions: AppliedSalesCondition[];
   bonusInfo: BonusInfo;
   agreementId: string | null;
   pricesIncludeVat: boolean;
   vatPercentage: number;
-  setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[], vatPercentage: number) => void;
+  setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[], vatPercentage: number, salesConditions?: SalesCondition[]) => void;
   addItem: (product: ProductWithPrice, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -40,17 +44,20 @@ export const useCartStore = create<CartState>()(
       subtotal: 0,
       subtotalWithDiscount: 0,
       discountApplied: 0,
+      discountFromConditions: 0,
       vatAmount: 0,
       totalPrice: 0,
       isVolumePricingActive: false,
       promotions: [],
       appliedPromotions: [],
+      salesConditions: [],
+      appliedConditions: [],
       bonusInfo: {},
       agreementId: null,
       pricesIncludeVat: true,
       vatPercentage: 21,
 
-      setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[], vatPercentage: number) => {
+      setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[], vatPercentage: number, salesConditions: SalesCondition[] = []) => {
         const currentAgreementId = get().agreementId;
         if (id !== currentAgreementId) {
           set({
@@ -58,15 +65,18 @@ export const useCartStore = create<CartState>()(
             pricesIncludeVat: pricesIncludeVat,
             promotions: promotions,
             vatPercentage: vatPercentage,
+            salesConditions: salesConditions,
             items: [],
             totalItems: 0,
             subtotal: 0,
             subtotalWithDiscount: 0,
             discountApplied: 0,
+            discountFromConditions: 0,
             vatAmount: 0,
             totalPrice: 0,
             isVolumePricingActive: false,
             appliedPromotions: [],
+            appliedConditions: [],
             bonusInfo: {},
           });
         } else {
@@ -75,13 +85,14 @@ export const useCartStore = create<CartState>()(
             pricesIncludeVat: pricesIncludeVat,
             promotions: promotions,
             vatPercentage: vatPercentage,
-            ...calculateCartTotals(items, pricesIncludeVat, promotions, vatPercentage)
+            salesConditions: salesConditions,
+            ...calculateCartTotals(items, pricesIncludeVat, promotions, vatPercentage, salesConditions)
           });
         }
       },
 
       addItem: (product: ProductWithPrice, quantity: number = 1) => {
-        const { items, pricesIncludeVat, promotions, vatPercentage } = get();
+        const { items, pricesIncludeVat, promotions, vatPercentage, salesConditions } = get();
         const existingItem = items.find(
           (item) => item.product.id === product.id
         );
@@ -98,11 +109,11 @@ export const useCartStore = create<CartState>()(
         }
 
         updatedItems = updatedItems.filter(item => item.quantity > 0);
-        set({ items: updatedItems, ...calculateCartTotals(updatedItems, pricesIncludeVat, promotions, vatPercentage) });
+        set({ items: updatedItems, ...calculateCartTotals(updatedItems, pricesIncludeVat, promotions, vatPercentage, salesConditions) });
       },
 
       removeItem: (productId: string) => {
-        const { items, pricesIncludeVat, promotions, vatPercentage } = get();
+        const { items, pricesIncludeVat, promotions, vatPercentage, salesConditions } = get();
         const existingItem = items.find(item => item.product.id === productId);
 
         if (!existingItem) return;
@@ -118,11 +129,11 @@ export const useCartStore = create<CartState>()(
           updatedItems = items.filter(item => item.product.id !== productId);
         }
 
-        set({ items: updatedItems, ...calculateCartTotals(updatedItems, pricesIncludeVat, promotions, vatPercentage) });
+        set({ items: updatedItems, ...calculateCartTotals(updatedItems, pricesIncludeVat, promotions, vatPercentage, salesConditions) });
       },
 
       updateQuantity: (productId: string, quantity: number) => {
-        const { pricesIncludeVat, promotions, vatPercentage } = get();
+        const { pricesIncludeVat, promotions, vatPercentage, salesConditions } = get();
         let updatedItems;
         if (quantity <= 0) {
           updatedItems = get().items.filter(
@@ -133,7 +144,7 @@ export const useCartStore = create<CartState>()(
             item.product.id === productId ? { ...item, quantity } : item
           );
         }
-        set({ items: updatedItems, ...calculateCartTotals(updatedItems, pricesIncludeVat, promotions, vatPercentage) });
+        set({ items: updatedItems, ...calculateCartTotals(updatedItems, pricesIncludeVat, promotions, vatPercentage, salesConditions) });
       },
 
       getItemQuantity: (productId: string) => {
@@ -142,7 +153,7 @@ export const useCartStore = create<CartState>()(
       },
 
       clearCart: () => {
-        set({ items: [], totalItems: 0, subtotal: 0, subtotalWithDiscount: 0, discountApplied: 0, vatAmount: 0, totalPrice: 0, isVolumePricingActive: false, appliedPromotions: [], bonusInfo: {} });
+        set({ items: [], totalItems: 0, subtotal: 0, subtotalWithDiscount: 0, discountApplied: 0, discountFromConditions: 0, vatAmount: 0, totalPrice: 0, isVolumePricingActive: false, appliedPromotions: [], appliedConditions: [], bonusInfo: {} });
       },
     }),
     {
@@ -150,20 +161,23 @@ export const useCartStore = create<CartState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) =>
         Object.fromEntries(
-          Object.entries(state).filter(([key]) => !['promotions', 'appliedPromotions', 'bonusInfo'].includes(key))
+          Object.entries(state).filter(([key]) => !['promotions', 'appliedPromotions', 'bonusInfo', 'salesConditions', 'appliedConditions'].includes(key))
         ),
       onRehydrateStorage: () => (state, error) => {
         if (state) {
-          const { totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, isVolumePricingActive } = calculateCartTotals(state.items, state.pricesIncludeVat, [], state.vatPercentage);
+          const salesConditions = state.salesConditions || [];
+          const { totalItems, subtotal, subtotalWithDiscount, discountApplied, discountFromConditions, vatAmount, totalPrice, isVolumePricingActive, appliedConditions } = calculateCartTotals(state.items, state.pricesIncludeVat, [], state.vatPercentage, salesConditions);
           state.totalItems = totalItems;
           state.subtotal = subtotal;
           state.subtotalWithDiscount = subtotalWithDiscount;
           state.discountApplied = discountApplied;
+          state.discountFromConditions = discountFromConditions;
           state.vatAmount = vatAmount;
           state.totalPrice = totalPrice;
           state.isVolumePricingActive = isVolumePricingActive;
           state.promotions = [];
           state.appliedPromotions = [];
+          state.appliedConditions = appliedConditions;
           state.bonusInfo = {};
         }
       }
