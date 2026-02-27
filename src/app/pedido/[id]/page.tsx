@@ -28,9 +28,10 @@ const categoryTranslations: Record<string, string> = {
 export default async function OrderPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const { data, error } = await getOrderPageData(params.id);
+  const { id } = await params;
+  const { data, error } = await getOrderPageData(id);
 
   if (error || !data) {
     return (
