@@ -29,32 +29,50 @@ export default function PortalLayout({
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('/api/portal/client')
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error('Not authenticated');
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/portal/client', { 
+                    credentials: 'include' 
+                });
+                if (!response.ok) {
+                    router.push('/portal-cliente/login');
+                    return;
                 }
-                return res.json();
-            })
-            .then(data => {
+                const data = await response.json();
                 setClient(data.client);
-                setLoading(false);
-            })
-            .catch(() => {
+            } catch (error) {
+                console.error('Auth check failed:', error);
                 router.push('/portal-cliente/login');
-            });
+            } finally {
+                setLoading(false);
+            }
+        }
+        
+        checkAuth();
     }, [router]);
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-pulse">Cargando...</div>
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-muted-foreground">Cargando...</p>
+                </div>
             </div>
         );
     }
 
     if (!client) {
-        return null;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="text-center">
+                    <p className="mb-4">No autenticado</p>
+                    <Button asChild>
+                        <Link href="/portal-cliente/login">Ir al Login</Link>
+                    </Button>
+                </div>
+            </div>
+        );
     }
 
     const navItems = [
