@@ -76,9 +76,48 @@ export async function getOrderPageData(agreementId: string): Promise<ActionRespo
 
         if (itemsError) throw new Error("Error al cargar productos.");
 
+        let consumerPrices: Record<string, { price: number; volume_price: number | null }> = {};
+        
+        if (agreement.client_type === 'distribuidor') {
+            const { data: barberiaAgreements } = await supabase
+                .from('agreements')
+                .select('price_lists(id, name)')
+                .eq('client_type', 'barberia')
+                .limit(1);
+            
+            if (barberiaAgreements && barberiaAgreements.length > 0) {
+                const barberiaAgreement = barberiaAgreements[0] as any;
+                const priceListData = barberiaAgreement.price_lists;
+                const priceListId = Array.isArray(priceListData) ? priceListData[0]?.id : priceListData?.id;
+            
+                if (priceListId) {
+                    const { data: consumerItems } = await supabase
+                        .from('price_list_items')
+                        .select('price, volume_price, product_id')
+                        .eq('price_list_id', priceListId);
+                    
+                    if (consumerItems) {
+                        consumerItems.forEach((item: any) => {
+                            consumerPrices[item.product_id] = {
+                                price: item.price,
+                                volume_price: item.volume_price
+                            };
+                        });
+                    }
+                }
+            }
+        }
+
         const products = priceListItems.map((pli: any) => {
             const product = Array.isArray(pli.products) ? pli.products[0] : pli.products;
-            return { ...product, price: pli.price, volume_price: pli.volume_price };
+            const consumerPrice = consumerPrices[product.id];
+            return { 
+                ...product, 
+                price: pli.price, 
+                volume_price: pli.volume_price,
+                consumer_price: consumerPrice?.price || null,
+                consumer_volume_price: consumerPrice?.volume_price || null
+            };
         }).filter(p => !!p).sort((a, b) => a.name.localeCompare(b.name));
 
         const productsByCategory = products.reduce((acc, p) => {
@@ -95,6 +134,52 @@ export async function getOrderPageData(agreementId: string): Promise<ActionRespo
 
         const { data: client } = await supabase.from('clients').select('*').eq('agreement_id', agreementId).maybeSingle();
 
+        let productDurations: Record<string, number> = {};
+        
+        if (agreement.client_type === 'barberia' && client?.id) {
+            const { data: orderItems } = await supabase
+                .from('order_items')
+                .select(`
+                    quantity,
+                    created_at,
+                    products(id)
+                `)
+                .eq('client_id', client.id)
+                .order('created_at', { ascending: true });
+            
+            if (orderItems && orderItems.length > 0) {
+                const productPurchaseDates: Record<string, string[]> = {};
+                
+                orderItems.forEach((item: any) => {
+                    const productId = item.products?.id;
+                    if (productId) {
+                        if (!productPurchaseDates[productId]) {
+                            productPurchaseDates[productId] = [];
+                        }
+                        productPurchaseDates[productId].push(item.created_at);
+                    }
+                });
+                
+                Object.entries(productPurchaseDates).forEach(([productId, dates]) => {
+                    if (dates.length >= 2) {
+                        let totalDays = 0;
+                        let count = 0;
+                        for (let i = 1; i < dates.length; i++) {
+                            const prevDate = new Date(dates[i - 1]);
+                            const currDate = new Date(dates[i]);
+                            const diffTime = currDate.getTime() - prevDate.getTime();
+                            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+                            totalDays += diffDays;
+                            count++;
+                        }
+                        if (count > 0) {
+                            productDurations[productId] = Math.round(totalDays / count);
+                        }
+                    }
+                });
+            }
+        }
+
         const salesConditions = agreement.agreement_sales_conditions?.map((asc: any) => asc.sales_conditions).filter(Boolean) || [];
 
         return {
@@ -103,7 +188,10 @@ export async function getOrderPageData(agreementId: string): Promise<ActionRespo
             productsByCategory,
             vatPercentage: settings.vat_percentage || 21,
             logoUrl: settings.logo_url,
-            salesConditions
+            salesConditions,
+            showProfitEstimation: agreement.client_type === 'distribuidor',
+            showProductDuration: agreement.client_type === 'barberia',
+            productDurations
         };
     });
 }

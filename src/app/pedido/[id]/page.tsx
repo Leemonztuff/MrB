@@ -1,10 +1,11 @@
 
 import { getOrderPageData } from "@/app/actions/user.actions";
+import { getPublicNews } from "@/app/actions/news.actions";
 import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/app/logo";
 import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Package2 } from "lucide-react";
+import { Package2, Megaphone } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -13,9 +14,10 @@ import {
 } from "@/components/ui/accordion";
 import { OrderSummary } from "./_components/order-summary";
 import { MobileCartIndicator } from "./_components/mobile-cart-indicator";
+import { NewsCarousel } from "./_components/news-carousel";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
-import { AgreementPromotion, ProductWithPrice } from "@/types";
+import { AgreementPromotion, ProductWithPrice, NewsPost } from "@/types";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const categoryTranslations: Record<string, string> = {
@@ -33,7 +35,12 @@ export default async function OrderPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { data, error } = await getOrderPageData(id);
+  const [{ data, error }, newsResult] = await Promise.all([
+    getOrderPageData(id),
+    getPublicNews()
+  ]);
+
+  const news = newsResult.success ? (newsResult.data || []) : [];
 
   if (error || !data) {
     return (
@@ -49,7 +56,7 @@ export default async function OrderPage({
     );
   }
 
-  const { agreement, client, productsByCategory, vatPercentage, logoUrl, salesConditions = [] } = data;
+  const { agreement, client, productsByCategory, vatPercentage, logoUrl, salesConditions = [], showProfitEstimation = false, showProductDuration = false, productDurations = {} } = data;
   const categories = Object.keys(productsByCategory);
   const promotions = (agreement.agreement_promotions || []).map((ap: AgreementPromotion) => ap.promotions);
 
@@ -94,6 +101,16 @@ export default async function OrderPage({
             <p className="mt-2 text-xs uppercase font-bold tracking-widest text-muted-foreground/60 italic">Personaliza tu pedido con nuestra selección exclusiva.</p>
           </div>
 
+          {news.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-primary">
+                <Megaphone className="h-4 w-4" />
+                <p className="text-xs uppercase font-black tracking-widest">Novedades</p>
+              </div>
+              <NewsCarousel news={news} />
+            </div>
+          )}
+
           {categories.length > 0 ? (
             <Accordion type="multiple" defaultValue={categories} className="w-full space-y-6">
               {categories.map((category) => (
@@ -106,8 +123,15 @@ export default async function OrderPage({
                     </CardHeader>
                     <AccordionContent className="px-6 pb-6 pt-2">
                       <div className="flex flex-col gap-4">
-                        {productsByCategory[category].map((product: ProductWithPrice) => (
-                          <ProductCard key={product.id} product={product} promotions={promotions} />
+                        {productsByCategory[category].map((product: ProductWithPrice & { consumer_price?: number | null; consumer_volume_price?: number | null }) => (
+                          <ProductCard 
+                            key={product.id} 
+                            product={product} 
+                            promotions={promotions} 
+                            showProfitEstimation={showProfitEstimation}
+                            showProductDuration={showProductDuration}
+                            productDurations={productDurations}
+                          />
                         ))}
                       </div>
                     </AccordionContent>

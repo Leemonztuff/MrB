@@ -14,6 +14,7 @@ import { getImageUrl } from "@/lib/placeholder-images";
 import { useCartStore } from "@/hooks/use-cart-store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { TrendingUp, Clock } from "lucide-react";
 
 const PromoButton = ({ promo, onClick }: { promo: Promotion, onClick: (quantity: number) => void }) => {
   const buyQuantity = promo.rules.buy;
@@ -32,7 +33,24 @@ const PromoButton = ({ promo, onClick }: { promo: Promotion, onClick: (quantity:
   )
 }
 
-const ProductCardComponent = ({ product, promotions }: { product: ProductWithPrice, promotions: Promotion[] }) => {
+interface ProductWithConsumerPrice extends ProductWithPrice {
+  consumer_price?: number | null;
+  consumer_volume_price?: number | null;
+}
+
+const ProductCardComponent = ({ 
+  product, 
+  promotions,
+  showProfitEstimation = false,
+  showProductDuration = false,
+  productDurations = {}
+}: { 
+  product: ProductWithConsumerPrice, 
+  promotions: Promotion[],
+  showProfitEstimation?: boolean,
+  showProductDuration?: boolean,
+  productDurations?: Record<string, number>
+}) => {
   const { isVolumePricingActive, addItem } = useCartStore();
 
   const applicablePromos = useMemo(() => {
@@ -55,6 +73,12 @@ const ProductCardComponent = ({ product, promotions }: { product: ProductWithPri
   const formatCurrency = (num: number) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(num);
   }
+
+  const consumerPrice = product.consumer_price || null;
+  const profitPerUnit = consumerPrice && displayPrice ? consumerPrice - displayPrice : null;
+  const profitPercentage = profitPerUnit && displayPrice ? Math.round((profitPerUnit / displayPrice) * 100) : null;
+  
+  const productDuration = showProductDuration ? (productDurations[product.id] || null) : null;
 
   return (
     <Card className="flex flex-col sm:flex-row w-full overflow-hidden glass border-white/5 hover:bg-white/5 transition-all duration-300 group">
@@ -98,6 +122,18 @@ const ProductCardComponent = ({ product, promotions }: { product: ProductWithPri
                 <p className="text-xs font-bold text-muted-foreground/50 line-through">
                   {formatCurrency(product.price)}
                 </p>
+              )}
+              {showProfitEstimation && profitPerUnit && profitPerUnit > 0 && (
+                <div className="flex items-center gap-1 text-green-500" title={`Precio consumidor: ${formatCurrency(consumerPrice!)}`}>
+                  <TrendingUp className="h-3 w-3" />
+                  <span className="text-xs font-bold">+{formatCurrency(profitPerUnit)} ({profitPercentage}%)</span>
+                </div>
+              )}
+              {showProductDuration && productDuration && (
+                <div className="flex items-center gap-1 text-amber-500" title={`Basado en tu historial de compras`}>
+                  <Clock className="h-3 w-3" />
+                  <span className="text-xs font-bold">~{productDuration} días</span>
+                </div>
               )}
             </div>
 

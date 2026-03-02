@@ -190,3 +190,16 @@ export type PriceListItem = {
     volume_price: number | null;
     products: Product;
 };
+
+export type NewsPost = {
+    id: string;
+    title: string;
+    content: string;
+    image_url: string | null;
+    is_active: boolean;
+    display_order: number;
+    starts_at: string | null;
+    ends_at: string | null;
+    created_at: string;
+    updated_at: string;
+};
