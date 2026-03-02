@@ -96,11 +96,6 @@ export default async function OrderPage({
       <main className="container mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 items-start p-4 lg:p-12">
         {/* Columna Izquierda: Productos */}
         <div className="lg:col-span-2 space-y-8">
-          <div>
-            <h2 className="text-4xl font-black italic tracking-tighter text-foreground">Selección de Productos</h2>
-            <p className="mt-2 text-xs uppercase font-bold tracking-widest text-muted-foreground/60 italic">Personaliza tu pedido con nuestra selección exclusiva.</p>
-          </div>
-
           {news.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-primary">
@@ -110,6 +105,11 @@ export default async function OrderPage({
               <NewsCarousel news={news} />
             </div>
           )}
+
+          <div>
+            <h2 className="text-4xl font-black italic tracking-tighter text-foreground">Selección de Productos</h2>
+            <p className="mt-2 text-xs uppercase font-bold tracking-widest text-muted-foreground/60 italic">Personaliza tu pedido con nuestra selección exclusiva.</p>
+          </div>
 
           {categories.length > 0 ? (
             <Accordion type="multiple" defaultValue={categories} className="w-full space-y-6">

@@ -111,7 +111,7 @@ function LabelsPrintContent() {
     );
   }
 
-  const pageCount = Math.ceil(labels.length / 4) || 0;
+  const pageCount = Math.ceil(labels.length / 3) || 0;
 
   return (
     <div className={isPrinting ? "print-mode" : ""}>
@@ -166,7 +166,7 @@ function LabelsPrintContent() {
             </p>
             <div className="text-xs text-muted-foreground bg-muted p-3 rounded-lg">
               <div className="font-medium mb-1">Especificaciones:</div>
-              <div>• A4 Landscape • 4 rótulos por hoja • Con QR</div>
+              <div>• A4 Portrait • 3 rótulos por hoja • Con QR</div>
             </div>
           </div>
         </div>
@@ -189,7 +189,7 @@ function LabelsPrintContent() {
             width: 100%; 
           }
           @page { 
-            size: landscape; 
+            size: portrait; 
             margin: 3mm; 
           }
         }

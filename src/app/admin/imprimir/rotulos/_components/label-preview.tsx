@@ -24,7 +24,7 @@ interface LabelPreviewProps {
 }
 
 export function LabelPreview({ labels, baseUrl = 'http://localhost:9003' }: LabelPreviewProps) {
-  const labelsPerPage = 4;
+  const labelsPerPage = 3;
   const pages: LabelData[][] = [];
   
   for (let i = 0; i < labels.length; i += labelsPerPage) {
@@ -38,13 +38,13 @@ export function LabelPreview({ labels, baseUrl = 'http://localhost:9003' }: Labe
           key={pageIndex}
           className="bg-white shadow"
           style={{
-            width: '297mm',
-            height: '210mm',
-            padding: '3mm',
+            width: '210mm',
+            height: '297mm',
+            padding: '5mm',
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gridTemplateRows: '1fr 1fr',
-            gap: '2mm',
+            gridTemplateColumns: '1fr',
+            gridTemplateRows: 'repeat(3, 1fr)',
+            gap: '3mm',
             boxSizing: 'border-box',
             pageBreakAfter: 'always',
           }}
@@ -69,13 +69,13 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
     month: '2-digit',
   });
 
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=32x32&data=${encodeURIComponent(`${baseUrl}/api/pedido/confirmar/${label.id}`)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=48x48&data=${encodeURIComponent(`${baseUrl}/api/pedido/confirmar/${label.id}`)}`;
 
   return (
     <div 
       style={{
-        border: '1px solid #000',
-        borderRadius: '0',
+        border: '2px solid #000',
+        borderRadius: '4px',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -87,11 +87,11 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
         style={{
           backgroundColor: '#1a1a1a',
           color: '#E6D5A7',
-          padding: '2mm 3mm',
+          padding: '4mm 6mm',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          fontSize: '7pt',
+          fontSize: '10pt',
           fontWeight: 900,
         }}
       >
@@ -104,14 +104,14 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
         style={{
           flex: 1,
           display: 'flex',
-          padding: '2mm',
-          gap: '2mm',
+          padding: '5mm',
+          gap: '5mm',
         }}
       >
         {/* Info */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1mm', minWidth: 0 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2mm', minWidth: 0 }}>
           <div style={{ 
-            fontSize: '8pt', 
+            fontSize: '12pt', 
             fontWeight: 800, 
             textTransform: 'uppercase',
             color: '#000',
@@ -119,10 +119,10 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
             {(label.client_name_cache || 'CLIENTE').toUpperCase()}
           </div>
 
-          <div style={{ fontSize: '5pt', color: '#666' }}>
+          <div style={{ fontSize: '8pt', color: '#666' }}>
             <span style={{ fontWeight: 700 }}>DIRECCION:</span>
           </div>
-          <div style={{ fontSize: '5pt', fontWeight: 700, color: '#000' }}>
+          <div style={{ fontSize: '9pt', fontWeight: 700, color: '#000' }}>
             {label.clients?.address || 'SIN DATOS'}
           </div>
 
@@ -130,13 +130,13 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
             <div 
               style={{
                 backgroundColor: '#fffbeb',
-                padding: '1mm 2mm',
-                borderRadius: '1mm',
-                borderLeft: '2mm solid #f59e0b',
+                padding: '2mm 3mm',
+                borderRadius: '2mm',
+                borderLeft: '3mm solid #f59e0b',
                 marginTop: 'auto',
               }}
             >
-              <span style={{ fontSize: '5pt', fontWeight: 700, color: '#000' }}>
+              <span style={{ fontSize: '8pt', fontWeight: 700, color: '#000' }}>
                 {label.clients.delivery_window}
               </span>
             </div>
@@ -146,40 +146,40 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
             <div 
               style={{
                 backgroundColor: '#fef3c7',
-                padding: '1mm 2mm',
-                borderRadius: '1mm',
-                borderLeft: '2mm solid #f59e0b',
+                padding: '2mm 3mm',
+                borderRadius: '2mm',
+                borderLeft: '3mm solid #f59e0b',
               }}
             >
-              <span style={{ fontSize: '4pt', fontStyle: 'italic', color: '#000' }}>
-                {label.notes.length > 30 ? label.notes.substring(0, 27) + '...' : label.notes}
+              <span style={{ fontSize: '7pt', fontStyle: 'italic', color: '#000' }}>
+                {label.notes.length > 50 ? label.notes.substring(0, 47) + '...' : label.notes}
               </span>
             </div>
           )}
 
-          <div style={{ fontSize: '4pt', color: '#666', marginTop: 'auto' }}>
+          <div style={{ fontSize: '7pt', color: '#666', marginTop: 'auto' }}>
             CONTACTO: {label.clients?.phone || label.clients?.email || 'SIN DATOS'}
           </div>
         </div>
 
         {/* QR */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1mm' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2mm' }}>
           <Image
             src={qrUrl}
             alt="QR"
-            width={32}
-            height={32}
+            width={48}
+            height={48}
             unoptimized
-            style={{ width: '16mm', height: '16mm', border: '1px solid #000' }}
+            style={{ width: '24mm', height: '24mm', border: '1px solid #000' }}
           />
           <div 
             style={{
               backgroundColor: '#000',
               color: '#E6D5A7',
-              padding: '1mm 3mm',
-              fontSize: '5pt',
+              padding: '2mm 4mm',
+              fontSize: '8pt',
               fontWeight: 900,
-              borderRadius: '1mm',
+              borderRadius: '2mm',
             }}
           >
             {label.bundleIdx}/{label.totalBundles}
@@ -191,10 +191,10 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
       <div 
         style={{
           backgroundColor: '#f5f5f5',
-          padding: '1mm 3mm',
+          padding: '2mm 6mm',
           display: 'flex',
           justifyContent: 'flex-end',
-          fontSize: '4pt',
+          fontSize: '6pt',
           color: '#666',
         }}
       >
