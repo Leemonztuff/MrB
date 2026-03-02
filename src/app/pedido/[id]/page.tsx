@@ -1,11 +1,10 @@
 
 import { getOrderPageData } from "@/app/actions/user.actions";
-import { getPublicNews } from "@/app/actions/news.actions";
 import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/app/logo";
 import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Package2, Megaphone } from "lucide-react";
+import { Package2 } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -35,12 +34,8 @@ export default async function OrderPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [{ data, error }, newsResult] = await Promise.all([
-    getOrderPageData(id),
-    getPublicNews()
-  ]);
-
-  const news = newsResult.success ? (newsResult.data || []) : [];
+  const { data, error } = await getOrderPageData(id);
+  const news: any[] = [];
 
   if (error || !data) {
     return (
@@ -96,16 +91,6 @@ export default async function OrderPage({
       <main className="container mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 items-start p-4 lg:p-12">
         {/* Columna Izquierda: Productos */}
         <div className="lg:col-span-2 space-y-8">
-          {news.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-primary">
-                <Megaphone className="h-4 w-4" />
-                <p className="text-xs uppercase font-black tracking-widest">Novedades</p>
-              </div>
-              <NewsCarousel news={news} />
-            </div>
-          )}
-
           <div>
             <h2 className="text-4xl font-black italic tracking-tighter text-foreground">Selección de Productos</h2>
             <p className="mt-2 text-xs uppercase font-bold tracking-widest text-muted-foreground/60 italic">Personaliza tu pedido con nuestra selección exclusiva.</p>

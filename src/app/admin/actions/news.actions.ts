@@ -1,15 +1,17 @@
 "use server";
 
-import { getSupabaseClientWithAuth, handleAction } from "./_helpers";
+import { revalidatePath } from "next/cache";
+import { getSupabaseClientWithAuth } from "./_helpers";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { ActionResponse } from "@/types";
 import type { NewsPost } from "@/types";
 
 export async function getNews(): Promise<ActionResponse<NewsPost[]>> {
   try {
     const supabase = await getSupabaseClientWithAuth();
-    
+
     const now = new Date().toISOString();
-    
+
     const { data, error } = await supabase
       .from('news')
       .select('*')
@@ -33,7 +35,7 @@ export async function getNews(): Promise<ActionResponse<NewsPost[]>> {
 export async function getAllNews(): Promise<ActionResponse<NewsPost[]>> {
   try {
     const supabase = await getSupabaseClientWithAuth();
-    
+
     const { data, error } = await supabase
       .from('news')
       .select('*')
@@ -53,7 +55,7 @@ export async function getAllNews(): Promise<ActionResponse<NewsPost[]>> {
 export async function getNewsById(id: string): Promise<ActionResponse<NewsPost>> {
   try {
     const supabase = await getSupabaseClientWithAuth();
-    
+
     const { data, error } = await supabase
       .from('news')
       .select('*')
@@ -83,11 +85,17 @@ export async function createNews(
   }
 ): Promise<ActionResponse<NewsPost>> {
   try {
-    const supabase = await getSupabaseClientWithAuth();
-    
-    const { data, error } = await supabase
+    // Verify admin auth first
+    await getSupabaseClientWithAuth();
+
+    // Use service role client for write operations (RLS requires service_role)
+    if (!supabaseAdmin) {
+      return { success: false, error: { message: 'Supabase admin client no configurado.' } };
+    }
+
+    const { data, error } = await supabaseAdmin
       .from('news')
-      .insert(payload)
+      .insert(payload as any)
       .select()
       .single();
 
@@ -95,6 +103,7 @@ export async function createNews(
       console.error('Create news error:', error);
       return { success: false, error: { message: error.message } };
     }
+    revalidatePath('/admin/news');
     return { success: true, data };
   } catch (error: any) {
     console.error('Create news exception:', error);
@@ -115,11 +124,17 @@ export async function updateNews(
   }
 ): Promise<ActionResponse<NewsPost>> {
   try {
-    const supabase = await getSupabaseClientWithAuth();
-    
-    const { data, error } = await supabase
+    // Verify admin auth first
+    await getSupabaseClientWithAuth();
+
+    // Use service role client for write operations (RLS requires service_role)
+    if (!supabaseAdmin) {
+      return { success: false, error: { message: 'Supabase admin client no configurado.' } };
+    }
+
+    const { data, error } = await supabaseAdmin
       .from('news')
-      .update(payload)
+      .update(payload as any)
       .eq('id', id)
       .select()
       .single();
@@ -128,6 +143,7 @@ export async function updateNews(
       console.error('Update news error:', error);
       return { success: false, error: { message: error.message } };
     }
+    revalidatePath('/admin/news');
     return { success: true, data };
   } catch (error: any) {
     console.error('Update news exception:', error);
@@ -137,9 +153,15 @@ export async function updateNews(
 
 export async function deleteNews(id: string): Promise<ActionResponse<null>> {
   try {
-    const supabase = await getSupabaseClientWithAuth();
-    
-    const { error } = await supabase
+    // Verify admin auth first
+    await getSupabaseClientWithAuth();
+
+    // Use service role client for write operations (RLS requires service_role)
+    if (!supabaseAdmin) {
+      return { success: false, error: { message: 'Supabase admin client no configurado.' } };
+    }
+
+    const { error } = await supabaseAdmin
       .from('news')
       .delete()
       .eq('id', id);
@@ -148,6 +170,7 @@ export async function deleteNews(id: string): Promise<ActionResponse<null>> {
       console.error('Delete news error:', error);
       return { success: false, error: { message: error.message } };
     }
+    revalidatePath('/admin/news');
     return { success: true, data: null };
   } catch (error: any) {
     console.error('Delete news exception:', error);

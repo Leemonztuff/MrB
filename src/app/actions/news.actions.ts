@@ -19,14 +19,13 @@ export async function getPublicNews(): Promise<ActionResponse<NewsPost[]>> {
       .order('display_order', { ascending: false })
       .limit(3);
 
-    if (error) throw error;
+    if (error) {
+      console.error('News error:', error);
+      return { success: true, data: [] };
+    }
     return { success: true, data: data || [] };
   } catch (error) {
-    return {
-      success: false,
-      error: {
-        message: error instanceof Error ? error.message : "Error al cargar noticias",
-      },
-    };
+    console.error('News exception:', error);
+    return { success: true, data: [] };
   }
 }
