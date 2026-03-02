@@ -22,13 +22,13 @@ export async function generateLabelsPDF(
   baseUrl: string
 ): Promise<Buffer> {
   const doc = new jsPDF({
-    orientation: 'portrait',
+    orientation: 'landscape',
     unit: 'mm',
     format: 'a4',
   });
 
-  const pageWidth = 210;
-  const pageHeight = 297;
+  const pageWidth = 297;
+  const pageHeight = 210;
   const margin = 5;
   const labelWidth = (pageWidth - margin * 3) / 2;
   const labelHeight = (pageHeight - margin * 3) / 2;
@@ -42,7 +42,7 @@ export async function generateLabelsPDF(
 
   pages.forEach((pageLabels, pageIndex) => {
     if (pageIndex > 0) {
-      doc.addPage();
+      doc.addPage('landscape');
     }
 
     pageLabels.forEach((label, labelIndex) => {

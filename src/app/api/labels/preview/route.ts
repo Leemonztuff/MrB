@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateLabelsPDF } from '@/lib/pdf/label-generator';
 import { getOrdersBatch } from '@/app/admin/actions/orders.actions';
-import { getSettings } from '@/app/admin/actions/settings.actions';
 
 interface LabelData {
   id: string;
@@ -40,10 +38,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const settings = await getSettings();
-    const logoUrl = settings.logo_url ?? null;
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9003';
-
     const allLabels: LabelData[] = [];
     selections.forEach((sel: { id: string; bundles: number }) => {
       const order = orders.find((o: any) => o.id === sel.id);
@@ -69,18 +63,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const pdfBuffer = await generateLabelsPDF(allLabels, logoUrl, baseUrl);
-
-    return new NextResponse(pdfBuffer, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="rotulos-${new Date().toISOString().split('T')[0]}.pdf"`,
-      },
-    });
+    return NextResponse.json({ labels: allLabels });
   } catch (error) {
-    console.error('PDF Generation Error:', error);
+    console.error('Preview Error:', error);
     return NextResponse.json(
-      { error: 'Failed to generate PDF' },
+      { error: 'Failed to generate preview' },
       { status: 500 }
     );
   }
