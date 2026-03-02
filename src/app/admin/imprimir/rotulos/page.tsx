@@ -30,6 +30,85 @@ interface OrderData {
     } | null;
 }
 
+function LabelCard({ label, logoUrl, origin }: { label: OrderData; logoUrl: string | null; origin: string }) {
+    const shortId = label.id?.slice(-6).toUpperCase() || "N/A";
+    const date = new Date(label.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+    
+    return (
+        <div className="label-card">
+            <div className="label-header">
+                <div className="label-logo">
+                    {logoUrl ? (
+                        <Image 
+                            src={logoUrl} 
+                            alt="Logo" 
+                            width={80} 
+                            height={24}
+                            style={{ height: '24px', width: 'auto' }}
+                            unoptimized
+                        />
+                    ) : (
+                        <span className="logo-text">MR. BLONDE</span>
+                    )}
+                </div>
+                <div className="label-order-id">
+                    #{shortId}
+                </div>
+            </div>
+            
+            <div className="label-content">
+                <div className="label-main">
+                    <div className="client-name">
+                        {label.client_name_cache || "Cliente"}
+                    </div>
+                    
+                    <div className="address-row">
+                        <span className="address-icon">📍</span>
+                        <span className="address-text">
+                            {label.clients?.address || "Sin dirección"}
+                        </span>
+                    </div>
+                    
+                    {label.clients?.delivery_window && (
+                        <div className="delivery-row">
+                            <span className="delivery-icon">📅</span>
+                            <span className="delivery-text">{label.clients.delivery_window}</span>
+                        </div>
+                    )}
+                    
+                    {label.notes && (
+                        <div className="notes-row">
+                            <span className="notes-text">📝 {label.notes}</span>
+                        </div>
+                    )}
+                    
+                    <div className="contact-row">
+                        {label.clients?.phone || label.clients?.email || 'Sin contacto'}
+                    </div>
+                </div>
+                
+                <div className="label-qr">
+                    <Image
+                        className="qr-img"
+                        width={70}
+                        height={70}
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(`${origin}/api/pedido/confirmar/${label.id}`)}`}
+                        alt="QR"
+                        unoptimized
+                    />
+                    <div className="bundle-badge">
+                        {label.bundleIdx}/{label.totalBundles}
+                    </div>
+                </div>
+            </div>
+            
+            <div className="label-footer">
+                <span className="date">{date}</span>
+            </div>
+        </div>
+    );
+}
+
 function LabelsPrintContent() {
     const searchParams = useSearchParams();
     const [labels, setLabels] = useState<OrderData[]>([]);
@@ -109,8 +188,14 @@ function LabelsPrintContent() {
         );
     }
 
+    const labelsPerPage = 4;
+    const pages: OrderData[][] = [];
+    for (let i = 0; i < labels.length; i += labelsPerPage) {
+        pages.push(labels.slice(i, i + labelsPerPage));
+    }
+
     return (
-        <div className="print-wrapper">
+        <div className="Print-wrapper">
             <div className="no-print fixed top-4 right-4 flex gap-2 z-50">
                 <Button onClick={handlePrint} className="bg-primary hover:bg-primary/90">
                     <Printer className="w-4 h-4 mr-2" />
@@ -124,270 +209,213 @@ function LabelsPrintContent() {
 
             <style jsx global>{`
                 @media screen {
-                    body { background: #e5e5e5; padding: 20px; }
-                    .print-wrapper { max-width: 1000px; margin: 0 auto; }
+                    body { background: #f0f0f0; padding: 20px; }
+                    .print-wrapper { max-width: 210mm; margin: 0 auto; }
                     .print-container { 
                         background: white; 
                         box-shadow: 0 4px 20px rgba(0,0,0,0.15); 
-                        border-radius: 8px;
-                        overflow: hidden;
                     }
-                    .print-wrapper { position: relative; }
                 }
                 @media print {
-                    @page { size: A4; margin: 0; }
-                    body { background: white !important; margin: 0 !important; padding: 0 !important; }
-                    .print-container { 
-                        box-shadow: none !important; 
-                        width: 100% !important; 
-                        max-width: none !important;
-                        border-radius: 0 !important;
+                    @page { 
+                        size: A4; 
+                        margin: 5mm; 
                     }
+                    body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    .print-container { box-shadow: none !important; }
                     .no-print { display: none !important; }
                     .label-page { 
                         width: 100% !important; 
-                        height: auto !important;
-                        min-height: 297mm;
-                        padding: 15mm !important;
+                        height: 282mm !important;
                         page-break-after: always;
+                        display: grid !important;
+                        grid-template-columns: 1fr 1fr !important;
+                        grid-template-rows: 1fr 1fr !important;
+                        gap: 3mm !important;
+                        padding: 3mm !important;
                     }
-                    .label-card {
-                        break-inside: avoid;
-                        border: 2px solid #000 !important;
-                        margin-bottom: 10mm !important;
-                        border-radius: 0 !important;
+                    .label-page:last-child { page-break-after: auto; }
+                    .label-card { 
+                        break-inside: avoid; 
+                        border: 1px solid #000 !important;
                     }
                 }
+                
                 .label-page {
-                    padding: 15mm;
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    grid-template-rows: 1fr 1fr;
+                    gap: 3mm;
+                    padding: 3mm;
                     background: white;
                 }
+                
                 .label-card {
-                    border: 2px solid #000;
-                    border-radius: 8px;
+                    border: 1px solid #000;
+                    border-radius: 4px;
                     padding: 0;
-                    margin-bottom: 15px;
                     display: flex;
+                    flex-direction: column;
                     background: white;
+                    min-height: 0;
+                    overflow: hidden;
                 }
+                
                 .label-header {
-                    background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+                    background: #1a1a1a;
                     color: #E6D5A7;
-                    padding: 15px 20px;
+                    padding: 6px 8px;
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
+                    flex-shrink: 0;
                 }
+                
                 .label-logo {
-                    font-size: 28px;
+                    font-size: 10px;
                     font-weight: 900;
-                    letter-spacing: 2px;
+                    letter-spacing: 1px;
                 }
-                .label-order-info {
-                    text-align: right;
-                    font-size: 12px;
-                    opacity: 0.9;
+                
+                .logo-text {
+                    font-size: 9px;
+                    font-weight: 900;
+                    letter-spacing: 0.5px;
                 }
-                .label-body {
+                
+                .label-order-id {
+                    font-size: 10px;
+                    font-weight: 700;
+                }
+                
+                .label-content {
                     display: flex;
-                    padding: 0;
+                    flex: 1;
+                    min-height: 0;
+                    gap: 4px;
+                    padding: 6px;
                 }
+                
                 .label-main {
                     flex: 1;
-                    padding: 20px;
-                    border-right: 2px dashed #ccc;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 3px;
+                    min-width: 0;
                 }
-                .label-sidebar {
-                    width: 200px;
-                    padding: 15px;
+                
+                .client-name {
+                    font-size: 11px;
+                    font-weight: 800;
+                    color: #000;
+                    text-transform: uppercase;
+                    line-height: 1.2;
+                    word-break: break-word;
+                }
+                
+                .address-row, .delivery-row {
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 3px;
+                    font-size: 8px;
+                }
+                
+                .address-icon, .delivery-icon {
+                    font-size: 8px;
+                    flex-shrink: 0;
+                }
+                
+                .address-text {
+                    font-size: 9px;
+                    font-weight: 600;
+                    color: #000;
+                    line-height: 1.3;
+                    word-break: break-word;
+                }
+                
+                .delivery-text {
+                    font-size: 8px;
+                    font-weight: 600;
+                    color: #000;
+                }
+                
+                .notes-row {
+                    background: #fffbeb;
+                    padding: 3px 5px;
+                    border-radius: 2px;
+                    border-left: 2px solid #f59e0b;
+                    margin-top: auto;
+                }
+                
+                .notes-text {
+                    font-size: 7px;
+                    color: #000;
+                    font-style: italic;
+                    line-height: 1.3;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                }
+                
+                .contact-row {
+                    font-size: 7px;
+                    color: #666;
+                    margin-top: auto;
+                    padding-top: 3px;
+                    border-top: 1px dashed #ddd;
+                }
+                
+                .label-qr {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    background: #f9f9f9;
+                    gap: 2px;
+                    flex-shrink: 0;
                 }
-                .client-name {
-                    font-size: 24px;
-                    font-weight: 800;
-                    color: #000;
-                    margin-bottom: 8px;
-                    text-transform: uppercase;
-                }
-                .address-section {
-                    margin-bottom: 15px;
-                }
-                .address-label {
-                    font-size: 10px;
-                    font-weight: 700;
-                    color: #666;
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
-                    margin-bottom: 4px;
-                }
-                .address-value {
-                    font-size: 18px;
-                    font-weight: 600;
-                    color: #000;
-                }
-                .delivery-info {
-                    display: flex;
-                    gap: 20px;
-                    margin-bottom: 15px;
-                    padding: 10px;
-                    background: #fffbeb;
-                    border-radius: 6px;
-                    border-left: 4px solid #f59e0b;
-                }
-                .delivery-item {
-                    flex: 1;
-                }
-                .delivery-label {
-                    font-size: 10px;
-                    font-weight: 700;
-                    color: #92400e;
-                    text-transform: uppercase;
-                }
-                .delivery-value {
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: #000;
-                }
-                .notes-section {
-                    padding: 10px;
-                    background: #fef3c7;
-                    border-radius: 6px;
-                    border-left: 4px solid #f59e0b;
-                }
-                .notes-label {
-                    font-size: 10px;
-                    font-weight: 700;
-                    color: #92400e;
-                    text-transform: uppercase;
-                    margin-bottom: 4px;
-                }
-                .notes-value {
-                    font-size: 14px;
-                    color: #000;
-                    font-style: italic;
-                }
-                .qr-section {
-                    text-align: center;
-                    margin-bottom: 15px;
-                }
+                
                 .qr-img {
-                    width: 140px;
-                    height: 140px;
-                    border: 3px solid #000;
-                    border-radius: 8px;
+                    width: 55px;
+                    height: 55px;
+                    border: 1px solid #000;
+                    border-radius: 2px;
                 }
-                .qr-text {
-                    font-size: 10px;
-                    font-weight: 800;
-                    color: #000;
-                    text-transform: uppercase;
-                    margin-top: 8px;
-                    letter-spacing: 1px;
-                }
+                
                 .bundle-badge {
                     background: #000;
                     color: #E6D5A7;
-                    padding: 12px 20px;
-                    font-size: 18px;
+                    padding: 2px 8px;
+                    font-size: 10px;
                     font-weight: 900;
-                    width: 100%;
-                    text-align: center;
-                    border-radius: 6px;
+                    border-radius: 2px;
                     text-transform: uppercase;
-                    letter-spacing: 2px;
                 }
-                .contact-info {
-                    margin-top: 10px;
-                    padding-top: 10px;
-                    border-top: 1px solid #ddd;
-                    font-size: 12px;
+                
+                .label-footer {
+                    background: #f5f5f5;
+                    padding: 2px 8px;
+                    display: flex;
+                    justify-content: flex-end;
+                    flex-shrink: 0;
+                }
+                
+                .date {
+                    font-size: 7px;
                     color: #666;
-                }
-                .page-break { page-break-after: always; }
-                @media print {
-                    .page-break { page-break-after: always; }
                 }
             `}</style>
 
             <div className="print-container">
-                {labels.map((label, idx) => (
-                    <div key={`${label.id}-${idx}`} className={`label-card ${(idx + 1) % 3 === 0 ? 'page-break' : ''}`}>
-                        <div className="label-header">
-                            <div className="label-logo">
-                                {logoUrl ? (
-                                    <Image 
-                                        src={logoUrl} 
-                                        alt="Logo" 
-                                        width={120} 
-                                        height={40}
-                                        style={{ height: '40px', width: 'auto' }}
-                                        unoptimized
-                                    />
-                                ) : (
-                                    'MR. BLONDE'
-                                )}
-                            </div>
-                            <div className="label-order-info">
-                                <div>PEDIDO #{label.id?.slice(-8).toUpperCase()}</div>
-                                <div>{new Date(label.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
-                            </div>
-                        </div>
-                        
-                        <div className="label-body">
-                            <div className="label-main">
-                                <div className="client-name">
-                                    {label.client_name_cache || "Cliente"}
-                                </div>
-                                
-                                <div className="address-section">
-                                    <div className="address-label">Dirección de Entrega</div>
-                                    <div className="address-value">
-                                        {label.clients?.address || "Dirección no registrada"}
-                                    </div>
-                                </div>
-                                
-                                {label.clients?.delivery_window && (
-                                    <div className="delivery-info">
-                                        <div className="delivery-item">
-                                            <div className="delivery-label">Día de Entrega</div>
-                                            <div className="delivery-value">{label.clients.delivery_window}</div>
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                {label.notes && (
-                                    <div className="notes-section">
-                                        <div className="notes-label">Notas del Pedido</div>
-                                        <div className="notes-value">{label.notes}</div>
-                                    </div>
-                                )}
-                                
-                                <div className="contact-info">
-                                    <strong>Contacto:</strong> {label.clients?.phone || label.clients?.email || 'No disponible'}
-                                </div>
-                            </div>
-                            
-                            <div className="label-sidebar">
-                                <div className="qr-section">
-                                        <Image
-                                            className="qr-img"
-                                            width={140}
-                                            height={140}
-                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${origin}/api/pedido/confirmar/${label.id}`)}`}
-                                            alt="QR de Conformidad"
-                                            unoptimized
-                                        />
-                                    <div className="qr-text">ESCANEAR PARA CONFORMAR</div>
-                                </div>
-                                
-                                <div className="bundle-badge">
-                                    BULTO {label.bundleIdx} DE {label.totalBundles}
-                                </div>
-                            </div>
-                        </div>
+                {pages.map((pageLabels, pageIdx) => (
+                    <div key={pageIdx} className="label-page">
+                        {pageLabels.map((label, labelIdx) => (
+                            <LabelCard 
+                                key={`${label.id}-${labelIdx}`} 
+                                label={label} 
+                                logoUrl={logoUrl} 
+                                origin={origin} 
+                            />
+                        ))}
                     </div>
                 ))}
             </div>
