@@ -29,36 +29,31 @@ export async function generateLabelsPDF(
 
   const pageWidth = 297;
   const pageHeight = 210;
-  const margin = 5;
-  const labelWidth = (pageWidth - margin * 3) / 2;
-  const labelHeight = (pageHeight - margin * 3) / 2;
+  const margin = 3;
+  const gap = 2;
+  const cols = 2;
+  const rows = 2;
+  const labelWidth = (pageWidth - margin * 2 - gap * (cols - 1)) / cols;
+  const labelHeight = (pageHeight - margin * 2 - gap * (rows - 1)) / rows;
 
-  const labelsPerPage = 4;
-  const pages: LabelData[][] = [];
-  
-  for (let i = 0; i < labels.length; i += labelsPerPage) {
-    pages.push(labels.slice(i, i + labelsPerPage));
-  }
-
-  pages.forEach((pageLabels, pageIndex) => {
-    if (pageIndex > 0) {
+  for (let i = 0; i < labels.length; i++) {
+    if (i > 0 && i % 4 === 0) {
       doc.addPage('landscape');
     }
 
-    pageLabels.forEach((label, labelIndex) => {
-      const col = labelIndex % 2;
-      const row = Math.floor(labelIndex / 2);
-      const x = margin + col * (labelWidth + margin);
-      const y = margin + row * (labelHeight + margin);
+    const labelIndex = i % 4;
+    const col = labelIndex % cols;
+    const row = Math.floor(labelIndex / cols);
+    const x = margin + col * (labelWidth + gap);
+    const y = margin + row * (labelHeight + gap);
 
-      drawLabel(doc, label, x, y, labelWidth, labelHeight, baseUrl);
-    });
-  });
+    drawCompactLabel(doc, labels[i], x, y, labelWidth, labelHeight, baseUrl);
+  }
 
   return Buffer.from(doc.output('arraybuffer'));
 }
 
-function drawLabel(
+function drawCompactLabel(
   doc: jsPDF,
   label: LabelData,
   x: number,
@@ -71,107 +66,102 @@ function drawLabel(
   const date = new Date(label.created_at).toLocaleDateString('es-AR', {
     day: '2-digit',
     month: '2-digit',
-    year: 'numeric',
   });
 
   doc.setDrawColor(0);
-  doc.setLineWidth(0.5);
+  doc.setLineWidth(0.3);
   doc.rect(x, y, width, height);
 
-  const headerHeight = 12;
+  const headerH = 6;
   doc.setFillColor(26, 26, 26);
-  doc.rect(x, y, width, headerHeight, 'F');
+  doc.rect(x, y, width, headerH, 'F');
 
   doc.setTextColor(230, 213, 167);
-  doc.setFontSize(10);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
-  doc.text('MR. BLONDE', x + 4, y + 8);
+  doc.text('MR. BLONDE', x + 3, y + 4);
+  doc.text(`#${shortId}`, x + width - 3, y + 4, { align: 'right' });
 
-  doc.setFontSize(9);
-  doc.text(`#${shortId}`, x + width - 4, y + 8, { align: 'right' });
-
-  const contentPadding = 5;
-  const qrSize = 28;
-  const qrX = x + width - qrSize - contentPadding;
-  const qrY = y + headerHeight + 8;
+  const qrSize = 16;
+  const qrX = x + width - qrSize - 3;
+  const qrY = y + headerH + 2;
 
   try {
-    const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(`${baseUrl}/api/pedido/confirmar/${label.id}`)}`;
-    doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=32x32&data=${encodeURIComponent(`${baseUrl}/api/pedido/confirmar/${label.id}`)}`;
+    doc.addImage(qrUrl, 'PNG', qrX, qrY, qrSize, qrSize);
   } catch (e) {
-    doc.setFontSize(6);
+    doc.setFontSize(4);
     doc.setTextColor(100);
     doc.text('QR', qrX + qrSize/2, qrY + qrSize/2, { align: 'center' });
   }
 
-  const mainX = x + contentPadding;
-  const mainY = y + headerHeight + 6;
-  const mainWidth = width - qrSize - contentPadding * 2;
+  const contentX = x + 3;
+  const contentY = y + headerH + 2;
+  const contentW = width - qrSize - 9;
 
   doc.setTextColor(0);
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  const clientName = label.client_name_cache || 'Cliente';
-  doc.text(clientName.toUpperCase(), mainX, mainY, { maxWidth: mainWidth });
-
-  let textY = mainY + 8;
   doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  const clientName = (label.client_name_cache || 'CLIENTE').toUpperCase();
+  doc.text(clientName, contentX, contentY, { maxWidth: contentW });
+
+  let lineY = contentY + 5;
+  doc.setFontSize(5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(80);
-  doc.text('DIRECCIÓN:', mainX, textY);
+  doc.text('DIRECCION:', contentX, lineY);
   doc.setTextColor(0);
   doc.setFont('helvetica', 'bold');
-  const address = label.clients?.address || 'Sin dirección';
-  doc.text(address, mainX, textY + 4, { maxWidth: mainWidth });
+  const address = label.clients?.address || 'SIN DATOS';
+  doc.text(address, contentX, lineY + 3, { maxWidth: contentW });
 
-  textY += 14;
+  lineY += 10;
   if (label.clients?.delivery_window) {
     doc.setFillColor(255, 251, 235);
-    doc.rect(x + contentPadding, textY - 3, mainWidth, 8, 'F');
+    doc.rect(x + 3, lineY - 2, contentW, 5, 'F');
     doc.setDrawColor(245, 158, 11);
-    doc.setLineWidth(0.3);
-    doc.line(x + contentPadding, textY - 3, x + contentPadding, textY + 5);
-    
+    doc.setLineWidth(0.2);
+    doc.line(x + 3, lineY - 2, x + 3, lineY + 3);
     doc.setTextColor(0);
-    doc.setFontSize(7);
+    doc.setFontSize(5);
     doc.setFont('helvetica', 'bold');
-    doc.text(`📅 ${label.clients.delivery_window}`, mainX + 2, textY + 2);
-    textY += 10;
+    doc.text(label.clients.delivery_window, contentX + 1, lineY + 1);
+    lineY += 7;
   }
 
   if (label.notes) {
     doc.setFillColor(254, 243, 199);
-    doc.rect(x + contentPadding, textY - 3, mainWidth, 8, 'F');
+    doc.rect(x + 3, lineY - 2, contentW, 5, 'F');
     doc.setDrawColor(245, 158, 11);
-    doc.setLineWidth(0.3);
-    doc.line(x + contentPadding, textY - 3, x + contentPadding, textY + 5);
-    
+    doc.line(x + 3, lineY - 2, x + 3, lineY + 3);
     doc.setTextColor(0);
-    doc.setFontSize(6);
+    doc.setFontSize(4);
     doc.setFont('helvetica', 'italic');
-    const truncatedNotes = label.notes.length > 50 ? label.notes.substring(0, 47) + '...' : label.notes;
-    doc.text(`📝 ${truncatedNotes}`, mainX + 2, textY + 2, { maxWidth: mainWidth - 4 });
-    textY += 10;
+    const noteText = label.notes.length > 30 ? label.notes.substring(0, 27) + '...' : label.notes;
+    doc.text(noteText, contentX + 1, lineY + 1, { maxWidth: contentW - 2 });
+    lineY += 7;
   }
 
-  const contact = label.clients?.phone || label.clients?.email || 'Sin contacto';
+  const contact = label.clients?.phone || label.clients?.email || 'SIN CONTACTO';
   doc.setTextColor(100);
-  doc.setFontSize(6);
+  doc.setFontSize(4);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Contacto: ${contact}`, mainX, y + height - 8);
+  doc.text(`CONTACTO: ${contact}`, contentX, y + height - 2);
 
-  const badgeX = x + (width - 20) / 2;
-  const badgeY = qrY + qrSize + 4;
+  const badgeW = 12;
+  const badgeH = 5;
+  const badgeX = x + (width - badgeW) / 2;
+  const badgeY = qrY + qrSize + 1;
   doc.setFillColor(0, 0, 0);
-  doc.roundedRect(badgeX, badgeY, 20, 8, 1, 1, 'F');
+  doc.rect(badgeX, badgeY, badgeW, badgeH, 'F');
   doc.setTextColor(230, 213, 167);
-  doc.setFontSize(8);
+  doc.setFontSize(5);
   doc.setFont('helvetica', 'bold');
-  doc.text(`${label.bundleIdx}/${label.totalBundles}`, badgeX + 10, badgeY + 5.5, { align: 'center' });
+  doc.text(`${label.bundleIdx}/${label.totalBundles}`, badgeX + badgeW/2, badgeY + 3.5, { align: 'center' });
 
   doc.setFillColor(245, 245, 245);
-  doc.rect(x, y + height - 6, width, 6, 'F');
+  doc.rect(x, y + height - 3, width, 3, 'F');
   doc.setTextColor(100);
-  doc.setFontSize(6);
-  doc.text(date, x + width - 4, y + height - 2, { align: 'right' });
+  doc.setFontSize(4);
+  doc.text(date, x + width - 3, y + height - 1, { align: 'right' });
 }

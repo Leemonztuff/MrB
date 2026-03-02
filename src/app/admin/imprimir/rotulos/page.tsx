@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Loader2, Download, Eye, Printer } from "lucide-react";
+import { Loader2, Download, Eye, Printer, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LabelPreview } from "./_components/label-preview";
 
@@ -32,6 +32,7 @@ function LabelsPrintContent() {
   const [loading, setLoading] = useState(true);
   const [labels, setLabels] = useState<LabelData[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   useEffect(() => {
     const dataParam = searchParams.get("data");
@@ -95,88 +96,101 @@ function LabelsPrintContent() {
   };
 
   const handlePrint = () => {
-    window.print();
+    setIsPrinting(true);
+    setTimeout(() => {
+      window.print();
+      setIsPrinting(false);
+    }, 100);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white text-black">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <Loader2 className="h-8 w-8 animate-spin" />
-        <p className="ml-3 font-medium">Cargando...</p>
       </div>
     );
   }
 
+  const pageCount = Math.ceil(labels.length / 4) || 0;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
-      <div className="no-print bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div>
-          <h1 className="text-xl font-bold">Rótulos de Entrega</h1>
-          <p className="text-sm text-muted-foreground">
-            {labels.length} rótulos ({labels.length > 0 ? Math.ceil(labels.length / 4) : 0} páginas)
-          </p>
+    <div className={isPrinting ? "print-mode" : ""}>
+      {!isPrinting && (
+        <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold">Rótulos de Entrega</h1>
+            <p className="text-sm text-muted-foreground">
+              {labels.length} rótulos ({pageCount} {pageCount === 1 ? 'página' : 'páginas'})
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant={showPreview ? "default" : "outline"} 
+              onClick={() => setShowPreview(!showPreview)}
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              {showPreview ? "Ocultar" : "Vista Previa"}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handlePrint}
+              disabled={labels.length === 0}
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              Imprimir
+            </Button>
+            <Button 
+              onClick={handleDownloadPDF}
+              disabled={labels.length === 0}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              PDF
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant={showPreview ? "default" : "outline"} 
-            onClick={() => setShowPreview(!showPreview)}
-          >
-            <Eye className="mr-2 h-4 w-4" />
-            {showPreview ? "Ocultar Vista Previa" : "Vista Previa"}
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={handlePrint}
-            disabled={labels.length === 0}
-          >
-            <Printer className="mr-2 h-4 w-4" />
-            Imprimir
-          </Button>
-          <Button 
-            onClick={handleDownloadPDF}
-            disabled={labels.length === 0}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Descargar PDF
-          </Button>
-        </div>
-      </div>
+      )}
 
       {showPreview ? (
-        <div className="p-6">
+        <div className="p-4 bg-gray-100 min-h-screen">
           <LabelPreview labels={labels} />
         </div>
-      ) : (
+      ) : !isPrinting ? (
         <div className="p-8">
-          <div className="max-w-md mx-auto bg-white rounded-2xl shadow-2xl p-8 text-center">
-            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-              <Eye className="w-8 h-8 text-primary" />
+          <div className="max-w-md mx-auto bg-white rounded-xl shadow-sm p-6 text-center">
+            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Eye className="w-6 h-6 text-primary" />
             </div>
-            <h2 className="text-2xl font-bold mb-2">Vista Previa</h2>
-            <p className="text-muted-foreground mb-6">
-              Haz clic en "Vista Previa" para ver cómo quedarán los rótulos antes de imprimir o descargar el PDF.
+            <h2 className="text-lg font-semibold mb-2">Vista Previa</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Haz clic en "Vista Previa" para ver los rótulos antes de imprimir.
             </p>
-            <div className="bg-muted rounded-lg p-4 text-left">
-              <h3 className="font-semibold mb-2 text-sm">Especificaciones:</h3>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li>• Formato: A4 Landscape (apaisado)</li>
-                <li>• 4 rótulos por hoja (A6)</li>
-                <li>• Incluye código QR</li>
-                <li>• Optimizado para impresión</li>
-              </ul>
+            <div className="text-xs text-muted-foreground bg-muted p-3 rounded-lg">
+              <div className="font-medium mb-1">Especificaciones:</div>
+              <div>• A4 Landscape • 4 rótulos por hoja • Con QR</div>
             </div>
           </div>
+        </div>
+      ) : null}
+
+      {isPrinting && (
+        <div className="print-only">
+          <LabelPreview labels={labels} />
         </div>
       )}
 
       <style jsx global>{`
         @media print {
-          .no-print { display: none !important; }
-          body { background: white !important; }
-          .label-page { 
-            page-break-after: always; 
-            print-color-adjust: exact;
-            -webkit-print-color-adjust: exact;
+          body * { visibility: hidden; }
+          .print-only, .print-only * { visibility: visible; }
+          .print-only { 
+            position: absolute; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+          }
+          @page { 
+            size: landscape; 
+            margin: 3mm; 
           }
         }
       `}</style>

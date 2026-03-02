@@ -32,25 +32,25 @@ export function LabelPreview({ labels, baseUrl = 'http://localhost:9003' }: Labe
   }
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col gap-2 items-center">
       {pages.map((pageLabels, pageIndex) => (
         <div 
-          key={pageIndex} 
-          className="label-page bg-white shadow-lg"
+          key={pageIndex}
+          className="bg-white shadow"
           style={{
             width: '297mm',
-            minHeight: '210mm',
-            padding: '5mm',
+            height: '210mm',
+            padding: '3mm',
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
             gridTemplateRows: '1fr 1fr',
-            gap: '5mm',
-            margin: '0 auto',
+            gap: '2mm',
             boxSizing: 'border-box',
+            pageBreakAfter: 'always',
           }}
         >
           {pageLabels.map((label, labelIndex) => (
-            <LabelCard 
+            <CompactLabelCard 
               key={`${label.id}-${labelIndex}`} 
               label={label} 
               baseUrl={baseUrl}
@@ -62,22 +62,20 @@ export function LabelPreview({ labels, baseUrl = 'http://localhost:9003' }: Labe
   );
 }
 
-function LabelCard({ label, baseUrl }: { label: LabelData; baseUrl: string }) {
+function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: string }) {
   const shortId = label.id?.slice(-6).toUpperCase() || 'N/A';
   const date = new Date(label.created_at).toLocaleDateString('es-AR', {
     day: '2-digit',
     month: '2-digit',
-    year: 'numeric',
   });
 
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(`${baseUrl}/api/pedido/confirmar/${label.id}`)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=32x32&data=${encodeURIComponent(`${baseUrl}/api/pedido/confirmar/${label.id}`)}`;
 
   return (
     <div 
-      className="label-card"
       style={{
         border: '1px solid #000',
-        borderRadius: '4px',
+        borderRadius: '0',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -89,16 +87,16 @@ function LabelCard({ label, baseUrl }: { label: LabelData; baseUrl: string }) {
         style={{
           backgroundColor: '#1a1a1a',
           color: '#E6D5A7',
-          padding: '6mm 8mm',
+          padding: '2mm 3mm',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          fontSize: '7pt',
+          fontWeight: 900,
         }}
       >
-        <span style={{ fontSize: '10mm', fontWeight: 900, letterSpacing: '1mm' }}>
-          MR. BLONDE
-        </span>
-        <span style={{ fontSize: '9mm', fontWeight: 700 }}>#{shortId}</span>
+        <span>MR. BLONDE</span>
+        <span style={{ fontWeight: 700 }}>#{shortId}</span>
       </div>
 
       {/* Content */}
@@ -106,44 +104,39 @@ function LabelCard({ label, baseUrl }: { label: LabelData; baseUrl: string }) {
         style={{
           flex: 1,
           display: 'flex',
-          padding: '6mm',
-          gap: '4mm',
+          padding: '2mm',
+          gap: '2mm',
         }}
       >
-        {/* Main Info */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3mm', minWidth: 0 }}>
+        {/* Info */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1mm', minWidth: 0 }}>
           <div style={{ 
-            fontSize: '11mm', 
+            fontSize: '8pt', 
             fontWeight: 800, 
             textTransform: 'uppercase',
             color: '#000',
-            lineHeight: 1.2,
           }}>
-            {label.client_name_cache || 'Cliente'}
+            {(label.client_name_cache || 'CLIENTE').toUpperCase()}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '3mm', fontSize: '8mm' }}>
-            <span>📍</span>
-            <span style={{ fontSize: '9mm', fontWeight: 600, color: '#000' }}>
-              {label.clients?.address || 'Sin dirección'}
-            </span>
+          <div style={{ fontSize: '5pt', color: '#666' }}>
+            <span style={{ fontWeight: 700 }}>DIRECCION:</span>
+          </div>
+          <div style={{ fontSize: '5pt', fontWeight: 700, color: '#000' }}>
+            {label.clients?.address || 'SIN DATOS'}
           </div>
 
           {label.clients?.delivery_window && (
             <div 
               style={{
                 backgroundColor: '#fffbeb',
-                padding: '2mm 4mm',
-                borderRadius: '2mm',
+                padding: '1mm 2mm',
+                borderRadius: '1mm',
                 borderLeft: '2mm solid #f59e0b',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '2mm',
                 marginTop: 'auto',
               }}
             >
-              <span style={{ fontSize: '7mm' }}>📅</span>
-              <span style={{ fontSize: '8mm', fontWeight: 600, color: '#000' }}>
+              <span style={{ fontSize: '5pt', fontWeight: 700, color: '#000' }}>
                 {label.clients.delivery_window}
               </span>
             </div>
@@ -153,50 +146,40 @@ function LabelCard({ label, baseUrl }: { label: LabelData; baseUrl: string }) {
             <div 
               style={{
                 backgroundColor: '#fef3c7',
-                padding: '3mm 5mm',
-                borderRadius: '2mm',
+                padding: '1mm 2mm',
+                borderRadius: '1mm',
                 borderLeft: '2mm solid #f59e0b',
-                marginTop: 'auto',
               }}
             >
-              <span style={{ fontSize: '6mm', color: '#000', fontStyle: 'italic' }}>
-                📝 {label.notes.length > 50 ? label.notes.substring(0, 47) + '...' : label.notes}
+              <span style={{ fontSize: '4pt', fontStyle: 'italic', color: '#000' }}>
+                {label.notes.length > 30 ? label.notes.substring(0, 27) + '...' : label.notes}
               </span>
             </div>
           )}
 
-          <div 
-            style={{
-              fontSize: '6mm',
-              color: '#666',
-              marginTop: 'auto',
-              paddingTop: '3mm',
-              borderTop: '0.5mm dashed #ddd',
-            }}
-          >
-            Contacto: {label.clients?.phone || label.clients?.email || 'Sin contacto'}
+          <div style={{ fontSize: '4pt', color: '#666', marginTop: 'auto' }}>
+            CONTACTO: {label.clients?.phone || label.clients?.email || 'SIN DATOS'}
           </div>
         </div>
 
-        {/* QR Section */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2mm' }}>
+        {/* QR */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1mm' }}>
           <Image
             src={qrUrl}
-            alt="QR Code"
-            width={50}
-            height={50}
+            alt="QR"
+            width={32}
+            height={32}
             unoptimized
-            style={{ width: '50mm', height: '50mm', border: '1px solid #000', borderRadius: '2mm' }}
+            style={{ width: '16mm', height: '16mm', border: '1px solid #000' }}
           />
           <div 
             style={{
               backgroundColor: '#000',
               color: '#E6D5A7',
-              padding: '2mm 6mm',
-              fontSize: '9mm',
+              padding: '1mm 3mm',
+              fontSize: '5pt',
               fontWeight: 900,
-              borderRadius: '2mm',
-              textTransform: 'uppercase',
+              borderRadius: '1mm',
             }}
           >
             {label.bundleIdx}/{label.totalBundles}
@@ -208,12 +191,14 @@ function LabelCard({ label, baseUrl }: { label: LabelData; baseUrl: string }) {
       <div 
         style={{
           backgroundColor: '#f5f5f5',
-          padding: '2mm 8mm',
+          padding: '1mm 3mm',
           display: 'flex',
           justifyContent: 'flex-end',
+          fontSize: '4pt',
+          color: '#666',
         }}
       >
-        <span style={{ fontSize: '6mm', color: '#666' }}>{date}</span>
+        {date}
       </div>
     </div>
   );
