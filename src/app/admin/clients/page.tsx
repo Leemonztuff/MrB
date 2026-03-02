@@ -7,6 +7,7 @@ import { Users } from "lucide-react";
 import { ClientsTable } from "./_components/clients-table";
 import { CreateClientButton } from "./_components/create-client-button";
 import { SearchClients } from "./_components/search-clients";
+import { ImportClientsButton } from "./_components/import-clients-button";
 
 export default async function ClientsPage({
   searchParams,
@@ -40,6 +41,7 @@ export default async function ClientsPage({
       >
         <div className="flex items-center gap-2">
           <SearchClients />
+          <ImportClientsButton />
           <CreateClientButton />
         </div>
       </PageHeader>

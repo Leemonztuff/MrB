@@ -27,7 +27,7 @@ const sampleProducts = [
   { nombre: "Shampoo Volumen", descripcion: "Shampoo con volumen extra", categoria: "Shampoo & Conditioners", imagen: "" },
 ];
 
-export function ImportProductsDialog() {
+export function ImportProductsButton() {
   const [open, setOpen] = useState(false);
 
   const handleImport = async (data: ImportProductRow[]): Promise<ImportResult> => {
@@ -51,11 +51,9 @@ export function ImportProductsDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="h-8 gap-1">
-          <Upload className="h-3.5 w-3.5" />
-          <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-            Importar
-          </span>
+        <Button variant="outline" size="sm">
+          <Upload className="mr-2 h-4 w-4" />
+          Importar
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">

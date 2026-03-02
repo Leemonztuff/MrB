@@ -66,3 +66,51 @@ export async function upsertProduct(formData: FormData): Promise<ActionResponse<
 export async function deleteProduct(id: string): Promise<ActionResponse<null>> {
   return await deleteEntity("products", id, ["/admin/products", "/admin/pricelists"]);
 }
+
+export type ImportProductRow = {
+  nombre?: string;
+  descripcion?: string;
+  categoria?: string;
+  imagen?: string;
+};
+
+export async function importProducts(
+  data: ImportProductRow[]
+): Promise<ActionResponse<{ imported: number; errors: string[] }>> {
+  return handleAction(async () => {
+    const supabase = await getSupabaseClientWithAuth();
+    
+    const errors: string[] = [];
+    let imported = 0;
+
+    for (const row of data) {
+      try {
+        const productData = {
+          name: (row.nombre || "").trim(),
+          description: row.descripcion?.trim() || null,
+          category: row.categoria?.trim() || null,
+          image_url: row.imagen?.trim() || null,
+        };
+
+        if (!productData.name) {
+          errors.push(`Producto sin nombre, omitido`);
+          continue;
+        }
+
+        const { error: insertError } = await supabase
+          .from('products')
+          .insert(productData);
+
+        if (insertError) {
+          errors.push(`Error en "${productData.name}": ${insertError.message}`);
+        } else {
+          imported++;
+        }
+      } catch (err: any) {
+        errors.push(`Error procesando: ${err.message}`);
+      }
+    }
+
+    return { imported, errors };
+  }, ['/admin/products']);
+}

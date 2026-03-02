@@ -304,3 +304,68 @@ export async function rejectChange(changeId: string): Promise<ActionResponse<nul
     return null;
   }, ['/admin/clients']);
 }
+
+export type ImportClientRow = {
+  nombre?: string;
+  email?: string;
+  telefono?: string;
+  celular?: string;
+  cuit?: string;
+  direccion?: string;
+  localidad?: string;
+  provincia?: string;
+  contacto?: string;
+  instagram?: string;
+  categoria?: string;
+};
+
+export async function importClients(
+  data: ImportClientRow[]
+): Promise<ActionResponse<{ imported: number; errors: string[] }>> {
+  return handleAction(async () => {
+    const supabase = await getSupabaseClientWithAuth();
+    
+    const errors: string[] = [];
+    let imported = 0;
+
+    for (const row of data) {
+      try {
+        const clientData: any = {
+          contact_name: (row.nombre || row.nombre || "").toUpperCase(),
+          email: row.email?.toLowerCase().trim() || null,
+          phone: row.telefono?.trim() || null,
+          celular: row.celular?.trim() || null,
+          address: row.direccion?.trim() || null,
+          localidad: row.localidad?.trim() || null,
+          provincia: row.provincia?.trim() || null,
+          instagram: row.instagram?.trim() || null,
+          contact_dni: row.contacto?.trim() || null,
+          onboarding_token: crypto.randomUUID(),
+          status: 'pending_agreement',
+        };
+
+        if (row.cuit) {
+          const cleanCuit = row.cuit.replace(/[^0-9]/g, '');
+          if (cleanCuit.length >= 6) {
+            clientData.cuit = cleanCuit;
+            clientData.portal_token = cleanCuit.slice(0, 6);
+          }
+        }
+
+        const { error: insertError } = await supabase
+          .from('clients')
+          .insert(clientData);
+
+        if (insertError) {
+          errors.push(`Error en "${clientData.contact_name}": ${insertError.message}`);
+        } else {
+          imported++;
+        }
+      } catch (err: any) {
+        errors.push(`Error procesando "${row.nombre || row.nombre}": ${err.message}`);
+      }
+    }
+
+    return { imported, errors };
+  }, ['/admin/clients']);
+}

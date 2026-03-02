@@ -87,6 +87,13 @@ El proyecto está desarrollado con un enfoque en **simplicidad, logística profe
 - Componentes accesibles (shadcn/ui)
 - Tema claro/oscuro
 
+### 📥📤 Importación y Exportación de Datos
+- Importación masiva desde Excel (.xlsx) y CSV
+- Exportación a Excel y CSV
+- Plantillas descargables para cada tipo de dato
+- Validación de datos antes de importar
+- Reporte de errores detallado
+
 ---
 
 ## Arquitectura del Sistema
