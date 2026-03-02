@@ -1,6 +1,7 @@
 
 import type { Metadata } from 'next';
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/sonner"
+import { SkipLink } from "@/components/shared/skip-link"
 import './globals.css';
 import { cn } from '@/lib/utils';
 import localFont from 'next/font/local';
@@ -71,6 +72,7 @@ export default function RootLayout({
         )}
         suppressHydrationWarning={true}
       >
+        <SkipLink />
         <ThemeProvider>
           <ErrorBoundary>
             {children}

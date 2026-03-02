@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/shared/empty-state';
+import { ShoppingCart } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -91,12 +93,11 @@ export default function PortalOrdersPage() {
                     <h2 className="text-2xl font-bold">Mis Pedidos</h2>
                     <p className="text-muted-foreground">Historial de tus pedidos</p>
                 </div>
-                <Card>
-                    <CardContent className="py-12 text-center">
-                        <p className="text-muted-foreground mb-4">No tenés pedidos realizados</p>
-                        <p className="text-sm text-muted-foreground/60">Hacé tu primer pedido a través del enlace que te proporcionó el administrador</p>
-                    </CardContent>
-                </Card>
+                <EmptyState
+                    icon={ShoppingCart}
+                    title="No tienes pedidos todavía"
+                    description="Cuando realices tu primer pedido, aparecerá aquí."
+                />
             </div>
         );
     }

@@ -318,7 +318,14 @@ function LabelsPrintContent() {
                         <div className="label-header">
                             <div className="label-logo">
                                 {logoUrl ? (
-                                    <img src={logoUrl} alt="Logo" style={{ height: '40px' }} />
+                                    <Image 
+                                        src={logoUrl} 
+                                        alt="Logo" 
+                                        width={120} 
+                                        height={40}
+                                        style={{ height: '40px', width: 'auto' }}
+                                        unoptimized
+                                    />
                                 ) : (
                                     'MR. BLONDE'
                                 )}
@@ -365,12 +372,13 @@ function LabelsPrintContent() {
                             
                             <div className="label-sidebar">
                                 <div className="qr-section">
-                                        <img
+                                        <Image
                                             className="qr-img"
                                             width={140}
                                             height={140}
                                             src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${origin}/api/pedido/confirmar/${label.id}`)}`}
                                             alt="QR de Conformidad"
+                                            unoptimized
                                         />
                                     <div className="qr-text">ESCANEAR PARA CONFORMAR</div>
                                 </div>

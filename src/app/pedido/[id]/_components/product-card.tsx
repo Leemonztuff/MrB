@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import {
   Card,
   CardContent,
@@ -32,7 +32,7 @@ const PromoButton = ({ promo, onClick }: { promo: Promotion, onClick: (quantity:
   )
 }
 
-export function ProductCard({ product, promotions }: { product: ProductWithPrice, promotions: Promotion[] }) {
+const ProductCardComponent = ({ product, promotions }: { product: ProductWithPrice, promotions: Promotion[] }) => {
   const { isVolumePricingActive, addItem } = useCartStore();
 
   const applicablePromos = useMemo(() => {
@@ -119,3 +119,5 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
     </Card>
   );
 }
+
+export const ProductCard = memo(ProductCardComponent);

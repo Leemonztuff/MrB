@@ -1,6 +1,8 @@
 
 import { getOrders } from "@/app/admin/actions/orders.actions";
 import { PageHeader } from "@/components/shared/page-header";
+import { EmptyState } from "@/components/shared/empty-state";
+import { ShoppingCart } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
@@ -47,8 +49,12 @@ export default async function OrdersHistoryPage({
             <TableBody>
               {!orders || orders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-12 text-muted-foreground italic">
-                    No se encontraron pedidos.
+                  <TableCell colSpan={5}>
+                    <EmptyState
+                      icon={ShoppingCart}
+                      title="No hay pedidos todavía"
+                      description="Los pedidos aparecerán aquí cuando los clientes realicen su primer pedido."
+                    />
                   </TableCell>
                 </TableRow>
               ) : (

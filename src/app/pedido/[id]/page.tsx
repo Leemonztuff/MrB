@@ -2,8 +2,9 @@
 import { getOrderPageData } from "@/app/actions/user.actions";
 import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/app/logo";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertTriangle, Package2 } from "lucide-react";
+import { Card, CardHeader } from "@/components/ui/card";
+import { EmptyState } from "@/components/shared/empty-state";
+import { Package2 } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -115,17 +116,11 @@ export default async function OrderPage({
               ))}
             </Accordion>
           ) : (
-            <Card className="mt-6 flex flex-col items-center justify-center py-24 glass border-white/5 border-dashed">
-              <CardHeader className="text-center">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 mb-6 border border-white/10 shadow-xl">
-                  <Package2 className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle className="text-2xl font-black italic tracking-tighter uppercase">Catálogo Vacío</CardTitle>
-                <CardDescription className="text-[10px] uppercase font-bold tracking-widest opacity-60">
-                  Aún no se han asignado productos a este portal.
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            <EmptyState
+              icon={Package2}
+              title="Catálogo vacío"
+              description="No se han asignado productos a este portal."
+            />
           )}
         </div>
 

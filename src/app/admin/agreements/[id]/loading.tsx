@@ -6,11 +6,12 @@ export default function Loading() {
     <div className="container mx-auto py-6 space-y-6">
       <SkeletonPageHeader />
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <SkeletonCard />
+      <div className="grid gap-6 md:grid-cols-2">
         <SkeletonCard />
         <SkeletonCard />
       </div>
+
+      <SkeletonCard />
     </div>
   )
 }

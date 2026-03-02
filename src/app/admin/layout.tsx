@@ -187,7 +187,7 @@ export default async function AdminLayout({
             </Sheet>
           </div>
         </header>
-        <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 pb-24 sm:pb-4">
+        <main id="main-content" className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 pb-24 sm:pb-4">
           <Suspense fallback={<PageLoader />}>
             {children}
           </Suspense>
