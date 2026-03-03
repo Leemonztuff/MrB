@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/accordion";
 import { OrderSummary } from "./_components/order-summary";
 import { MobileCartIndicator } from "./_components/mobile-cart-indicator";
+import { ProductHighlighter } from "./_components/product-highlighter";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { AgreementPromotion, ProductWithPrice } from "@/types";
@@ -152,6 +153,7 @@ export default async function OrderPage({
         </div>
       </main>
       <MobileCartIndicator />
+      <ProductHighlighter />
     </div>
   );
 }

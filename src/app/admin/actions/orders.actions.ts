@@ -90,11 +90,32 @@ export async function getPublicOrderDetails(orderId: string): Promise<ActionResp
     });
 }
 
-export async function publicConfirmOrder(orderId: string): Promise<ActionResponse<null>> {
+export async function publicConfirmOrder(orderId: string, portalToken: string): Promise<ActionResponse<null>> {
     return handleAction(async () => {
         const supabase = await createClient();
-        const { error } = await supabase.from('orders').update({ status: 'entregado' }).eq('id', orderId);
-        if (error) throw error;
+
+        // 1. Verificar el token del cliente asociado al pedido
+        const { data: order, error: fetchError } = await supabase
+            .from('orders')
+            .select('client_id, clients(portal_token)')
+            .eq('id', orderId)
+            .single();
+
+        if (fetchError || !order) throw new Error("Pedido no encontrado");
+
+        const clientToken = (order.clients as any)?.portal_token;
+        if (!clientToken || clientToken !== portalToken) {
+            throw new Error("Token de portal inválido o no configurado");
+        }
+
+        // 2. Si el token es correcto, actualizar el estado
+        const { error: updateError } = await supabase
+            .from('orders')
+            .update({ status: 'entregado' })
+            .eq('id', orderId);
+
+        if (updateError) throw updateError;
+
         return null;
     }, ['/admin', '/admin/orders']);
 }

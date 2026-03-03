@@ -38,14 +38,14 @@ interface ProductWithConsumerPrice extends ProductWithPrice {
   consumer_volume_price?: number | null;
 }
 
-const ProductCardComponent = ({ 
-  product, 
+const ProductCardComponent = ({
+  product,
   promotions,
   showProfitEstimation = false,
   showProductDuration = false,
   productDurations = {}
-}: { 
-  product: ProductWithConsumerPrice, 
+}: {
+  product: ProductWithConsumerPrice,
   promotions: Promotion[],
   showProfitEstimation?: boolean,
   showProductDuration?: boolean,
@@ -77,11 +77,14 @@ const ProductCardComponent = ({
   const consumerPrice = product.consumer_price || null;
   const profitPerUnit = consumerPrice && displayPrice ? consumerPrice - displayPrice : null;
   const profitPercentage = profitPerUnit && displayPrice ? Math.round((profitPerUnit / displayPrice) * 100) : null;
-  
+
   const productDuration = showProductDuration ? (productDurations[product.id] || null) : null;
 
   return (
-    <Card className="flex flex-col sm:flex-row w-full overflow-hidden glass border-white/5 hover:bg-white/5 transition-all duration-300 group">
+    <Card
+      id={`product-${product.id}`}
+      className="flex flex-col sm:flex-row w-full overflow-hidden glass border-white/5 hover:bg-white/5 transition-all duration-300 group scroll-mt-24"
+    >
       <CardContent className="p-0 flex flex-col sm:flex-row items-center gap-4 p-4 w-full">
         <div className="relative aspect-square w-full sm:w-24 sm:h-24 flex-shrink-0">
           <Image

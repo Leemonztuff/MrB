@@ -3,21 +3,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { publicConfirmOrder } from "@/app/admin/actions/orders.actions";
 import { redirect } from "next/navigation";
 
-export async function GET(
+export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id } = await params;
+    const body = await request.json();
+    const token = body.token;
 
-    try {
-        // Ejecutar la confirmación (esto llamará a revalidatePath de forma segura)
-        await publicConfirmOrder(id);
-    } catch (error) {
-        console.error("Error en auto-confirmación vía API:", error);
-        // Continuamos a la página de todos modos para que el portal maneje el estado de error o ya confirmado
+    if (!token) {
+        return NextResponse.json({ error: "PIN requerido" }, { status: 400 });
     }
 
-    // Redirigir al portal de confirmación (que ahora solo mostrará el mensaje de éxito)
-    const origin = new URL(request.url).origin;
-    return NextResponse.redirect(`${origin}/pedido/confirmar/${id}`);
+    try {
+        const result = await publicConfirmOrder(id, token);
+        if (result.error) {
+            return NextResponse.json({ error: result.error.message }, { status: 401 });
+        }
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        console.error("Error en confirmación vía API:", error);
+        return NextResponse.json({ error: error.message || "Error interno" }, { status: 500 });
+    }
 }
