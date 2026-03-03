@@ -30,7 +30,7 @@ export async function getPublicNews(): Promise<ActionResponse<NewsPost[]>> {
       if (starts && starts > nowTime) return false;
       if (ends && ends < nowTime) return false;
       return true;
-    }).slice(0, 3);
+    });
 
     console.log(`Fetched ${data?.length} raw news, ${activeNews.length} active after filtering.`);
 

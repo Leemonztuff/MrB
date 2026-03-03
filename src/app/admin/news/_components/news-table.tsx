@@ -127,12 +127,40 @@ export default function NewsTable({ news }: NewsTableProps) {
               </TableCell>
               <TableCell className="font-medium">{item.title}</TableCell>
               <TableCell>
-                <Badge
-                  variant={item.is_active ? "default" : "secondary"}
-                  className={item.is_active ? "bg-green-500/20 text-green-500 hover:bg-green-500/30" : ""}
-                >
-                  {item.is_active ? "Activa" : "Inactiva"}
-                </Badge>
+                {(() => {
+                  const isExpired = item.ends_at && new Date(item.ends_at) < new Date();
+                  const isScheduled = item.starts_at && new Date(item.starts_at) > new Date();
+
+                  if (!item.is_active) {
+                    return (
+                      <Badge variant="secondary" className="bg-slate-500/10 text-slate-400 border-slate-500/20">
+                        Inactiva
+                      </Badge>
+                    );
+                  }
+
+                  if (isExpired) {
+                    return (
+                      <Badge variant="outline" className="text-destructive border-destructive/50 bg-destructive/5">
+                        Caducada
+                      </Badge>
+                    );
+                  }
+
+                  if (isScheduled) {
+                    return (
+                      <Badge variant="outline" className="text-yellow-500 border-yellow-500/50 bg-yellow-500/5">
+                        Programada
+                      </Badge>
+                    );
+                  }
+
+                  return (
+                    <Badge className="bg-green-500/10 text-green-500 border-green-500/20">
+                      Activa
+                    </Badge>
+                  );
+                })()}
               </TableCell>
               <TableCell>{item.display_order}</TableCell>
               <TableCell className="text-sm text-muted-foreground">
