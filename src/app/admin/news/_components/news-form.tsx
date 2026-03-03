@@ -1,5 +1,14 @@
 "use client";
 
+import { createClient } from "@/lib/supabase/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +25,7 @@ import type { NewsPost } from "@/types";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { RichEditor } from "./rich-editor";
@@ -31,6 +40,8 @@ export const newsSchema = z.object({
   display_order: z.number().int().min(0).default(0),
   starts_at: z.string().optional(),
   ends_at: z.string().optional(),
+  promotion_id: z.string().uuid().nullable().optional(),
+  target_client_type: z.enum(['barberia', 'distribuidor', 'especial']).nullable().optional(),
 });
 
 export type NewsFormValues = z.infer<typeof newsSchema>;
@@ -50,6 +61,16 @@ export function NewsForm({ news, onClose }: NewsFormProps) {
   );
   const { toast } = useToast();
   const router = useRouter();
+  const [promotions, setPromotions] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchPromos = async () => {
+      const supabase = createClient();
+      const { data } = await supabase.from('promotions').select('id, name').order('name');
+      if (data) setPromotions(data);
+    };
+    fetchPromos();
+  }, []);
 
   const {
     register,
@@ -67,6 +88,8 @@ export function NewsForm({ news, onClose }: NewsFormProps) {
       display_order: news?.display_order || 0,
       starts_at: news?.starts_at || "",
       ends_at: news?.ends_at || "",
+      promotion_id: news?.promotion_id || null,
+      target_client_type: news?.target_client_type || null,
     },
   });
 
@@ -195,6 +218,46 @@ export function NewsForm({ news, onClose }: NewsFormProps) {
               />
             </PopoverContent>
           </Popover>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Vincular Promoción (Opcional)</Label>
+          <Select
+            onValueChange={(val) => setValue("promotion_id", val === "none" ? null : val)}
+            defaultValue={watch("promotion_id") || "none"}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Sin promoción" />
+            </SelectTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" /> {/* Hack for some Shadcn versions, but usually SelectContent is used */}
+            <SelectContent>
+              <SelectItem value="none">Ninguna</SelectItem>
+              {promotions.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Tipo de Cliente Subvencionado</Label>
+          <Select
+            onValueChange={(val: any) => setValue("target_client_type", val === "all" ? null : val)}
+            defaultValue={watch("target_client_type") || "all"}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Todos los clientes" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los clientes</SelectItem>
+              <SelectItem value="barberia">Barbería</SelectItem>
+              <SelectItem value="distribuidor">Distribuidor</SelectItem>
+              <SelectItem value="especial">Especial</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-[10px] text-muted-foreground italic">Solo este tipo de cliente verá y recibirá la promo.</p>
         </div>
       </div>
 

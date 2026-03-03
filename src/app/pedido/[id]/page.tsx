@@ -30,11 +30,14 @@ const categoryTranslations: Record<string, string> = {
 
 export default async function OrderPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ newsId?: string, promoId?: string }>;
 }) {
   const { id } = await params;
-  const { data, error } = await getOrderPageData(id);
+  const { newsId, promoId } = await searchParams;
+  const { data, error } = await getOrderPageData(id, { newsId, promoId });
 
   if (error || !data) {
     return (

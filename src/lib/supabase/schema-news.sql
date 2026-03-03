@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS news (
     display_order INTEGER DEFAULT 0,
     starts_at TIMESTAMP WITH TIME ZONE,
     ends_at TIMESTAMP WITH TIME ZONE,
+    promotion_id UUID REFERENCES promotions(id),
+    target_client_type public.client_type,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

@@ -2,14 +2,26 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import type { NewsPost } from "@/types";
+import Link from "next/link";
 
 interface NewsCarouselProps {
   news: NewsPost[];
+}
+
+function NewsPromoButton({ newsId, promoId }: { newsId: string, promoId: string }) {
+  return (
+    <Button asChild size="sm" className="mt-4 bg-primary text-primary-foreground font-black uppercase tracking-tighter rounded-full px-6 hover:scale-105 transition-transform shadow-lg shadow-primary/20">
+      <Link href={`/portal/catalogo?newsId=${newsId}&promoId=${promoId}`}>
+        <Ticket className="h-4 w-4 mr-2" />
+        Ver Promoción
+      </Link>
+    </Button>
+  );
 }
 
 function RichContent({ content }: { content: string }) {
@@ -81,6 +93,9 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
             <h2 className="text-2xl font-black italic tracking-tight">{selectedNews?.title}</h2>
             <div className="mt-4">
               <RichContent content={selectedNews?.content || ""} />
+              {selectedNews?.promotion_id && (
+                <NewsPromoButton newsId={selectedNews.id} promoId={selectedNews.promotion_id} />
+              )}
             </div>
           </DialogContent>
         </Dialog>
@@ -119,6 +134,9 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
             <CardContent className="p-4 flex flex-col justify-center flex-1">
               <h3 className="font-black italic text-lg tracking-tight mb-1 uppercase group-hover:text-primary transition-colors">{currentItem.title}</h3>
               <RichContent content={currentItem.content} />
+              {currentItem.promotion_id && (
+                <NewsPromoButton newsId={currentItem.id} promoId={currentItem.promotion_id} />
+              )}
             </CardContent>
           </div>
         </Card>

@@ -56,16 +56,31 @@ export async function logout() {
     redirect('/login');
 }
 
-export async function getOrderPageData(agreementId: string): Promise<ActionResponse<any>> {
+export async function getOrderPageData(agreementId: string, options?: { newsId?: string, promoId?: string }): Promise<ActionResponse<any>> {
     return handleAction(async () => {
         const supabase = await createServerClient();
-        const [agreementResult, settingsResult] = await Promise.all([
+
+        const [agreementResult, settingsResult, newsPromoResult] = await Promise.all([
             supabase.from('agreements').select('*, agreement_promotions(promotions(*)), agreement_sales_conditions(sales_conditions(*)), price_lists(*)').eq('id', agreementId).maybeSingle(),
-            supabase.from('app_settings').select('key, value')
+            supabase.from('app_settings').select('key, value'),
+            options?.newsId ? supabase.from('news').select('promotion_id, target_client_type').eq('id', options.newsId).single() : Promise.resolve({ data: null, error: null })
         ]);
 
         const { data: agreement, error: agreementError } = agreementResult;
         if (agreementError || !agreement) throw new Error("Convenio inválido.");
+
+        let newsLinkedPromotion = null;
+        if (options?.newsId && newsPromoResult.data) {
+            const { promotion_id, target_client_type } = newsPromoResult.data;
+
+            // Validate client type if targeted
+            if (!target_client_type || target_client_type === agreement.client_type) {
+                if (promotion_id) {
+                    const { data: promo } = await supabase.from('promotions').select('*').eq('id', promotion_id).single();
+                    if (promo) newsLinkedPromotion = promo;
+                }
+            }
+        }
 
         if (!agreement.price_lists) throw new Error("Este convenio no tiene una lista de precios asignada.");
 
@@ -77,25 +92,25 @@ export async function getOrderPageData(agreementId: string): Promise<ActionRespo
         if (itemsError) throw new Error("Error al cargar productos.");
 
         let consumerPrices: Record<string, { price: number; volume_price: number | null }> = {};
-        
+
         if (agreement.client_type === 'distribuidor') {
             const { data: barberiaAgreements } = await supabase
                 .from('agreements')
                 .select('price_lists(id, name)')
                 .eq('client_type', 'barberia')
                 .limit(1);
-            
+
             if (barberiaAgreements && barberiaAgreements.length > 0) {
                 const barberiaAgreement = barberiaAgreements[0] as any;
                 const priceListData = barberiaAgreement.price_lists;
                 const priceListId = Array.isArray(priceListData) ? priceListData[0]?.id : priceListData?.id;
-            
+
                 if (priceListId) {
                     const { data: consumerItems } = await supabase
                         .from('price_list_items')
                         .select('price, volume_price, product_id')
                         .eq('price_list_id', priceListId);
-                    
+
                     if (consumerItems) {
                         consumerItems.forEach((item: any) => {
                             consumerPrices[item.product_id] = {
@@ -111,9 +126,9 @@ export async function getOrderPageData(agreementId: string): Promise<ActionRespo
         const products = priceListItems.map((pli: any) => {
             const product = Array.isArray(pli.products) ? pli.products[0] : pli.products;
             const consumerPrice = consumerPrices[product.id];
-            return { 
-                ...product, 
-                price: pli.price, 
+            return {
+                ...product,
+                price: pli.price,
                 volume_price: pli.volume_price,
                 consumer_price: consumerPrice?.price || null,
                 consumer_volume_price: consumerPrice?.volume_price || null
@@ -135,7 +150,7 @@ export async function getOrderPageData(agreementId: string): Promise<ActionRespo
         const { data: client } = await supabase.from('clients').select('*').eq('agreement_id', agreementId).maybeSingle();
 
         let productDurations: Record<string, number> = {};
-        
+
         if (agreement.client_type === 'barberia' && client?.id) {
             const { data: orderItems } = await supabase
                 .from('order_items')
@@ -146,10 +161,10 @@ export async function getOrderPageData(agreementId: string): Promise<ActionRespo
                 `)
                 .eq('client_id', client.id)
                 .order('created_at', { ascending: true });
-            
+
             if (orderItems && orderItems.length > 0) {
                 const productPurchaseDates: Record<string, string[]> = {};
-                
+
                 orderItems.forEach((item: any) => {
                     const productId = item.products?.id;
                     if (productId) {
@@ -159,7 +174,7 @@ export async function getOrderPageData(agreementId: string): Promise<ActionRespo
                         productPurchaseDates[productId].push(item.created_at);
                     }
                 });
-                
+
                 Object.entries(productPurchaseDates).forEach(([productId, dates]) => {
                     if (dates.length >= 2) {
                         let totalDays = 0;
@@ -178,6 +193,11 @@ export async function getOrderPageData(agreementId: string): Promise<ActionRespo
                     }
                 });
             }
+        }
+
+        const promotions = (agreement.agreement_promotions || []).map((ap: any) => ap.promotions);
+        if (newsLinkedPromotion) {
+            promotions.push(newsLinkedPromotion);
         }
 
         const salesConditions = agreement.agreement_sales_conditions?.map((asc: any) => asc.sales_conditions).filter(Boolean) || [];

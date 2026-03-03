@@ -200,6 +200,8 @@ export type NewsPost = {
     display_order: number;
     starts_at: string | null;
     ends_at: string | null;
+    promotion_id: string | null;
+    target_client_type: 'barberia' | 'distribuidor' | 'especial' | null;
     created_at: string;
     updated_at: string;
 };
