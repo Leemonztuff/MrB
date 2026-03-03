@@ -15,9 +15,10 @@ CREATE TABLE IF NOT EXISTS news (
 -- Enable RLS
 ALTER TABLE news ENABLE ROW LEVEL SECURITY;
 
--- Allow public read access to active news
-CREATE POLICY "Public can read active news" ON news
+-- Allow authenticated users (clients) and anon users to read active news
+CREATE POLICY "Anyone can read active news" ON news
     FOR SELECT
+    TO public, authenticated, anon
     USING (is_active = true AND (starts_at IS NULL OR starts_at <= NOW()) AND (ends_at IS NULL OR ends_at >= NOW()));
 
 -- Allow service role full access

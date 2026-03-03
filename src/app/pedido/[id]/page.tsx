@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/accordion";
 import { OrderSummary } from "./_components/order-summary";
 import { MobileCartIndicator } from "./_components/mobile-cart-indicator";
-import { NewsCarousel } from "./_components/news-carousel";
+import { NewsCarousel } from "@/components/shared/news-carousel";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { AgreementPromotion, ProductWithPrice, NewsPost } from "@/types";

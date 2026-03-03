@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Mail, MapPin, FileText, Calendar, ShoppingCart, ArrowRight, User as UserIcon } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { getPublicNews } from '@/app/actions/news.actions';
+import { NewsCarousel } from '@/components/shared/news-carousel';
+import { NewsPost } from '@/types';
 
 interface Client {
   id: string;
@@ -25,6 +28,7 @@ interface Client {
 export default function PortalPage() {
   const router = useRouter();
   const [client, setClient] = useState<Client | null>(null);
+  const [news, setNews] = useState<NewsPost[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,6 +48,11 @@ export default function PortalPage() {
         console.error('Auth error:', err);
         router.push('/portal-cliente/login');
       });
+
+    // Fetch news
+    getPublicNews().then(res => {
+      if (res.data) setNews(res.data);
+    });
   }, [router]);
 
   if (loading) {
@@ -81,6 +90,12 @@ export default function PortalPage() {
           </Badge>
         </div>
       </div>
+
+      {news && news.length > 0 && (
+        <div className="mb-6">
+          <NewsCarousel news={news} />
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {infoCards.map((card) => (
