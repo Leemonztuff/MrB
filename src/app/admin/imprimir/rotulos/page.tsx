@@ -44,7 +44,7 @@ function LabelsPrintContent() {
     const loadData = async () => {
       try {
         const selections: OrderSelection[] = JSON.parse(dataParam);
-        
+
         const response = await fetch('/api/labels/preview', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -71,7 +71,7 @@ function LabelsPrintContent() {
 
     try {
       const selections = JSON.parse(dataParam);
-      
+
       const response = await fetch('/api/labels', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -105,8 +105,8 @@ function LabelsPrintContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-muted/20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -114,59 +114,69 @@ function LabelsPrintContent() {
   const pageCount = Math.ceil(labels.length / 3) || 0;
 
   return (
-    <div className={isPrinting ? "print-mode" : ""}>
+    <div className={`min-h-screen bg-muted/20 ${isPrinting ? "print-mode" : ""}`}>
       {!isPrinting && (
-        <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold">Rótulos de Entrega</h1>
-            <p className="text-sm text-muted-foreground">
-              {labels.length} rótulos ({pageCount} {pageCount === 1 ? 'página' : 'páginas'})
-            </p>
+        <div className="sticky top-0 z-50 glass border-b border-white/10 px-6 py-4 flex flex-col md:flex-row gap-4 items-center justify-between shadow-xl">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center border border-primary/30">
+              <Printer className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl font-black italic uppercase tracking-tighter text-white">Rótulos de Entrega</h1>
+              <p className="text-sm text-muted-foreground font-medium">
+                {labels.length} rótulos listas para imprimir ({pageCount} {pageCount === 1 ? 'hoja' : 'hojas'} A4)
+              </p>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button 
-              variant={showPreview ? "default" : "outline"} 
+          <div className="flex gap-3">
+            <Button
+              variant={showPreview ? "default" : "outline"}
               onClick={() => setShowPreview(!showPreview)}
+              className="font-bold border-white/10"
             >
               <Eye className="mr-2 h-4 w-4" />
-              {showPreview ? "Ocultar" : "Vista Previa"}
+              {showPreview ? "Ocultar Previa" : "Ver en Pantalla"}
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={handlePrint}
-              disabled={labels.length === 0}
-            >
-              <Printer className="mr-2 h-4 w-4" />
-              Imprimir
-            </Button>
-            <Button 
+            <Button
               onClick={handleDownloadPDF}
               disabled={labels.length === 0}
+              variant="secondary"
+              className="font-bold bg-white text-black hover:bg-white/90"
             >
               <Download className="mr-2 h-4 w-4" />
-              PDF
+              Descargar PDF
+            </Button>
+            <Button
+              onClick={handlePrint}
+              disabled={labels.length === 0}
+              className="font-black italic uppercase tracking-wider bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              Imprimir Físico
             </Button>
           </div>
         </div>
       )}
 
       {showPreview ? (
-        <div className="p-4 bg-gray-100 min-h-screen">
+        <div className="w-full">
           <LabelPreview labels={labels} />
         </div>
       ) : !isPrinting ? (
-        <div className="p-8">
-          <div className="max-w-md mx-auto bg-white rounded-xl shadow-sm p-6 text-center">
-            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Eye className="w-6 h-6 text-primary" />
+        <div className="p-8 flex items-center justify-center min-h-[60vh]">
+          <div className="max-w-md w-full glass rounded-3xl border border-white/10 p-8 text-center animate-in fade-in zoom-in duration-500">
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-primary/20 shadow-inner">
+              <Printer className="w-10 h-10 text-primary" />
             </div>
-            <h2 className="text-lg font-semibold mb-2">Vista Previa</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Haz clic en "Vista Previa" para ver los rótulos antes de imprimir.
+            <h2 className="text-2xl font-black italic tracking-tighter text-white uppercase mb-3">Listo para Imprimir</h2>
+            <p className="text-base text-muted-foreground font-medium mb-6">
+              Haz clic en "Ver en Pantalla" para revisar la hoja o descarga directamente el PDF de alta resolución.
             </p>
-            <div className="text-xs text-muted-foreground bg-muted p-3 rounded-lg">
-              <div className="font-medium mb-1">Especificaciones:</div>
-              <div>• A4 Portrait • 3 rótulos por hoja • Con QR</div>
+            <div className="bg-black/50 p-4 rounded-xl border border-white/5 space-y-2">
+              <p className="text-[10px] uppercase font-black tracking-widest text-primary">Especificaciones Técnicas</p>
+              <p className="text-sm font-medium text-white/80">• Formato A4 Vertical (210x297mm)</p>
+              <p className="text-sm font-medium text-white/80">• 3 Rótulos completos por hoja</p>
+              <p className="text-sm font-medium text-white/80">• QR ultra-nítido para escaneo logístico</p>
             </div>
           </div>
         </div>
@@ -181,6 +191,7 @@ function LabelsPrintContent() {
       <style jsx global>{`
         @media print {
           body * { visibility: hidden; }
+          body { margin: 0 !important; padding: 0 !important; }
           .print-only, .print-only * { visibility: visible; }
           .print-only { 
             position: absolute; 
@@ -190,7 +201,7 @@ function LabelsPrintContent() {
           }
           @page { 
             size: portrait; 
-            margin: 3mm; 
+            margin: 0; /* CRITICAL FIX: The previous 3mm margin shrank 100% width causing overflow cut-offs */
           }
         }
       `}</style>

@@ -58,16 +58,16 @@ const THEME = {
   },
   spacing: {
     margin: 5,
-    padding: 8,
+    padding: 5,
     gap: 4,
-    headerHeight: 16,
+    headerHeight: 12,
     footerHeight: 8,
   },
   fonts: {
-    title: 18,
-    header: 14,
-    body: 12,
-    small: 9,
+    title: 16,
+    header: 13,
+    body: 11,
+    small: 8,
   }
 };
 
