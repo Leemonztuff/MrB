@@ -92,15 +92,16 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
       }}
     >
       {/* Header */}
+      {/* Header */}
       <div
         style={{
           backgroundColor: '#1a1a1a',
           color: '#E6D5A7',
-          padding: '4mm 6mm',
+          padding: '6mm 8mm',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          fontSize: '10pt',
+          fontSize: '14pt',
           fontWeight: 900,
         }}
       >
@@ -113,25 +114,26 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
         style={{
           flex: 1,
           display: 'flex',
-          padding: '5mm',
-          gap: '5mm',
+          padding: '8mm',
+          gap: '8mm',
         }}
       >
         {/* Info */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2mm', minWidth: 0 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3mm', minWidth: 0 }}>
           <div style={{
-            fontSize: '12pt',
+            fontSize: '16pt',
             fontWeight: 800,
             textTransform: 'uppercase',
             color: '#000',
+            lineHeight: 1.2,
           }}>
             {(label.client_name_cache || 'CLIENTE').toUpperCase()}
           </div>
 
-          <div style={{ fontSize: '8pt', color: '#666' }}>
+          <div style={{ fontSize: '10pt', color: '#666' }}>
             <span style={{ fontWeight: 700 }}>DIRECCION:</span>
           </div>
-          <div style={{ fontSize: '9pt', fontWeight: 700, color: '#000' }}>
+          <div style={{ fontSize: '12pt', fontWeight: 700, color: '#000', lineHeight: 1.3 }}>
             {label.clients?.address || 'SIN DATOS'}
           </div>
 
@@ -139,13 +141,13 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
             <div
               style={{
                 backgroundColor: '#fffbeb',
-                padding: '2mm 3mm',
+                padding: '3mm 4mm',
                 borderRadius: '2mm',
-                borderLeft: '3mm solid #f59e0b',
+                borderLeft: '4mm solid #f59e0b',
                 marginTop: 'auto',
               }}
             >
-              <span style={{ fontSize: '8pt', fontWeight: 700, color: '#000' }}>
+              <span style={{ fontSize: '11pt', fontWeight: 700, color: '#000' }}>
                 {label.clients.delivery_window}
               </span>
             </div>
@@ -155,38 +157,38 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
             <div
               style={{
                 backgroundColor: '#fef3c7',
-                padding: '2mm 3mm',
+                padding: '3mm 4mm',
                 borderRadius: '2mm',
-                borderLeft: '3mm solid #f59e0b',
+                borderLeft: '4mm solid #f59e0b',
               }}
             >
-              <span style={{ fontSize: '7pt', fontStyle: 'italic', color: '#000' }}>
+              <span style={{ fontSize: '10pt', fontStyle: 'italic', color: '#000' }}>
                 {label.notes.length > 50 ? label.notes.substring(0, 47) + '...' : label.notes}
               </span>
             </div>
           )}
 
-          <div style={{ fontSize: '7pt', color: '#666', marginTop: 'auto' }}>
+          <div style={{ fontSize: '9pt', color: '#666', marginTop: 'auto' }}>
             CONTACTO: {label.clients?.phone || label.clients?.email || 'SIN DATOS'}
           </div>
         </div>
 
         {/* QR */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2mm' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4mm' }}>
           <Image
             src={qrUrl}
             alt="QR"
             width={48}
             height={48}
             unoptimized
-            style={{ width: '24mm', height: '24mm', border: '1px solid #000' }}
+            style={{ width: '40mm', height: '40mm', border: '1.5px solid #000' }}
           />
           <div
             style={{
               backgroundColor: '#000',
               color: '#E6D5A7',
-              padding: '2mm 4mm',
-              fontSize: '8pt',
+              padding: '3mm 6mm',
+              fontSize: '12pt',
               fontWeight: 900,
               borderRadius: '2mm',
             }}

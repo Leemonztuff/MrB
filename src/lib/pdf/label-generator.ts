@@ -58,16 +58,16 @@ const THEME = {
   },
   spacing: {
     margin: 5,
-    padding: 6,
-    gap: 3,
-    headerHeight: 12,
-    footerHeight: 6,
+    padding: 8,
+    gap: 4,
+    headerHeight: 16,
+    footerHeight: 8,
   },
   fonts: {
-    title: 14,
-    header: 11,
-    body: 10,
-    small: 7,
+    title: 18,
+    header: 14,
+    body: 12,
+    small: 9,
   }
 };
 
@@ -164,7 +164,7 @@ async function formatLabelData(label: LabelData, baseUrl: string): Promise<Forma
  * Defining where components sit within the label.
  */
 function getLabelLayout(x: number, y: number, width: number, height: number): LabelLayout {
-  const qrSize = 35; // Requested: "mas grande"
+  const qrSize = 45; // Increased for better scanability
   return {
     x, y, width, height,
     contentX: x + THEME.spacing.padding,
@@ -193,8 +193,8 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   doc.setTextColor(...THEME.colors.headerText);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(THEME.fonts.header);
-  doc.text('MR. BLONDE', contentX, y + 7.5); // Adjusted for taller header
-  doc.text(`#${data.shortId}`, x + width - THEME.spacing.padding, y + 7.5, { align: 'right' });
+  doc.text('MR. BLONDE', contentX, y + 10); // Adjusted for taller header
+  doc.text(`#${data.shortId}`, x + width - THEME.spacing.padding, y + 10, { align: 'right' });
 
   // --- QR Code ---
   const qrX = x + width - qrSize - THEME.spacing.padding;
@@ -208,7 +208,7 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
 
   // Title (Client Name) - Stark and Large
   const clientLines = doc.splitTextToSize(data.clientName, contentWidth);
-  doc.text(clientLines, contentX, contentY + 2);
+  doc.text(clientLines, contentX, contentY + 4);
 
   let currentY = contentY + (clientLines.length * 7) + 2;
 
