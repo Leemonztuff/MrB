@@ -128,8 +128,16 @@ export function NewsForm({ news, onClose }: NewsFormProps) {
     }
   };
 
+  const onError = (errors: any) => {
+    toast({
+      title: "Revisar los datos",
+      description: "Por favor, completa correctamente los campos obligatorios.",
+      variant: "destructive",
+    });
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="title">Título</Label>
         <Input
@@ -285,7 +293,7 @@ export function NewsForm({ news, onClose }: NewsFormProps) {
         />
       </div>
 
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button type="submit" className="w-full font-bold uppercase tracking-widest" disabled={isPending}>
         {isPending ? "Guardando..." : news ? "Actualizar noticia" : "Crear noticia"}
       </Button>
     </form>

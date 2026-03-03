@@ -184,13 +184,26 @@ function CompactLabelCard({ label, qrDataUrl }: { label: LabelData; qrDataUrl?: 
             color: '#000',
             lineHeight: 1.1,
             marginBottom: '1mm',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
           }}>
             {(label.client_name_cache || 'CLIENTE').toUpperCase()}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1mm' }}>
             <span style={{ fontSize: '9pt', fontWeight: 900, color: '#000', opacity: 0.4, letterSpacing: '0.05em' }}>DIRECCION:</span>
-            <span style={{ fontSize: '12pt', fontWeight: 800, color: '#000', lineHeight: 1.2 }}>
+            <span style={{
+              fontSize: '12pt',
+              fontWeight: 800,
+              color: '#000',
+              lineHeight: 1.2,
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden'
+            }}>
               {label.clients?.address || 'SIN DATOS'}
             </span>
           </div>

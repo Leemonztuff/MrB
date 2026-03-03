@@ -106,6 +106,7 @@ export async function createNews(
       console.error('Create news error:', error);
       return { success: false, error: { message: error.message } };
     }
+    revalidatePath('/', 'layout'); // Invalidate public portal cache
     revalidatePath('/admin/news');
     return { success: true, data: data as NewsPost };
   } catch (error: any) {
@@ -145,6 +146,7 @@ export async function updateNews(
       console.error('Update news error:', error);
       return { success: false, error: { message: error.message } };
     }
+    revalidatePath('/', 'layout'); // Invalidate public portal cache
     revalidatePath('/admin/news');
     return { success: true, data: data as NewsPost };
   } catch (error: any) {
@@ -168,6 +170,7 @@ export async function deleteNews(id: string): Promise<ActionResponse<null>> {
       console.error('Delete news error:', error);
       return { success: false, error: { message: error.message } };
     }
+    revalidatePath('/', 'layout'); // Invalidate public portal cache
     revalidatePath('/admin/news');
     return { success: true, data: null };
   } catch (error: any) {

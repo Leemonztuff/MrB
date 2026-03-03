@@ -206,11 +206,14 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   doc.setFontSize(THEME.fonts.title);
   doc.setFont('helvetica', 'bold');
 
-  // Title (Client Name) - Stark and Large
-  const clientLines = doc.splitTextToSize(data.clientName, contentWidth);
-  doc.text(clientLines, contentX, contentY + 4);
+  // Title (Client Name) - Stark and Large, Max 2 lines
+  const rawClientLines = doc.splitTextToSize(data.clientName, contentWidth + 10);
+  const clientLines = rawClientLines.length > 2 ? rawClientLines.slice(0, 2) : rawClientLines;
+  if (rawClientLines.length > 2) clientLines[1] = clientLines[1].replace(/...$/, '...');
 
-  let currentY = contentY + (clientLines.length * 7) + 2;
+  doc.text(clientLines, contentX, contentY + 2);
+
+  let currentY = contentY + (clientLines.length * 7);
 
   // Address Section
   doc.setFontSize(THEME.fonts.small);
@@ -222,7 +225,12 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   doc.setFontSize(THEME.fonts.body);
   doc.setFont('helvetica', 'bold'); // Bold address for legibility
   doc.setTextColor(...THEME.colors.primaryText);
-  const addrLines = doc.splitTextToSize(data.address, contentWidth);
+
+  // Address - Max 3 lines
+  const rawAddrLines = doc.splitTextToSize(data.address, contentWidth + 10);
+  const addrLines = rawAddrLines.length > 3 ? rawAddrLines.slice(0, 3) : rawAddrLines;
+  if (rawAddrLines.length > 3) addrLines[2] = addrLines[2].replace(/...$/, '...');
+
   doc.text(addrLines, contentX, currentY);
 
   currentY += (addrLines.length * 5) + 6;
