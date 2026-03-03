@@ -137,8 +137,8 @@ async function formatLabelData(label: LabelData, baseUrl: string): Promise<Forma
   // Generate QR code locally as a DataURL (base64)
   // This is much more reliable than fetching from an external API in a server environment
   const qrDataUrl = await QRCode.toDataURL(confirmUrl, {
-    margin: 1,
-    width: 200, // Sufficient resolution for scanning
+    margin: 2,
+    width: 600, // Higher resolution for printing
     color: {
       dark: '#000000',
       light: '#ffffff',
