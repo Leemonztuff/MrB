@@ -201,7 +201,7 @@ export function OrderSummary({
   const loadRepeatOrder = async () => {
     const params = new URLSearchParams(window.location.search);
     const repeatOrderId = params.get('repeat_order');
-    
+
     if (!repeatOrderId) return;
 
     const checkAndLoad = () => {
@@ -215,6 +215,7 @@ export function OrderSummary({
         .then(res => res.json())
         .then(order => {
           if (order && order.order_items) {
+            state.clearCart(); // Clear existing cart first
             order.order_items.forEach((item: any) => {
               if (item.products && item.quantity) {
                 const productWithPrice = {
@@ -228,7 +229,7 @@ export function OrderSummary({
           }
         })
         .catch(err => console.error('Error loading repeat order:', err));
-      
+
       window.history.replaceState({}, '', window.location.pathname);
     };
 
