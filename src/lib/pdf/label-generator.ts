@@ -47,33 +47,34 @@ interface LabelLayout {
 
 const THEME = {
   colors: {
-    headerBg: [26, 26, 26] as [number, number, number],
-    headerText: [230, 213, 167] as [number, number, number],
+    headerBg: [0, 0, 0] as [number, number, number],
+    headerText: [255, 255, 255] as [number, number, number],
     primaryText: [0, 0, 0] as [number, number, number],
-    secondaryText: [80, 80, 80] as [number, number, number],
-    mutedText: [120, 120, 120] as [number, number, number],
-    accentBg: [255, 251, 235] as [number, number, number],
-    accentBorder: [245, 158, 11] as [number, number, number],
-    footerBg: [245, 245, 245] as [number, number, number],
+    secondaryText: [0, 0, 0] as [number, number, number],
+    mutedText: [60, 60, 60] as [number, number, number],
+    accentBg: [255, 255, 255] as [number, number, number],
+    accentBorder: [0, 0, 0] as [number, number, number],
+    footerBg: [255, 255, 255] as [number, number, number],
   },
   spacing: {
     margin: 5,
-    padding: 5,
+    padding: 6,
     gap: 3,
-    headerHeight: 10,
+    headerHeight: 12,
     footerHeight: 6,
   },
   fonts: {
-    title: 12,
-    header: 10,
-    body: 8,
-    small: 6,
+    title: 14,
+    header: 11,
+    body: 10,
+    small: 7,
   }
 };
 
 const DATE_FORMATTER = new Intl.DateTimeFormat('es-AR', {
   day: '2-digit',
   month: '2-digit',
+  year: 'numeric',
 });
 
 // --- Orchestration ---
@@ -134,7 +135,7 @@ async function formatLabelData(label: LabelData, baseUrl: string): Promise<Forma
   const confirmUrl = `${baseUrl}/api/pedido/confirmar/${label.id}`;
   const qrDataUrl = await QRCode.toDataURL(confirmUrl, {
     margin: 1,
-    width: 256,
+    width: 512,
     color: { dark: '#000000', light: '#ffffff' }
   });
 
@@ -157,7 +158,7 @@ async function formatLabelData(label: LabelData, baseUrl: string): Promise<Forma
  * Defining where components sit within the label.
  */
 function getLabelLayout(x: number, y: number, width: number, height: number): LabelLayout {
-  const qrSize = 26; // Professional scale
+  const qrSize = 35; // Requested: "mas grande"
   return {
     x, y, width, height,
     contentX: x + THEME.spacing.padding,
@@ -176,8 +177,8 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
 
   // --- Outer Border ---
   doc.setDrawColor(0);
-  doc.setLineWidth(0.5);
-  doc.roundedRect(x, y, width, height, 2, 2);
+  doc.setLineWidth(0.6); // Slightly thicker for B&W clarity
+  doc.roundedRect(x, y, width, height, 1, 1);
 
   // --- Header ---
   doc.setFillColor(...THEME.colors.headerBg);
@@ -186,8 +187,8 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   doc.setTextColor(...THEME.colors.headerText);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(THEME.fonts.header);
-  doc.text('MR. BLONDE', contentX, y + 6.5);
-  doc.text(`#${data.shortId}`, x + width - THEME.spacing.padding, y + 6.5, { align: 'right' });
+  doc.text('MR. BLONDE', contentX, y + 7.5); // Adjusted for taller header
+  doc.text(`#${data.shortId}`, x + width - THEME.spacing.padding, y + 7.5, { align: 'right' });
 
   // --- QR Code ---
   const qrX = x + width - qrSize - THEME.spacing.padding;
@@ -199,83 +200,83 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   doc.setFontSize(THEME.fonts.title);
   doc.setFont('helvetica', 'bold');
 
-  // Title (Client Name)
+  // Title (Client Name) - Stark and Large
   const clientLines = doc.splitTextToSize(data.clientName, contentWidth);
-  doc.text(clientLines, contentX, contentY);
+  doc.text(clientLines, contentX, contentY + 2);
 
-  let currentY = contentY + (clientLines.length * 6);
+  let currentY = contentY + (clientLines.length * 7) + 2;
 
-  // Address
-  doc.setFontSize(THEME.fonts.body);
-  doc.setFont('helvetica', 'normal');
+  // Address Section
+  doc.setFontSize(THEME.fonts.small);
+  doc.setFont('helvetica', 'bold');
   doc.setTextColor(...THEME.colors.secondaryText);
   doc.text('DIRECCION:', contentX, currentY);
 
-  currentY += 4;
+  currentY += 4.5;
+  doc.setFontSize(THEME.fonts.body);
+  doc.setFont('helvetica', 'bold'); // Bold address for legibility
   doc.setTextColor(...THEME.colors.primaryText);
-  doc.setFont('helvetica', 'bold');
   const addrLines = doc.splitTextToSize(data.address, contentWidth);
   doc.text(addrLines, contentX, currentY);
 
-  currentY += (addrLines.length * 4) + 4;
+  currentY += (addrLines.length * 5) + 6;
 
-  // Delivery Window Badge
+  // Delivery Window & Notes - High Contrast B&W
   if (data.deliveryWindow) {
-    drawBadge(doc, contentX, currentY, contentWidth, data.deliveryWindow, 'accent');
-    currentY += 10;
+    drawHighContrastBadge(doc, contentX, currentY, contentWidth, `HORARIO: ${data.deliveryWindow}`);
+    currentY += 12;
   }
 
-  // Notes Badge
   if (data.notes) {
-    drawBadge(doc, contentX, currentY, contentWidth, data.notes, 'accent', true);
-    currentY += 10;
+    drawHighContrastBadge(doc, contentX, currentY, contentWidth, `NOTAS: ${data.notes}`, true);
+    currentY += 12;
   }
 
   // --- Footer Decoration ---
-  doc.setFillColor(...THEME.colors.footerBg);
-  doc.rect(x, y + height - THEME.spacing.footerHeight, width, THEME.spacing.footerHeight, 'F');
+  doc.setLineWidth(0.3);
+  doc.setDrawColor(200);
+  doc.line(x + THEME.spacing.padding, y + height - 10, x + width - THEME.spacing.padding, y + height - 10);
 
   // Contact Info
   doc.setTextColor(...THEME.colors.mutedText);
   doc.setFontSize(THEME.fonts.small);
   doc.setFont('helvetica', 'normal');
-  doc.text(data.contact, contentX, y + height - 8);
+  doc.text(data.contact, contentX, y + height - 6);
 
   // Date
-  doc.text(data.dateText, x + width - THEME.spacing.padding, y + height - 2, { align: 'right' });
+  doc.text(data.dateText, x + width - THEME.spacing.padding, y + height - 6, { align: 'right' });
 
   // --- Bundle ID Badge ---
-  const badgeW = 18;
-  const badgeH = 8;
+  const badgeW = 22; // Larger
+  const badgeH = 10; // Larger
   const badgeX = qrX + (qrSize - badgeW) / 2;
-  const badgeY = qrY + qrSize + 4;
+  const badgeY = qrY + qrSize + 5;
 
   doc.setFillColor(0, 0, 0);
-  doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1, 1, 'F');
-  doc.setTextColor(...THEME.colors.headerText);
-  doc.setFontSize(9);
+  doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 0.5, 0.5, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(12); // Larger
   doc.setFont('helvetica', 'bold');
-  doc.text(data.bundleText, badgeX + badgeW / 2, badgeY + 5.5, { align: 'center' });
+  doc.text(data.bundleText, badgeX + badgeW / 2, badgeY + 6.5, { align: 'center' });
 }
 
-// --- Helpers ---
-
-function drawBadge(doc: jsPDF, x: number, y: number, w: number, text: string, type: 'accent', isItalic = false) {
-  const padding = 2;
-  const fontSize = isItalic ? THEME.fonts.body - 1 : THEME.fonts.body;
-  doc.setFontSize(fontSize);
+function drawHighContrastBadge(doc: jsPDF, x: number, y: number, w: number, text: string, isItalic = false) {
+  const padding = 3;
+  doc.setFontSize(THEME.fonts.body - 1);
   doc.setFont('helvetica', isItalic ? 'italic' : 'bold');
 
-  const lines = doc.splitTextToSize(text, w - (padding * 2));
-  const h = (lines.length * 4) + 2;
+  const lines = doc.splitTextToSize(text, w - (padding * 2) - 4);
+  const h = (lines.length * 4.5) + 4;
 
-  doc.setFillColor(...THEME.colors.accentBg);
-  doc.roundedRect(x, y - 3, w, h, 1, 1, 'F');
+  // Stark Border instead of color fill
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.2);
+  doc.rect(x, y - 4, w, h);
 
-  doc.setDrawColor(...THEME.colors.accentBorder);
-  doc.setLineWidth(0.3);
-  doc.line(x, y - 3, x, y - 3 + h);
+  // Thick left indicator bar
+  doc.setFillColor(0, 0, 0);
+  doc.rect(x, y - 4, 1.5, h, 'F');
 
   doc.setTextColor(...THEME.colors.primaryText);
-  doc.text(lines, x + padding, y + 1);
+  doc.text(lines, x + padding + 1, y - 4 + padding + 2);
 }

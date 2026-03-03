@@ -1,5 +1,6 @@
 
 import { getOrderPageData } from "@/app/actions/user.actions";
+import { getPublicNews } from "@/app/actions/news.actions";
 import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/app/logo";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -34,8 +35,10 @@ export default async function OrderPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { data, error } = await getOrderPageData(id);
-  const news: any[] = [];
+  const [{ data, error }, { data: news = [] }] = await Promise.all([
+    getOrderPageData(id),
+    getPublicNews()
+  ]);
 
   if (error || !data) {
     return (
@@ -81,9 +84,9 @@ export default async function OrderPage({
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <div className="text-right">
-            <p className="text-sm font-black italic tracking-tighter text-foreground">{client?.contact_name ?? "Cliente"}</p>
-            <p className="text-[10px] uppercase font-black tracking-widest text-primary/70">{agreement.agreement_name}</p>
-          </div>
+              <p className="text-sm font-black italic tracking-tighter text-foreground">{client?.contact_name ?? "Cliente"}</p>
+              <p className="text-[10px] uppercase font-black tracking-widest text-primary/70">{agreement.agreement_name}</p>
+            </div>
           </div>
         </div>
       </header>
@@ -95,6 +98,12 @@ export default async function OrderPage({
             <h2 className="text-4xl font-black italic tracking-tighter text-foreground">Selección de Productos</h2>
             <p className="mt-2 text-xs uppercase font-bold tracking-widest text-muted-foreground/60 italic">Personaliza tu pedido con nuestra selección exclusiva.</p>
           </div>
+
+          {news && news.length > 0 && (
+            <div className="mb-4">
+              <NewsCarousel news={news} />
+            </div>
+          )}
 
           {categories.length > 0 ? (
             <Accordion type="multiple" defaultValue={categories} className="w-full space-y-6">
@@ -109,10 +118,10 @@ export default async function OrderPage({
                     <AccordionContent className="px-6 pb-6 pt-2">
                       <div className="flex flex-col gap-4">
                         {productsByCategory[category].map((product: ProductWithPrice & { consumer_price?: number | null; consumer_volume_price?: number | null }) => (
-                          <ProductCard 
-                            key={product.id} 
-                            product={product} 
-                            promotions={promotions} 
+                          <ProductCard
+                            key={product.id}
+                            product={product}
+                            promotions={promotions}
                             showProfitEstimation={showProfitEstimation}
                             showProductDuration={showProductDuration}
                             productDurations={productDurations}
