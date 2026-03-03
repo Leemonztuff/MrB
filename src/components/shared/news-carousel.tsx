@@ -44,22 +44,22 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
     return (
       <>
         <Card
-          className="glass border-white/10 overflow-hidden cursor-pointer hover:border-primary/30 transition-colors"
+          className="glass-card group border-white/5 overflow-hidden cursor-pointer hover:border-primary/20 transition-all hover:shadow-primary/5 shadow-2xl"
           onClick={() => setSelectedNews(item)}
         >
           <div className="flex">
             {item.image_url && (
-              <div className="relative w-32 h-24 sm:w-48 sm:h-32 shrink-0">
+              <div className="relative w-32 h-24 sm:w-48 sm:h-32 shrink-0 overflow-hidden">
                 <Image
                   src={item.image_url}
                   alt={item.title}
                   fill
-                  className="object-cover"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
             )}
             <CardContent className="p-4 flex flex-col justify-center">
-              <h3 className="font-black italic text-lg tracking-tight mb-1">{item.title}</h3>
+              <h3 className="font-black italic text-lg tracking-tight mb-1 uppercase group-hover:text-primary transition-colors">{item.title}</h3>
               <RichContent content={item.content} />
             </CardContent>
           </div>
@@ -102,22 +102,22 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
     <>
       <div className="relative">
         <Card
-          className="glass border-white/10 overflow-hidden cursor-pointer hover:border-primary/30 transition-colors"
+          className="glass-card group border-white/5 overflow-hidden cursor-pointer hover:border-primary/20 transition-all hover:shadow-primary/5 shadow-2xl"
           onClick={() => setSelectedNews(currentItem)}
         >
           <div className="flex">
             {currentItem.image_url && (
-              <div className="relative w-32 h-24 sm:w-48 sm:h-32 shrink-0">
+              <div className="relative w-32 h-24 sm:w-48 sm:h-32 shrink-0 overflow-hidden">
                 <Image
                   src={currentItem.image_url}
                   alt={currentItem.title}
                   fill
-                  className="object-cover"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
             )}
             <CardContent className="p-4 flex flex-col justify-center flex-1">
-              <h3 className="font-black italic text-lg tracking-tight mb-1">{currentItem.title}</h3>
+              <h3 className="font-black italic text-lg tracking-tight mb-1 uppercase group-hover:text-primary transition-colors">{currentItem.title}</h3>
               <RichContent content={currentItem.content} />
             </CardContent>
           </div>
@@ -126,9 +126,9 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
         {news.length > 1 && (
           <>
             <Button
-              variant="ghost"
+              variant="secondary"
               size="icon"
-              className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-black/50 hover:bg-black/70 text-white rounded-full"
+              className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-black/40 hover:bg-primary/80 backdrop-blur-md text-white border border-white/10 rounded-xl transition-all"
               onClick={(e) => {
                 e.stopPropagation();
                 goToPrevious();
@@ -137,9 +137,9 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button
-              variant="ghost"
+              variant="secondary"
               size="icon"
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-black/50 hover:bg-black/70 text-white rounded-full"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-black/40 hover:bg-primary/80 backdrop-blur-md text-white border border-white/10 rounded-xl transition-all"
               onClick={(e) => {
                 e.stopPropagation();
                 goToNext();

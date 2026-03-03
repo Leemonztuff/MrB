@@ -1,6 +1,5 @@
 
 import { getOrderPageData } from "@/app/actions/user.actions";
-import { getPublicNews } from "@/app/actions/news.actions";
 import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/app/logo";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -14,10 +13,9 @@ import {
 } from "@/components/ui/accordion";
 import { OrderSummary } from "./_components/order-summary";
 import { MobileCartIndicator } from "./_components/mobile-cart-indicator";
-import { NewsCarousel } from "@/components/shared/news-carousel";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
-import { AgreementPromotion, ProductWithPrice, NewsPost } from "@/types";
+import { AgreementPromotion, ProductWithPrice } from "@/types";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const categoryTranslations: Record<string, string> = {
@@ -35,10 +33,7 @@ export default async function OrderPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [{ data, error }, { data: news = [] }] = await Promise.all([
-    getOrderPageData(id),
-    getPublicNews()
-  ]);
+  const { data, error } = await getOrderPageData(id);
 
   if (error || !data) {
     return (
@@ -99,11 +94,6 @@ export default async function OrderPage({
             <p className="mt-2 text-xs uppercase font-bold tracking-widest text-muted-foreground/60 italic">Personaliza tu pedido con nuestra selección exclusiva.</p>
           </div>
 
-          {news && news.length > 0 && (
-            <div className="mb-4">
-              <NewsCarousel news={news} />
-            </div>
-          )}
 
           {categories.length > 0 ? (
             <Accordion type="multiple" defaultValue={categories} className="w-full space-y-6">

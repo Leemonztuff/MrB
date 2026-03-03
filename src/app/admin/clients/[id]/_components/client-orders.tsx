@@ -22,6 +22,16 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { OrderStatusBadge } from "@/app/admin/_components/order-status-badge";
 import { ReprintLabelButton } from "@/app/admin/_components/reprint-label-button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ShoppingBag, Eye } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
@@ -57,13 +67,52 @@ export function ClientOrders({ orders }: { orders: OrderWithItems[] }) {
                   </TableCell>
                   <TableCell className="text-sm">{formatDate(order.created_at)}</TableCell>
                   <TableCell>
-                    <div className="max-w-[300px] flex flex-wrap gap-1">
-                      {order.order_items?.map((item, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-[10px] bg-white/5 font-normal">
-                          {item.quantity}x {item.products?.name}
-                        </Badge>
-                      )) || <span className="text-xs text-muted-foreground italic">Sin detalle</span>}
-                    </div>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 gap-2 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors border border-white/5 rounded-lg"
+                        >
+                          <ShoppingBag className="h-3.5 w-3.5" />
+                          <span>{order.order_items?.length || 0} items</span>
+                          <Eye className="h-3 w-3 opacity-50" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="glass border-white/10 sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-2 font-headline italic">
+                            <ShoppingBag className="h-5 w-5 text-primary" />
+                            Contenido del Pedido #{order.id.slice(-6).toUpperCase()}
+                          </DialogTitle>
+                        </DialogHeader>
+                        <div className="mt-4 space-y-4">
+                          <ScrollArea className="max-h-[300px] pr-4">
+                            <div className="grid gap-2">
+                              {order.order_items?.map((item, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
+                                  <div className="flex items-center gap-3">
+                                    <Badge variant="secondary" className="bg-primary/20 text-primary h-6 w-6 flex items-center justify-center p-0 font-black">
+                                      {item.quantity}
+                                    </Badge>
+                                    <span className="text-xs">{item.products?.name}</span>
+                                  </div>
+                                  <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap">
+                                    {formatCurrency((item.price_per_unit || 0) * item.quantity)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                          <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                            <span className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Total</span>
+                            <span className="text-lg font-headline font-black text-primary">
+                              {formatCurrency(order.total_amount)}
+                            </span>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </TableCell>
                   <TableCell className="font-bold">{formatCurrency(order.total_amount)}</TableCell>
                   <TableCell>

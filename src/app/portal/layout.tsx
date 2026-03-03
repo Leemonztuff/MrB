@@ -8,15 +8,15 @@ import { formatCuit } from '@/lib/formatters';
 import { User, Package, ShoppingCart, LogOut } from 'lucide-react';
 
 interface Client {
-  id: string;
-  contact_name: string | null;
-  email: string | null;
-  address: string | null;
-  created_at: string;
-  status: string;
-  agreement_id: string | null;
-  agreements?: { agreement_name: string } | null;
-  cuit: string | null;
+    id: string;
+    contact_name: string | null;
+    email: string | null;
+    address: string | null;
+    created_at: string;
+    status: string;
+    agreement_id: string | null;
+    agreements?: { agreement_name: string } | null;
+    cuit: string | null;
 }
 
 export default function PortalLayout({
@@ -31,8 +31,8 @@ export default function PortalLayout({
     useEffect(() => {
         async function checkAuth() {
             try {
-                const response = await fetch('/api/portal/client', { 
-                    credentials: 'include' 
+                const response = await fetch('/api/portal/client', {
+                    credentials: 'include'
                 });
                 if (!response.ok) {
                     router.push('/portal-cliente/login');
@@ -47,7 +47,7 @@ export default function PortalLayout({
                 setLoading(false);
             }
         }
-        
+
         checkAuth();
     }, [router]);
 
@@ -85,54 +85,53 @@ export default function PortalLayout({
     const canOrder = isActive && client.agreement_id;
 
     if (canOrder) {
-        navItems.push({ 
-            href: `/pedido/${client.agreement_id}`, 
-            label: 'Catálogo', 
-            icon: ShoppingCart 
+        navItems.push({
+            href: `/pedido/${client.agreement_id}`,
+            label: 'Catálogo',
+            icon: ShoppingCart
         });
     }
 
     return (
-        <div className="min-h-screen bg-background text-foreground">
-            <header className="glass border-b sticky top-0 z-40">
+        <div className="portal-layout">
+            <header className="glass border-b border-primary/10 sticky top-0 z-40 backdrop-blur-md">
                 <div className="max-w-7xl mx-auto px-4 py-3">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <Link href="/portal" className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg">
-                                    <span className="text-primary-foreground font-bold text-lg">MB</span>
+                            <Link href="/portal" className="flex items-center gap-3 group">
+                                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
+                                    <span className="text-primary-foreground font-black text-lg italic italic-black">MB</span>
                                 </div>
                                 <div>
-                                    <h1 className="text-xl font-bold">Mr. Blonde</h1>
-                                    <p className="text-xs text-muted-foreground">Portal de Cliente</p>
+                                    <h1 className="text-xl font-black italic tracking-tighter uppercase">Mr. Blonde</h1>
+                                    <p className="text-[10px] text-muted-foreground font-black tracking-widest uppercase opacity-60">Portal de Cliente</p>
                                 </div>
                             </Link>
                         </div>
                         <div className="flex items-center gap-4">
-                            <div className="hidden md:flex items-center gap-2 text-sm">
-                                <span className="font-medium">{client.contact_name}</span>
-                                <span className="text-muted-foreground">|</span>
-                                <span className="text-muted-foreground">{formatCuit(client.cuit)}</span>
+                            <div className="hidden md:flex flex-col items-end gap-0.5 text-xs">
+                                <span className="font-black italic uppercase tracking-tight text-foreground/80">{client.contact_name}</span>
+                                <span className="text-[10px] text-muted-foreground font-bold tracking-widest">{formatCuit(client.cuit)}</span>
                             </div>
                             <Link href="/api/portal/logout" className="text-muted-foreground hover:text-destructive">
-                                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
-                                    <LogOut className="h-4 w-4 mr-1" />
-                                    <span className="hidden sm:inline">Salir</span>
+                                <Button variant="ghost" size="sm" className="h-9 px-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all">
+                                    <LogOut className="h-4 w-4 mr-2" />
+                                    <span className="hidden sm:inline font-bold uppercase tracking-widest text-[10px]">Salir</span>
                                 </Button>
                             </Link>
                         </div>
                     </div>
                 </div>
-                <nav className="border-t border-white/5">
+                <nav className="border-t border-white/5 bg-white/5">
                     <div className="max-w-7xl mx-auto px-4">
-                        <div className="flex gap-1 overflow-x-auto py-1">
+                        <div className="flex gap-1 overflow-x-auto py-1 scrollbar-hide">
                             {navItems.map((item) => (
-                                <Link 
+                                <Link
                                     key={item.href}
-                                    href={item.href} 
-                                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                                    href={item.href}
+                                    className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
                                 >
-                                    <item.icon className="h-4 w-4" />
+                                    <item.icon className="h-3.5 w-3.5" />
                                     {item.label}
                                 </Link>
                             ))}
@@ -140,7 +139,7 @@ export default function PortalLayout({
                     </div>
                 </nav>
             </header>
-            <main className="max-w-7xl mx-auto px-4 py-6">
+            <main className="max-w-7xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {children}
             </main>
         </div>

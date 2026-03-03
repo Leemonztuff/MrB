@@ -30,6 +30,12 @@ interface RichEditorProps {
 export function RichEditor({ value, onChange, placeholder }: RichEditorProps) {
     const [products, setProducts] = useState<Product[]>([]);
 
+    // Use a ref to avoid stale closures in Tiptap configuration
+    const latestProducts = { current: products };
+    useEffect(() => {
+        latestProducts.current = products;
+    }, [products]);
+
     useEffect(() => {
         getProducts().then((res) => {
             if (res.success && res.data) {
@@ -43,22 +49,22 @@ export function RichEditor({ value, onChange, placeholder }: RichEditorProps) {
             StarterKit,
             Mention.configure({
                 HTMLAttributes: {
-                    class: "mention bg-primary/20 text-primary px-1 rounded-md font-bold italic",
+                    class: "mention",
                 },
                 suggestion: {
-                    items: ({ query }) => {
-                        return products
+                    items: ({ query }: { query: string }) => {
+                        return latestProducts.current
                             .filter((item) =>
                                 item.name.toLowerCase().includes(query.toLowerCase())
                             )
-                            .slice(0, 5);
+                            .slice(0, 10);
                     },
                     render: () => {
                         let component: ReactRenderer<MentionListRef>;
                         let popup: Instance[];
 
                         return {
-                            onStart: (props) => {
+                            onStart: (props: any) => {
                                 component = new ReactRenderer(MentionList, {
                                     props,
                                     editor: props.editor,
@@ -79,7 +85,7 @@ export function RichEditor({ value, onChange, placeholder }: RichEditorProps) {
                                 });
                             },
 
-                            onUpdate(props) {
+                            onUpdate(props: any) {
                                 component.updateProps(props);
 
                                 if (!props.clientRect) {
@@ -91,7 +97,7 @@ export function RichEditor({ value, onChange, placeholder }: RichEditorProps) {
                                 });
                             },
 
-                            onKeyDown(props) {
+                            onKeyDown(props: any) {
                                 if (props.event.key === "Escape") {
                                     popup[0].hide();
                                     return true;
@@ -139,7 +145,7 @@ export function RichEditor({ value, onChange, placeholder }: RichEditorProps) {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => editor.chain().focus().toggleBold().execute()}
+                    onClick={() => editor.chain().focus().toggleBold().run()}
                     className={editor.isActive("bold") ? "bg-muted" : ""}
                 >
                     <Bold className="h-4 w-4" />
@@ -148,7 +154,7 @@ export function RichEditor({ value, onChange, placeholder }: RichEditorProps) {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => editor.chain().focus().toggleItalic().execute()}
+                    onClick={() => editor.chain().focus().toggleItalic().run()}
                     className={editor.isActive("italic") ? "bg-muted" : ""}
                 >
                     <Italic className="h-4 w-4" />
@@ -158,7 +164,7 @@ export function RichEditor({ value, onChange, placeholder }: RichEditorProps) {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).execute()}
+                    onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
                     className={editor.isActive("heading", { level: 1 }) ? "bg-muted" : ""}
                 >
                     <Heading1 className="h-4 w-4" />
@@ -167,7 +173,7 @@ export function RichEditor({ value, onChange, placeholder }: RichEditorProps) {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).execute()}
+                    onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
                     className={editor.isActive("heading", { level: 2 }) ? "bg-muted" : ""}
                 >
                     <Heading2 className="h-4 w-4" />
@@ -177,7 +183,7 @@ export function RichEditor({ value, onChange, placeholder }: RichEditorProps) {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => editor.chain().focus().toggleBulletList().execute()}
+                    onClick={() => editor.chain().focus().toggleBulletList().run()}
                     className={editor.isActive("bulletList") ? "bg-muted" : ""}
                 >
                     <List className="h-4 w-4" />
@@ -186,7 +192,7 @@ export function RichEditor({ value, onChange, placeholder }: RichEditorProps) {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => editor.chain().focus().toggleOrderedList().execute()}
+                    onClick={() => editor.chain().focus().toggleOrderedList().run()}
                     className={editor.isActive("orderedList") ? "bg-muted" : ""}
                 >
                     <ListOrdered className="h-4 w-4" />
@@ -196,7 +202,7 @@ export function RichEditor({ value, onChange, placeholder }: RichEditorProps) {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => editor.chain().focus().undo().execute()}
+                    onClick={() => editor.chain().focus().undo().run()}
                     disabled={!editor.can().undo()}
                 >
                     <Undo className="h-4 w-4" />
@@ -205,7 +211,7 @@ export function RichEditor({ value, onChange, placeholder }: RichEditorProps) {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => editor.chain().focus().redo().execute()}
+                    onClick={() => editor.chain().focus().redo().run()}
                     disabled={!editor.can().redo()}
                 >
                     <Redo className="h-4 w-4" />

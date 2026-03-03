@@ -20,6 +20,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { RichEditor } from "./rich-editor";
+import { ImageUpload } from "@/components/shared/image-upload";
 
 export const newsSchema = z.object({
   id: z.string().optional(),
@@ -130,11 +131,12 @@ export function NewsForm({ news, onClose }: NewsFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="image_url">URL de imagen</Label>
-        <Input
-          id="image_url"
-          {...register("image_url")}
-          placeholder="https://..."
+        <ImageUpload
+          value={watch("image_url")}
+          onChange={(url: string) => setValue("image_url", url, { shouldDirty: true })}
+          bucket="product_images" // Reuse existing bucket or create separate one
+          folder="news"
+          label="Imagen de la Noticia"
         />
       </div>
 

@@ -14,7 +14,17 @@ import { Input } from "@/components/ui/input";
 import { ShippingLabelButton } from "./shipping-label-button";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import { Printer } from "lucide-react";
+import { Printer, ShoppingBag, Eye } from "lucide-react";
+import { formatDate } from "@/lib/utils";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
@@ -149,10 +159,67 @@ export function RecentOrders({ orders: initialOrders }: { orders: OrderWithItems
                                         </span>
                                     </div>
                                     <div className="flex items-start gap-2 max-w-md">
-                                        <ShoppingBasket className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" />
-                                        <p className="text-[11px] text-muted-foreground line-clamp-1 italic">
-                                            {order.order_items?.map(i => `${i.quantity}x ${i.products?.name}`).join(", ") || "Sin detalle"}
-                                        </p>
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-6 px-2 gap-1.5 text-[10px] sm:text-[11px] text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors border border-white/5 rounded-lg"
+                                                >
+                                                    <ShoppingBag className="h-3 w-3" />
+                                                    <span>{order.order_items?.length || 0} productos</span>
+                                                    <Eye className="h-2.5 w-2.5 ml-0.5 opacity-50" />
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent className="glass border-white/10 sm:max-w-md animate-in fade-in zoom-in-95 duration-200">
+                                                <DialogHeader>
+                                                    <DialogTitle className="flex items-center gap-2 font-headline italic">
+                                                        <ShoppingBag className="h-5 w-5 text-primary" />
+                                                        Detalle del Pedido #{order.id.slice(-6).toUpperCase()}
+                                                    </DialogTitle>
+                                                </DialogHeader>
+                                                <div className="mt-4 space-y-4">
+                                                    <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                                                        <div className="space-y-0.5">
+                                                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Cliente</p>
+                                                            <p className="text-sm font-medium">{order.client_name_cache}</p>
+                                                        </div>
+                                                        <div className="text-right space-y-0.5">
+                                                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Fecha</p>
+                                                            <p className="text-sm font-medium">{formatDate(order.created_at)}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest ml-1">Contenido</p>
+                                                        <ScrollArea className="max-h-[300px] w-full pr-4">
+                                                            <div className="grid gap-2">
+                                                                {order.order_items?.map((item, idx) => (
+                                                                    <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <Badge variant="secondary" className="bg-primary/20 text-primary h-6 w-6 flex items-center justify-center p-0 font-black">
+                                                                                {item.quantity}
+                                                                            </Badge>
+                                                                            <span className="text-xs">{item.products?.name}</span>
+                                                                        </div>
+                                                                        <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap">
+                                                                            {formatCurrency((item.price_per_unit || 0) * item.quantity)}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </ScrollArea>
+                                                    </div>
+
+                                                    <div className="flex items-center justify-between pt-4 border-t border-white/10 mt-6">
+                                                        <span className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Total del Pedido</span>
+                                                        <span className="text-xl font-headline font-black text-primary">
+                                                            {formatCurrency(order.total_amount)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </DialogContent>
+                                        </Dialog>
                                     </div>
                                 </div>
                             </div>
