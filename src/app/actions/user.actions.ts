@@ -7,6 +7,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import type { CartItem, AuthState, AppSettingsRow, ActionResponse } from '@/types';
 import { handleAction } from '@/app/admin/actions/_helpers';
+import { getPortalClient } from '@/app/actions/portal.actions';
 import { onboardingSchema } from '@/lib/validations/client.schema';
 import { formatAddress, formatDeliveryWindow } from '@/lib/formatters';
 
@@ -147,7 +148,18 @@ export async function getOrderPageData(agreementId: string, options?: { newsId?:
             return acc;
         }, {});
 
-        const { data: client } = await supabase.from('clients').select('*').eq('agreement_id', agreementId).maybeSingle();
+        // SECURE IDENTITY ENFORCEMENT:
+        // Try to get the definitively authenticated client session.
+        const portalSession = await getPortalClient();
+        let client = null;
+
+        if (portalSession && portalSession.agreement_id === agreementId) {
+            client = portalSession;
+        } else {
+            // Fallback for anonymous public links: try to find a generic client
+            const { data } = await supabase.from('clients').select('*').eq('agreement_id', agreementId).limit(1).maybeSingle();
+            client = data;
+        }
 
         let productDurations: Record<string, number> = {};
 
