@@ -6,7 +6,7 @@ import Mention from "@tiptap/extension-mention";
 import tippy, { Instance } from "tippy.js";
 import { MentionList, MentionListRef } from "./mention-list";
 import { Product } from "@/types";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getProducts } from "@/app/admin/actions/products.actions";
 import {
     Bold,
@@ -29,17 +29,13 @@ interface RichEditorProps {
 
 export function RichEditor({ value, onChange, placeholder }: RichEditorProps) {
     const [products, setProducts] = useState<Product[]>([]);
-
-    // Use a ref to avoid stale closures in Tiptap configuration
-    const latestProducts = { current: products };
-    useEffect(() => {
-        latestProducts.current = products;
-    }, [products]);
+    const productsRef = useRef<Product[]>([]);
 
     useEffect(() => {
         getProducts().then((res) => {
             if (res.success && res.data) {
                 setProducts(res.data);
+                productsRef.current = res.data;
             }
         });
     }, []);
@@ -53,8 +49,8 @@ export function RichEditor({ value, onChange, placeholder }: RichEditorProps) {
                 },
                 suggestion: {
                     items: ({ query }: { query: string }) => {
-                        return latestProducts.current
-                            .filter((item) =>
+                        return (productsRef.current || [])
+                            .filter((item: Product) =>
                                 item.name.toLowerCase().includes(query.toLowerCase())
                             )
                             .slice(0, 10);
