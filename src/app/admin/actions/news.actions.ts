@@ -87,6 +87,8 @@ export async function createNews(
     display_order?: number;
     starts_at?: string;
     ends_at?: string;
+    promotion_id?: string | null;
+    target_client_type?: string | null;
   }
 ): Promise<ActionResponse<NewsPost>> {
   try {
@@ -122,6 +124,8 @@ export async function updateNews(
     display_order?: number;
     starts_at?: string;
     ends_at?: string;
+    promotion_id?: string | null;
+    target_client_type?: string | null;
   }
 ): Promise<ActionResponse<NewsPost>> {
   try {

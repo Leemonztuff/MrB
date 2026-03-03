@@ -98,15 +98,16 @@ export function NewsForm({ news, onClose }: NewsFormProps) {
   const onSubmit = async (data: NewsFormValues) => {
     setIsPending(true);
     try {
+      const { id, ...cleanData } = data;
       const payload = {
-        ...data,
+        ...cleanData,
         starts_at: startDate ? startDate.toISOString() : undefined,
         ends_at: endDate ? endDate.toISOString() : undefined,
       };
 
       const result = news
         ? await updateNews(news.id, payload)
-        : await createNews(payload);
+        : await createNews(payload as any);
 
       if (result.error) {
         toast({
@@ -231,7 +232,6 @@ export function NewsForm({ news, onClose }: NewsFormProps) {
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Sin promoción" />
             </SelectTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" /> {/* Hack for some Shadcn versions, but usually SelectContent is used */}
             <SelectContent>
               <SelectItem value="none">Ninguna</SelectItem>
               {promotions.map((p) => (
