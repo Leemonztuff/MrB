@@ -78,7 +78,7 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
     month: '2-digit',
   });
 
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=48x48&data=${encodeURIComponent(`${baseUrl}/api/pedido/confirmar/${label.id}`)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=48x48&data=${encodeURIComponent(`${baseUrl}/pedido/confirmar/${label.id}`)}`;
 
   return (
     <div
