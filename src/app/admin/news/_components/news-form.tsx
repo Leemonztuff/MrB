@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -14,7 +15,7 @@ import { createNews, updateNews } from "@/app/admin/actions/news.actions";
 import type { NewsPost } from "@/types";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarIcon, Upload, X } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -34,10 +35,10 @@ export type NewsFormValues = z.infer<typeof newsSchema>;
 
 interface NewsFormProps {
   news?: NewsPost;
-  onSuccess: () => void;
+  onClose?: () => void;
 }
 
-export function NewsForm({ news, onSuccess }: NewsFormProps) {
+export function NewsForm({ news, onClose }: NewsFormProps) {
   const [isPending, setIsPending] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(
     news?.starts_at ? new Date(news.starts_at) : undefined
@@ -46,6 +47,7 @@ export function NewsForm({ news, onSuccess }: NewsFormProps) {
     news?.ends_at ? new Date(news.ends_at) : undefined
   );
   const { toast } = useToast();
+  const router = useRouter();
 
   const {
     register,
@@ -92,7 +94,8 @@ export function NewsForm({ news, onSuccess }: NewsFormProps) {
           title: "Éxito",
           description: news ? "Noticia actualizada correctamente." : "Noticia creada correctamente.",
         });
-        onSuccess();
+        router.refresh();
+        onClose?.();
       }
     } finally {
       setIsPending(false);
@@ -118,7 +121,7 @@ export function NewsForm({ news, onSuccess }: NewsFormProps) {
         <Textarea
           id="content"
           {...register("content")}
-          placeholder="Escribe el contenido aquí...&#10;&#10;Puedes usar **negrita**, *cursiva*, listas, etc."
+          placeholder={"Escribe el contenido aquí...\n\nPuedes usar **negrita**, *cursiva*, listas, etc."}
           className="min-h-[200px] font-mono text-sm"
         />
         {errors.content && (

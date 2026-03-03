@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition, useState } from "react";
+import { useRouter } from "next/navigation";
 import { MoreHorizontal, Trash2, Edit, Eye, EyeOff, ImageIcon } from "lucide-react";
 import Image from "next/image";
 import {
@@ -42,13 +43,13 @@ import { NewsForm } from "./news-form";
 
 interface NewsTableProps {
   news: NewsPost[];
-  onRefresh: () => void;
 }
 
-export default function NewsTable({ news, onRefresh }: NewsTableProps) {
+export default function NewsTable({ news }: NewsTableProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const [editingNews, setEditingNews] = useState<NewsPost | null>(null);
+  const router = useRouter();
 
   const handleDelete = (id: string) => {
     startTransition(async () => {
@@ -64,7 +65,7 @@ export default function NewsTable({ news, onRefresh }: NewsTableProps) {
           title: "Éxito",
           description: "Noticia eliminada correctamente.",
         });
-        onRefresh();
+        router.refresh();
       }
     });
   };
@@ -83,7 +84,7 @@ export default function NewsTable({ news, onRefresh }: NewsTableProps) {
           title: "Éxito",
           description: newsItem.is_active ? "Noticia ocultada." : "Noticia publicada.",
         });
-        onRefresh();
+        router.refresh();
       }
     });
   };
@@ -216,9 +217,9 @@ export default function NewsTable({ news, onRefresh }: NewsTableProps) {
           </DialogHeader>
           <NewsForm
             news={editingNews || undefined}
-            onSuccess={() => {
+            onClose={() => {
               setEditingNews(null);
-              onRefresh();
+              router.refresh();
             }}
           />
         </DialogContent>

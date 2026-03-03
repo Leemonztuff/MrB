@@ -1,6 +1,9 @@
 import { jsPDF } from 'jspdf';
+import * as QRCode from 'qrcode';
 
-interface LabelData {
+// --- Types & Interfaces ---
+
+export interface LabelData {
   id: string;
   client_name_cache: string;
   created_at: string;
@@ -16,11 +19,74 @@ interface LabelData {
   } | null;
 }
 
+interface FormattedLabel {
+  id: string;
+  shortId: string;
+  clientName: string;
+  address: string;
+  deliveryWindow: string | null;
+  notes: string | null;
+  contact: string;
+  bundleText: string;
+  dateText: string;
+  qrDataUrl: string;
+}
+
+interface LabelLayout {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  contentX: number;
+  contentY: number;
+  contentWidth: number;
+  qrSize: number;
+}
+
+// --- Theme & Configuration ---
+
+const THEME = {
+  colors: {
+    headerBg: [26, 26, 26] as [number, number, number],
+    headerText: [230, 213, 167] as [number, number, number],
+    primaryText: [0, 0, 0] as [number, number, number],
+    secondaryText: [80, 80, 80] as [number, number, number],
+    mutedText: [120, 120, 120] as [number, number, number],
+    accentBg: [255, 251, 235] as [number, number, number],
+    accentBorder: [245, 158, 11] as [number, number, number],
+    footerBg: [245, 245, 245] as [number, number, number],
+  },
+  spacing: {
+    margin: 5,
+    padding: 5,
+    gap: 3,
+    headerHeight: 10,
+    footerHeight: 6,
+  },
+  fonts: {
+    title: 12,
+    header: 10,
+    body: 8,
+    small: 6,
+  }
+};
+
+const DATE_FORMATTER = new Intl.DateTimeFormat('es-AR', {
+  day: '2-digit',
+  month: '2-digit',
+});
+
+// --- Orchestration ---
+
+/**
+ * Generates a PDF with labels for order bundles.
+ * Optimized for A4 paper with 3 labels per page.
+ */
 export async function generateLabelsPDF(
   labels: LabelData[],
   logoUrl: string | null,
   baseUrl: string
-): Promise<Buffer> {
+): Promise<Uint8Array> {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -29,136 +95,187 @@ export async function generateLabelsPDF(
 
   const pageWidth = 210;
   const pageHeight = 297;
-  const margin = 5;
-  const gap = 3;
   const labelsPerPage = 3;
-  const labelHeight = (pageHeight - margin * 2 - gap * (labelsPerPage - 1)) / labelsPerPage;
-  const labelWidth = pageWidth - margin * 2;
 
-  for (let i = 0; i < labels.length; i++) {
+  const labelHeight = (pageHeight - THEME.spacing.margin * 2 - THEME.spacing.gap * (labelsPerPage - 1)) / labelsPerPage;
+  const labelWidth = pageWidth - THEME.spacing.margin * 2;
+
+  // Pre-format all labels (improves performance by doing heavy lifting outside the loop)
+  const formattedLabels = await Promise.all(
+    labels.map(label => formatLabelData(label, baseUrl))
+  );
+
+  for (let i = 0; i < formattedLabels.length; i++) {
     if (i > 0 && i % labelsPerPage === 0) {
       doc.addPage('portrait');
     }
 
     const labelIndex = i % labelsPerPage;
-    const x = margin;
-    const y = margin + labelIndex * (labelHeight + gap);
+    const layout: LabelLayout = getLabelLayout(
+      THEME.spacing.margin,
+      THEME.spacing.margin + labelIndex * (labelHeight + THEME.spacing.gap),
+      labelWidth,
+      labelHeight
+    );
 
-    drawCompactLabel(doc, labels[i], x, y, labelWidth, labelHeight, baseUrl);
+    renderLabel(doc, formattedLabels[i], layout, logoUrl);
   }
 
-  return Buffer.from(doc.output('arraybuffer'));
+  return new Uint8Array(doc.output('arraybuffer'));
 }
 
-function drawCompactLabel(
-  doc: jsPDF,
-  label: LabelData,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  baseUrl: string
-) {
-  const shortId = label.id?.slice(-6).toUpperCase() || 'N/A';
-  const date = new Date(label.created_at).toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
+// --- Logic Phases ---
+
+/**
+ * 1. Data Formatting Phase
+ * Preparing Strings and generating QR codes locally.
+ */
+async function formatLabelData(label: LabelData, baseUrl: string): Promise<FormattedLabel> {
+  const confirmUrl = `${baseUrl}/api/pedido/confirmar/${label.id}`;
+  const qrDataUrl = await QRCode.toDataURL(confirmUrl, {
+    margin: 1,
+    width: 256,
+    color: { dark: '#000000', light: '#ffffff' }
   });
 
+  return {
+    id: label.id,
+    shortId: label.id.slice(-6).toUpperCase(),
+    clientName: (label.client_name_cache || 'CLIENTE').toUpperCase(),
+    address: label.clients?.address || 'SIN DIRECCION REGISTRADA',
+    deliveryWindow: label.clients?.delivery_window || null,
+    notes: label.notes,
+    contact: `CONTACTO: ${label.clients?.phone || label.clients?.email || 'SIN DATOS'}`,
+    bundleText: `${label.bundleIdx}/${label.totalBundles}`,
+    dateText: DATE_FORMATTER.format(new Date(label.created_at)),
+    qrDataUrl,
+  };
+}
+
+/**
+ * 2. Layout Calculation Phase
+ * Defining where components sit within the label.
+ */
+function getLabelLayout(x: number, y: number, width: number, height: number): LabelLayout {
+  const qrSize = 26; // Professional scale
+  return {
+    x, y, width, height,
+    contentX: x + THEME.spacing.padding,
+    contentY: y + THEME.spacing.headerHeight + THEME.spacing.padding,
+    contentWidth: width - qrSize - (THEME.spacing.padding * 3),
+    qrSize,
+  };
+}
+
+/**
+ * 3. Rendering Phase
+ * Drawing to the jsPDF instance using theme tokens.
+ */
+function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logoUrl: string | null) {
+  const { x, y, width, height, contentX, contentY, contentWidth, qrSize } = layout;
+
+  // --- Outer Border ---
   doc.setDrawColor(0);
   doc.setLineWidth(0.5);
   doc.roundedRect(x, y, width, height, 2, 2);
 
-  const headerH = 10;
-  doc.setFillColor(26, 26, 26);
-  doc.rect(x, y, width, headerH, 'F');
+  // --- Header ---
+  doc.setFillColor(...THEME.colors.headerBg);
+  doc.rect(x, y, width, THEME.spacing.headerHeight, 'F');
 
-  doc.setTextColor(230, 213, 167);
-  doc.setFontSize(10);
+  doc.setTextColor(...THEME.colors.headerText);
   doc.setFont('helvetica', 'bold');
-  doc.text('MR. BLONDE', x + 5, y + 6.5);
-  doc.text(`#${shortId}`, x + width - 5, y + 6.5, { align: 'right' });
+  doc.setFontSize(THEME.fonts.header);
+  doc.text('MR. BLONDE', contentX, y + 6.5);
+  doc.text(`#${data.shortId}`, x + width - THEME.spacing.padding, y + 6.5, { align: 'right' });
 
-  const qrSize = 24;
-  const qrX = x + width - qrSize - 5;
-  const qrY = y + headerH + 5;
+  // --- QR Code ---
+  const qrX = x + width - qrSize - THEME.spacing.padding;
+  const qrY = y + THEME.spacing.headerHeight + THEME.spacing.padding;
+  doc.addImage(data.qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize, data.id, 'FAST');
 
-  try {
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=48x48&data=${encodeURIComponent(`${baseUrl}/api/pedido/confirmar/${label.id}`)}`;
-    doc.addImage(qrUrl, 'PNG', qrX, qrY, qrSize, qrSize);
-  } catch (e) {
-    doc.setFontSize(6);
-    doc.setTextColor(100);
-    doc.text('QR', qrX + qrSize/2, qrY + qrSize/2, { align: 'center' });
-  }
-
-  const contentX = x + 5;
-  const contentY = y + headerH + 5;
-  const contentW = width - qrSize - 15;
-
-  doc.setTextColor(0);
-  doc.setFontSize(12);
+  // --- Client Info ---
+  doc.setTextColor(...THEME.colors.primaryText);
+  doc.setFontSize(THEME.fonts.title);
   doc.setFont('helvetica', 'bold');
-  const clientName = (label.client_name_cache || 'CLIENTE').toUpperCase();
-  doc.text(clientName, contentX, contentY, { maxWidth: contentW });
 
-  let lineY = contentY + 8;
-  doc.setFontSize(8);
+  // Title (Client Name)
+  const clientLines = doc.splitTextToSize(data.clientName, contentWidth);
+  doc.text(clientLines, contentX, contentY);
+
+  let currentY = contentY + (clientLines.length * 6);
+
+  // Address
+  doc.setFontSize(THEME.fonts.body);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(80);
-  doc.text('DIRECCION:', contentX, lineY);
-  doc.setTextColor(0);
+  doc.setTextColor(...THEME.colors.secondaryText);
+  doc.text('DIRECCION:', contentX, currentY);
+
+  currentY += 4;
+  doc.setTextColor(...THEME.colors.primaryText);
   doc.setFont('helvetica', 'bold');
-  const address = label.clients?.address || 'SIN DATOS';
-  doc.text(address, contentX, lineY + 5, { maxWidth: contentW });
+  const addrLines = doc.splitTextToSize(data.address, contentWidth);
+  doc.text(addrLines, contentX, currentY);
 
-  lineY += 15;
-  if (label.clients?.delivery_window) {
-    doc.setFillColor(255, 251, 235);
-    doc.roundedRect(x + 5, lineY - 3, contentW, 8, 1, 1, 'F');
-    doc.setDrawColor(245, 158, 11);
-    doc.setLineWidth(0.3);
-    doc.line(x + 5, lineY - 3, x + 5, lineY + 5);
-    doc.setTextColor(0);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text(label.clients.delivery_window, contentX + 2, lineY + 2);
-    lineY += 12;
+  currentY += (addrLines.length * 4) + 4;
+
+  // Delivery Window Badge
+  if (data.deliveryWindow) {
+    drawBadge(doc, contentX, currentY, contentWidth, data.deliveryWindow, 'accent');
+    currentY += 10;
   }
 
-  if (label.notes) {
-    doc.setFillColor(254, 243, 199);
-    doc.roundedRect(x + 5, lineY - 3, contentW, 8, 1, 1, 'F');
-    doc.setDrawColor(245, 158, 11);
-    doc.line(x + 5, lineY - 3, x + 5, lineY + 5);
-    doc.setTextColor(0);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'italic');
-    const noteText = label.notes.length > 50 ? label.notes.substring(0, 47) + '...' : label.notes;
-    doc.text(noteText, contentX + 2, lineY + 2, { maxWidth: contentW - 4 });
-    lineY += 12;
+  // Notes Badge
+  if (data.notes) {
+    drawBadge(doc, contentX, currentY, contentWidth, data.notes, 'accent', true);
+    currentY += 10;
   }
 
-  const contact = label.clients?.phone || label.clients?.email || 'SIN CONTACTO';
-  doc.setTextColor(100);
-  doc.setFontSize(6);
+  // --- Footer Decoration ---
+  doc.setFillColor(...THEME.colors.footerBg);
+  doc.rect(x, y + height - THEME.spacing.footerHeight, width, THEME.spacing.footerHeight, 'F');
+
+  // Contact Info
+  doc.setTextColor(...THEME.colors.mutedText);
+  doc.setFontSize(THEME.fonts.small);
   doc.setFont('helvetica', 'normal');
-  doc.text(`CONTACTO: ${contact}`, contentX, y + height - 8);
+  doc.text(data.contact, contentX, y + height - 8);
 
-  const badgeW = 16;
-  const badgeH = 7;
-  const badgeX = x + (width - badgeW) / 2;
-  const badgeY = qrY + qrSize + 3;
+  // Date
+  doc.text(data.dateText, x + width - THEME.spacing.padding, y + height - 2, { align: 'right' });
+
+  // --- Bundle ID Badge ---
+  const badgeW = 18;
+  const badgeH = 8;
+  const badgeX = qrX + (qrSize - badgeW) / 2;
+  const badgeY = qrY + qrSize + 4;
+
   doc.setFillColor(0, 0, 0);
   doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1, 1, 'F');
-  doc.setTextColor(230, 213, 167);
-  doc.setFontSize(8);
+  doc.setTextColor(...THEME.colors.headerText);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text(`${label.bundleIdx}/${label.totalBundles}`, badgeX + badgeW/2, badgeY + 5, { align: 'center' });
+  doc.text(data.bundleText, badgeX + badgeW / 2, badgeY + 5.5, { align: 'center' });
+}
 
-  doc.setFillColor(245, 245, 245);
-  doc.rect(x, y + height - 6, width, 6, 'F');
-  doc.setTextColor(100);
-  doc.setFontSize(6);
-  doc.text(date, x + width - 5, y + height - 2, { align: 'right' });
+// --- Helpers ---
+
+function drawBadge(doc: jsPDF, x: number, y: number, w: number, text: string, type: 'accent', isItalic = false) {
+  const padding = 2;
+  const fontSize = isItalic ? THEME.fonts.body - 1 : THEME.fonts.body;
+  doc.setFontSize(fontSize);
+  doc.setFont('helvetica', isItalic ? 'italic' : 'bold');
+
+  const lines = doc.splitTextToSize(text, w - (padding * 2));
+  const h = (lines.length * 4) + 2;
+
+  doc.setFillColor(...THEME.colors.accentBg);
+  doc.roundedRect(x, y - 3, w, h, 1, 1, 'F');
+
+  doc.setDrawColor(...THEME.colors.accentBorder);
+  doc.setLineWidth(0.3);
+  doc.line(x, y - 3, x, y - 3 + h);
+
+  doc.setTextColor(...THEME.colors.primaryText);
+  doc.text(lines, x + padding, y + 1);
 }
