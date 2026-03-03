@@ -85,8 +85,8 @@ export async function createNews(
     image_url?: string;
     is_active?: boolean;
     display_order?: number;
-    starts_at?: string;
-    ends_at?: string;
+    starts_at?: string | null;
+    ends_at?: string | null;
     promotion_id?: string | null;
     target_client_type?: string | null;
   }
@@ -123,8 +123,8 @@ export async function updateNews(
     image_url?: string;
     is_active?: boolean;
     display_order?: number;
-    starts_at?: string;
-    ends_at?: string;
+    starts_at?: string | null;
+    ends_at?: string | null;
     promotion_id?: string | null;
     target_client_type?: string | null;
   }

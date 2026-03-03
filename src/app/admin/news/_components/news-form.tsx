@@ -101,8 +101,8 @@ export function NewsForm({ news, onClose }: NewsFormProps) {
       const { id, ...cleanData } = data;
       const payload = {
         ...cleanData,
-        starts_at: startDate ? startDate.toISOString() : undefined,
-        ends_at: endDate ? endDate.toISOString() : undefined,
+        starts_at: startDate ? new Date(new Date(startDate).setHours(0, 0, 0, 0)).toISOString() : null,
+        ends_at: endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)).toISOString() : null,
       };
 
       const result = news

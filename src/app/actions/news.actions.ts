@@ -1,10 +1,12 @@
 "use server";
 
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { unstable_noStore as noStore } from "next/cache";
 import type { ActionResponse } from "@/types";
 import type { NewsPost } from "@/types";
 
 export async function getPublicNews(): Promise<ActionResponse<NewsPost[]>> {
+  noStore();
   try {
     const supabase = await createServerClient();
 
