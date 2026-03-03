@@ -138,7 +138,7 @@ async function formatLabelData(label: LabelData, baseUrl: string): Promise<Forma
   // This is much more reliable than fetching from an external API in a server environment
   const qrDataUrl = await QRCode.toDataURL(confirmUrl, {
     margin: 2,
-    width: 600, // Higher resolution for printing
+    width: 1200, // Even higher resolution for ultra-sharp printing
     color: {
       dark: '#000000',
       light: '#ffffff',
@@ -199,7 +199,7 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   // --- QR Code ---
   const qrX = x + width - qrSize - THEME.spacing.padding;
   const qrY = y + THEME.spacing.headerHeight + THEME.spacing.padding;
-  doc.addImage(data.qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize, data.id, 'FAST');
+  doc.addImage(data.qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize, data.id, 'NONE');
 
   // --- Client Info ---
   doc.setTextColor(...THEME.colors.primaryText);
