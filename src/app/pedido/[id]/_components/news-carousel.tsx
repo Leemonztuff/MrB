@@ -12,38 +12,21 @@ interface NewsCarouselProps {
   news: NewsPost[];
 }
 
-function parseMarkdown(text: string): string {
-  let html = text;
-  
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-  html = html.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
-  html = html.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
-  html = html.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
-  html = html.replace(/^- (.*?)$/gm, '<li>$1</li>');
-  html = html.replace(/^\d+\. (.*?)$/gm, '<li>$1</li>');
-  html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary underline">$1</a>');
-  html = html.replace(/\n\n/g, '</p><p>');
-  html = html.replace(/\n/g, '<br/>');
-  
-  return `<p>${html}</p>`;
-}
-
-function SimpleMarkdown({ content }: { content: string }) {
+function RichContent({ content }: { content: string }) {
   const [mounted, setMounted] = useState(false);
-  
+
   useEffect(() => {
     setMounted(true);
   }, []);
-  
+
   if (!mounted) {
-    return <p className="text-sm text-muted-foreground">{content.substring(0, 100)}...</p>;
+    return <p className="text-sm text-muted-foreground line-clamp-2">{content.replace(/<[^>]*>?/gm, '').substring(0, 100)}...</p>;
   }
-  
+
   return (
-    <div 
-      className="text-sm text-muted-foreground prose prose-sm dark:prose-invert prose-a:text-primary prose-li:text-muted-foreground"
-      dangerouslySetInnerHTML={{ __html: parseMarkdown(content) }}
+    <div
+      className="text-sm text-muted-foreground prose prose-sm dark:prose-invert prose-p:leading-relaxed prose-p:my-2 prose-headings:font-black prose-headings:italic prose-headings:tracking-tight"
+      dangerouslySetInnerHTML={{ __html: content }}
     />
   );
 }
@@ -51,16 +34,16 @@ function SimpleMarkdown({ content }: { content: string }) {
 export function NewsCarousel({ news }: NewsCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedNews, setSelectedNews] = useState<NewsPost | null>(null);
-  
+
   if (!news || news.length === 0) {
     return null;
   }
-  
+
   if (news.length === 1) {
     const item = news[0];
     return (
       <>
-        <Card 
+        <Card
           className="glass border-white/10 overflow-hidden cursor-pointer hover:border-primary/30 transition-colors"
           onClick={() => setSelectedNews(item)}
         >
@@ -76,12 +59,12 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
               </div>
             )}
             <CardContent className="p-4 flex flex-col justify-center">
-              <h3 className="font-black italic text-lg tracking-tight">{item.title}</h3>
-              <SimpleMarkdown content={item.content} />
+              <h3 className="font-black italic text-lg tracking-tight mb-1">{item.title}</h3>
+              <RichContent content={item.content} />
             </CardContent>
           </div>
         </Card>
-        
+
         <Dialog open={!!selectedNews} onOpenChange={(open) => !open && setSelectedNews(null)}>
           <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogClose className="absolute right-4 top-4" />
@@ -97,28 +80,28 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
             )}
             <h2 className="text-2xl font-black italic tracking-tight">{selectedNews?.title}</h2>
             <div className="mt-4">
-              <SimpleMarkdown content={selectedNews?.content || ""} />
+              <RichContent content={selectedNews?.content || ""} />
             </div>
           </DialogContent>
         </Dialog>
       </>
     );
   }
-  
+
   const goToPrevious = () => {
     setCurrentIndex((prev) => (prev === 0 ? news.length - 1 : prev - 1));
   };
-  
+
   const goToNext = () => {
     setCurrentIndex((prev) => (prev === news.length - 1 ? 0 : prev + 1));
   };
-  
+
   const currentItem = news[currentIndex];
-  
+
   return (
     <>
       <div className="relative">
-        <Card 
+        <Card
           className="glass border-white/10 overflow-hidden cursor-pointer hover:border-primary/30 transition-colors"
           onClick={() => setSelectedNews(currentItem)}
         >
@@ -134,12 +117,12 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
               </div>
             )}
             <CardContent className="p-4 flex flex-col justify-center flex-1">
-              <h3 className="font-black italic text-lg tracking-tight">{currentItem.title}</h3>
-              <SimpleMarkdown content={currentItem.content} />
+              <h3 className="font-black italic text-lg tracking-tight mb-1">{currentItem.title}</h3>
+              <RichContent content={currentItem.content} />
             </CardContent>
           </div>
         </Card>
-        
+
         {news.length > 1 && (
           <>
             <Button
@@ -164,14 +147,13 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
-            
+
             <div className="flex justify-center gap-2 mt-3">
               {news.map((_, idx) => (
                 <button
                   key={idx}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    idx === currentIndex ? "bg-primary" : "bg-muted-foreground/30"
-                  }`}
+                  className={`w-2 h-2 rounded-full transition-colors ${idx === currentIndex ? "bg-primary" : "bg-muted-foreground/30"
+                    }`}
                   onClick={(e) => {
                     e.stopPropagation();
                     setCurrentIndex(idx);
@@ -182,7 +164,7 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
           </>
         )}
       </div>
-      
+
       <Dialog open={!!selectedNews} onOpenChange={(open) => !open && setSelectedNews(null)}>
         <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogClose className="absolute right-4 top-4" />
@@ -198,7 +180,7 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
           )}
           <h2 className="text-2xl font-black italic tracking-tight">{selectedNews?.title}</h2>
           <div className="mt-4">
-            <SimpleMarkdown content={selectedNews?.content || ""} />
+            <RichContent content={selectedNews?.content || ""} />
           </div>
         </DialogContent>
       </Dialog>

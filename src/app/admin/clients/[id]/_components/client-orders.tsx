@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { Order } from "@/types";
+import type { OrderWithItems } from "@/types";
 import {
   Table,
   TableBody,
@@ -27,7 +27,7 @@ const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
 }
 
-export function ClientOrders({ orders }: { orders: Order[] }) {
+export function ClientOrders({ orders }: { orders: OrderWithItems[] }) {
   return (
     <Card className="glass border-white/5 overflow-hidden">
       <CardHeader className="bg-white/5 pb-4">
@@ -42,6 +42,7 @@ export function ClientOrders({ orders }: { orders: Order[] }) {
             <TableRow>
               <TableHead className="pl-6">ID</TableHead>
               <TableHead>Fecha</TableHead>
+              <TableHead>Contenido</TableHead>
               <TableHead>Monto</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right pr-6">Acciones</TableHead>
@@ -50,9 +51,20 @@ export function ClientOrders({ orders }: { orders: Order[] }) {
           <TableBody>
             {orders.length > 0 ? (
               orders.map((order) => (
-                <TableRow key={order.id} className="hover:bg-white/5 transition-colors">
-                  <TableCell className="font-medium pl-6">#{order.id.slice(-6).toUpperCase()}</TableCell>
-                  <TableCell>{formatDate(order.created_at)}</TableCell>
+                <TableRow key={order.id} className="hover:bg-white/5 transition-colors group">
+                  <TableCell className="font-medium pl-6">
+                    <span className="text-xs bg-white/5 px-2 py-1 rounded">#{order.id.slice(-6).toUpperCase()}</span>
+                  </TableCell>
+                  <TableCell className="text-sm">{formatDate(order.created_at)}</TableCell>
+                  <TableCell>
+                    <div className="max-w-[300px] flex flex-wrap gap-1">
+                      {order.order_items?.map((item, idx) => (
+                        <Badge key={idx} variant="secondary" className="text-[10px] bg-white/5 font-normal">
+                          {item.quantity}x {item.products?.name}
+                        </Badge>
+                      )) || <span className="text-xs text-muted-foreground italic">Sin detalle</span>}
+                    </div>
+                  </TableCell>
                   <TableCell className="font-bold">{formatCurrency(order.total_amount)}</TableCell>
                   <TableCell>
                     <OrderStatusBadge status={order.status} />
@@ -64,7 +76,7 @@ export function ClientOrders({ orders }: { orders: Order[] }) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground italic">
+                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground italic">
                   Este cliente aún no ha realizado pedidos.
                 </TableCell>
               </TableRow>

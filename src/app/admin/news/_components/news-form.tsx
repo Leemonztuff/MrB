@@ -19,6 +19,7 @@ import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { RichEditor } from "./rich-editor";
 
 export const newsSchema = z.object({
   id: z.string().optional(),
@@ -117,19 +118,15 @@ export function NewsForm({ news, onClose }: NewsFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="content">Contenido (Markdown soportado)</Label>
-        <Textarea
-          id="content"
-          {...register("content")}
-          placeholder={"Escribe el contenido aquí...\n\nPuedes usar **negrita**, *cursiva*, listas, etc."}
-          className="min-h-[200px] font-mono text-sm"
+        <Label htmlFor="content">Contenido</Label>
+        <RichEditor
+          value={watch("content")}
+          onChange={(val) => setValue("content", val, { shouldDirty: true, shouldValidate: true })}
+          placeholder="Escribe el contenido aquí... Usa @ para mencionar productos."
         />
         {errors.content && (
           <p className="text-sm text-destructive">{errors.content.message}</p>
         )}
-        <p className="text-xs text-muted-foreground">
-          Soporta Markdown: **negrita**, *cursiva*, # títulos, - listas, [enlaces](url)
-        </p>
       </div>
 
       <div className="space-y-2">

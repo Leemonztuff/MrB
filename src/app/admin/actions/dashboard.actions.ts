@@ -3,16 +3,29 @@
 
 import { revalidatePath } from "next/cache";
 import { getSupabaseClientWithAuth } from "./_helpers";
-import type { DashboardStats, Order, Client } from "@/types";
+import type { DashboardStats, Order, OrderWithItems, Client } from "@/types";
 
 // --- Consolidated Dashboard Actions ---
 
 export async function getDashboardData() {
     const supabase = await getSupabaseClientWithAuth();
-    
+
     const [statsResult, pendingOrdersResult, pendingClientsResult] = await Promise.all([
         supabase.from("dashboard_stats").select("*").single(),
-        supabase.from("orders").select("id, client_id, agreement_id, created_at, total_amount, status, client_name_cache, notes").eq("status", "armado").order("created_at", { ascending: false }).limit(10),
+        supabase.from("orders").select(`
+            id, 
+            client_id, 
+            agreement_id, 
+            created_at, 
+            total_amount, 
+            status, 
+            client_name_cache, 
+            notes,
+            order_items(
+                quantity,
+                products(name)
+            )
+        `).eq("status", "armado").order("created_at", { ascending: false }).limit(10),
         supabase.from("clients").select("*").eq("status", "pending_agreement").order("created_at", { ascending: false }),
     ]);
 
@@ -22,12 +35,12 @@ export async function getDashboardData() {
     if (statsError || !stats) {
         console.error("getDashboardData (stats) error:", statsError?.message);
     }
-    
+
     return {
-        stats: stats ?? { 
-            total_revenue: 0, 
-            month_revenue: 0, 
-            active_clients: 0, 
+        stats: stats ?? {
+            total_revenue: 0,
+            month_revenue: 0,
+            active_clients: 0,
             overdue_orders_count: 0,
             total_clients: 0,
             total_pricelists: 0,
@@ -35,7 +48,7 @@ export async function getDashboardData() {
             total_sales_conditions: 0,
             pending_orders_count: 0
         },
-        pendingOrders: pendingOrdersResult.data ?? [],
+        pendingOrders: (pendingOrdersResult.data as any) ?? [],
         pendingClients: pendingClientsResult.data ?? [],
         error: statsError || pendingOrdersResult.error || pendingClientsResult.error,
     };
@@ -53,12 +66,12 @@ export async function getNotificationData(): Promise<{
     const { data: rpcData, error } = await supabase
         .rpc('get_notification_counts')
         .single();
-    
+
     const { count: pendingChangesCount } = await supabase
         .from('pending_changes')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending');
-    
+
     if (error) {
         console.error("getNotificationData error:", error.message);
         return {
@@ -69,25 +82,31 @@ export async function getNotificationData(): Promise<{
             error
         };
     }
-    
+
     const data = rpcData as { pending_orders_count?: number; pending_clients_count?: number; overdue_orders_count?: number } | null;
-    
-    return { 
+
+    return {
         pending_orders_count: data?.pending_orders_count || 0,
         pending_clients_count: data?.pending_clients_count || 0,
         overdue_orders_count: data?.overdue_orders_count || 0,
-        pending_changes_count: pendingChangesCount || 0, 
-        error: null 
+        pending_changes_count: pendingChangesCount || 0,
+        error: null
     };
 }
 
 // --- Individual Actions (still used elsewhere) ---
 
-export async function getClientOrders(clientId: string): Promise<Order[]> {
+export async function getClientOrders(clientId: string): Promise<OrderWithItems[]> {
     const supabase = await getSupabaseClientWithAuth();
     const { data, error } = await supabase
         .from("orders")
-        .select("*")
+        .select(`
+            *,
+            order_items(
+                quantity,
+                products(name)
+            )
+        `)
         .eq("client_id", clientId)
         .order("created_at", { ascending: false });
 
@@ -95,12 +114,12 @@ export async function getClientOrders(clientId: string): Promise<Order[]> {
         console.error("getClientOrders error:", error.message);
         return [];
     }
-    return data;
+    return (data as any);
 }
 
 export async function completeOrder(orderId: string, orderTotal: number) {
     const supabase = await getSupabaseClientWithAuth();
-    
+
     const { error: orderUpdateError } = await supabase
         .from('orders')
         .update({ status: 'entregado' })

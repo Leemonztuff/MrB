@@ -5,19 +5,19 @@ import { handleAction, getSupabaseClientWithAuth } from './_helpers';
 import type { Order, OrderWithItems, ActionResponse } from '@/types';
 import { createClient } from '@/lib/supabase/server';
 
-export async function getOrders(filters?: { 
-    status?: string; 
+export async function getOrders(filters?: {
+    status?: string;
     query?: string;
     page?: number;
     limit?: number;
-}): Promise<ActionResponse<{ orders: Order[]; total: number; page: number; totalPages: number }>> {
+}): Promise<ActionResponse<{ orders: OrderWithItems[]; total: number; page: number; totalPages: number }>> {
     return handleAction(async () => {
         const supabase = await getSupabaseClientWithAuth();
         const page = filters?.page || 1;
         const limit = Math.min(filters?.limit || 50, 100);
         const offset = (page - 1) * limit;
 
-        let queryBuilder = supabase.from('orders').select('*', { count: 'exact' }).order('created_at', { ascending: false });
+        let queryBuilder = supabase.from('orders').select('*, order_items(quantity, products(name))', { count: 'exact' }).order('created_at', { ascending: false });
 
         if (filters?.status && filters.status !== 'all') {
             queryBuilder = queryBuilder.eq('status', filters.status);
@@ -28,15 +28,15 @@ export async function getOrders(filters?: {
 
         const { data, error, count } = await queryBuilder.range(offset, offset + limit - 1);
         if (error) throw error;
-        
+
         const total = count || 0;
         const totalPages = Math.ceil(total / limit);
-        
-        return { 
-            orders: data || [], 
-            total, 
-            page, 
-            totalPages 
+
+        return {
+            orders: (data as any) || [],
+            total,
+            page,
+            totalPages
         };
     });
 }

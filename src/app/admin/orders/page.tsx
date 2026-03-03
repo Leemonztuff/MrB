@@ -2,12 +2,13 @@
 import { getOrders } from "@/app/admin/actions/orders.actions";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, ShoppingBasket } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
 import { ShippingLabelButton } from "../_components/shipping-label-button";
 import { OrderStatusBadge } from "../_components/order-status-badge";
+import { Badge } from "@/components/ui/badge";
 
 export default async function OrdersHistoryPage({
   searchParams,
@@ -39,6 +40,7 @@ export default async function OrdersHistoryPage({
               <TableRow className="border-white/5 hover:bg-transparent">
                 <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 pl-6">Fecha</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Cliente</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Contenido</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Monto</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Estado</TableHead>
                 <TableHead className="text-right pr-6">
@@ -49,7 +51,7 @@ export default async function OrdersHistoryPage({
             <TableBody>
               {!orders || orders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5}>
+                  <TableCell colSpan={6}>
                     <EmptyState
                       icon={ShoppingCart}
                       title="No hay pedidos todavía"
@@ -65,6 +67,15 @@ export default async function OrdersHistoryPage({
                     </TableCell>
                     <TableCell className="font-black italic tracking-tighter text-base group-hover:text-primary transition-colors">
                       {order.client_name_cache}
+                    </TableCell>
+                    <TableCell>
+                      <div className="max-w-[250px] flex flex-wrap gap-1">
+                        {order.order_items?.map((item, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-[9px] bg-white/5 font-normal">
+                            {item.quantity}x {item.products?.name}
+                          </Badge>
+                        )) || <span className="text-xs text-muted-foreground italic">Sin detalle</span>}
+                      </div>
                     </TableCell>
                     <TableCell className="font-headline font-black text-primary/80">
                       ${order.total_amount.toLocaleString()}

@@ -56,11 +56,11 @@ export type Order = {
 export type OrderWithItems = Order & {
     order_items: {
         quantity: number;
-        price_per_unit: number;
+        price_per_unit?: number;
         products: {
             name: string;
-            category: string | null;
-            image_url: string | null;
+            category?: string | null;
+            image_url?: string | null;
         } | null;
     }[];
     clients?: Client | null;

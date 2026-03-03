@@ -2,10 +2,10 @@
 "use client";
 
 import { useTransition, useState } from "react";
-import type { Order } from "@/types";
+import type { OrderWithItems } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { StickyNote, ChevronRight, Package, Truck, Clock } from "lucide-react";
+import { StickyNote, ChevronRight, Package, Truck, Clock, ShoppingBasket } from "lucide-react";
 import { updateOrderStatus, bulkUpdateOrderStatus } from "@/app/admin/actions/orders.actions";
 import { useToast } from "@/hooks/use-toast";
 import { OrderNoteWidget } from "./order-note-widget";
@@ -25,7 +25,7 @@ type NoteInfo = {
     note: string;
 }
 
-export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
+export function RecentOrders({ orders: initialOrders }: { orders: OrderWithItems[] }) {
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
     const [orders, setOrders] = useState(initialOrders);
@@ -139,13 +139,21 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
                                         </Button>
                                     )}
                                 </div>
-                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-                                    <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded text-muted-foreground font-black tracking-widest uppercase">
-                                        #{order.id.slice(-6)}
-                                    </span>
-                                    <span className="text-[10px] text-primary/70 font-bold uppercase tracking-wider">
-                                        {formatDistanceToNow(new Date(order.created_at), { locale: es, addSuffix: true })}
-                                    </span>
+                                <div className="flex flex-col gap-1 mt-1">
+                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                        <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded text-muted-foreground font-black tracking-widest uppercase">
+                                            #{order.id.slice(-6)}
+                                        </span>
+                                        <span className="text-[10px] text-primary/70 font-bold uppercase tracking-wider">
+                                            {formatDistanceToNow(new Date(order.created_at), { locale: es, addSuffix: true })}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-start gap-2 max-w-md">
+                                        <ShoppingBasket className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" />
+                                        <p className="text-[11px] text-muted-foreground line-clamp-1 italic">
+                                            {order.order_items?.map(i => `${i.quantity}x ${i.products?.name}`).join(", ") || "Sin detalle"}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
