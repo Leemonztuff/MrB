@@ -99,15 +99,31 @@ export default async function OrderConfirmationPortal({
               <Receipt className="h-3 w-3" />
               <span>Productos en este envío</span>
             </div>
-            <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-4 max-h-[350px] overflow-y-auto pr-3 custom-scrollbar">
               {order.order_items?.map((item: any, idx: number) => (
-                <div key={idx} className="flex justify-between items-center py-2 px-3 bg-white/5 rounded-lg border border-white/5">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold leading-tight">{item.products?.name}</span>
-                    <span className="text-[9px] uppercase tracking-wider opacity-40 font-black">{item.products?.category}</span>
+                <div
+                  key={idx}
+                  className="flex items-center gap-4 p-4 bg-white border border-black/5 rounded-2xl shadow-sm hover:shadow-md transition-shadow"
+                >
+                  {/* Quantity Badge - High Visibility */}
+                  <div className="flex-shrink-0 w-12 h-12 bg-black rounded-xl flex flex-col items-center justify-center text-white">
+                    <span className="text-[10px] font-black uppercase tracking-tighter opacity-60 leading-none mb-0.5">CANT.</span>
+                    <span className="text-xl font-black italic leading-none">{item.quantity}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-black italic text-primary">x{item.quantity}</span>
+
+                  {/* Product Info */}
+                  <div className="flex-grow min-w-0">
+                    <p className="text-sm font-black leading-tight uppercase tracking-tight truncate">
+                      {item.products?.name}
+                    </p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5 opacity-60">
+                      {item.products?.category || "GENERAL"}
+                    </p>
+                  </div>
+
+                  {/* Visual Aid for manual check */}
+                  <div className="flex-shrink-0 w-6 h-6 border-2 border-black/10 rounded-full flex items-center justify-center">
+                    <div className="w-2 h-2 rounded-full bg-black/5" />
                   </div>
                 </div>
               ))}
