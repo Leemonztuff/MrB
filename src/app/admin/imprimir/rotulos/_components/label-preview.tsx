@@ -23,10 +23,18 @@ interface LabelPreviewProps {
   baseUrl?: string;
 }
 
-export function LabelPreview({ labels, baseUrl = 'http://localhost:9003' }: LabelPreviewProps) {
+export function LabelPreview({ labels, baseUrl }: LabelPreviewProps) {
+  const [currentBaseUrl, setCurrentBaseUrl] = useState(baseUrl || '');
+
+  useEffect(() => {
+    if (!baseUrl && typeof window !== 'undefined') {
+      setCurrentBaseUrl(window.location.origin);
+    }
+  }, [baseUrl]);
+
   const labelsPerPage = 3;
   const pages: LabelData[][] = [];
-  
+
   for (let i = 0; i < labels.length; i += labelsPerPage) {
     pages.push(labels.slice(i, i + labelsPerPage));
   }
@@ -34,7 +42,7 @@ export function LabelPreview({ labels, baseUrl = 'http://localhost:9003' }: Labe
   return (
     <div className="flex flex-col gap-2 items-center">
       {pages.map((pageLabels, pageIndex) => (
-        <div 
+        <div
           key={pageIndex}
           className="bg-white shadow"
           style={{
@@ -50,10 +58,10 @@ export function LabelPreview({ labels, baseUrl = 'http://localhost:9003' }: Labe
           }}
         >
           {pageLabels.map((label, labelIndex) => (
-            <CompactLabelCard 
-              key={`${label.id}-${labelIndex}`} 
-              label={label} 
-              baseUrl={baseUrl}
+            <CompactLabelCard
+              key={`${label.id}-${labelIndex}`}
+              label={label}
+              baseUrl={currentBaseUrl}
             />
           ))}
         </div>
@@ -72,7 +80,7 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=48x48&data=${encodeURIComponent(`${baseUrl}/api/pedido/confirmar/${label.id}`)}`;
 
   return (
-    <div 
+    <div
       style={{
         border: '2px solid #000',
         borderRadius: '4px',
@@ -83,7 +91,7 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
       }}
     >
       {/* Header */}
-      <div 
+      <div
         style={{
           backgroundColor: '#1a1a1a',
           color: '#E6D5A7',
@@ -100,7 +108,7 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
       </div>
 
       {/* Content */}
-      <div 
+      <div
         style={{
           flex: 1,
           display: 'flex',
@@ -110,9 +118,9 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
       >
         {/* Info */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2mm', minWidth: 0 }}>
-          <div style={{ 
-            fontSize: '12pt', 
-            fontWeight: 800, 
+          <div style={{
+            fontSize: '12pt',
+            fontWeight: 800,
             textTransform: 'uppercase',
             color: '#000',
           }}>
@@ -127,7 +135,7 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
           </div>
 
           {label.clients?.delivery_window && (
-            <div 
+            <div
               style={{
                 backgroundColor: '#fffbeb',
                 padding: '2mm 3mm',
@@ -143,7 +151,7 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
           )}
 
           {label.notes && (
-            <div 
+            <div
               style={{
                 backgroundColor: '#fef3c7',
                 padding: '2mm 3mm',
@@ -172,7 +180,7 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
             unoptimized
             style={{ width: '24mm', height: '24mm', border: '1px solid #000' }}
           />
-          <div 
+          <div
             style={{
               backgroundColor: '#000',
               color: '#E6D5A7',
@@ -188,7 +196,7 @@ function CompactLabelCard({ label, baseUrl }: { label: LabelData; baseUrl: strin
       </div>
 
       {/* Footer */}
-      <div 
+      <div
         style={{
           backgroundColor: '#f5f5f5',
           padding: '2mm 6mm',

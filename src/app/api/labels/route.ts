@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { data: orders, error } = await getOrdersBatch(selections.map((o: any) => o.id));
-    
+
     if (error || !orders) {
       return NextResponse.json(
         { error: 'Error fetching orders' },
@@ -42,7 +42,10 @@ export async function POST(request: NextRequest) {
 
     const settings = await getSettings();
     const logoUrl = settings.logo_url ?? null;
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9003';
+
+    // Get base URL from request origin to ensure it matches the current environment
+    const url = new URL(request.url);
+    const baseUrl = url.origin;
 
     const allLabels: LabelData[] = [];
     selections.forEach((sel: { id: string; bundles: number }) => {
@@ -71,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     const pdfBuffer = await generateLabelsPDF(allLabels, logoUrl, baseUrl);
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="rotulos-${new Date().toISOString().split('T')[0]}.pdf"`,

@@ -132,12 +132,8 @@ export async function generateLabelsPDF(
  * Preparing Strings and generating QR codes locally.
  */
 async function formatLabelData(label: LabelData, baseUrl: string): Promise<FormattedLabel> {
-  const confirmUrl = `${baseUrl}/api/pedido/confirmar/${label.id}`;
-  const qrDataUrl = await QRCode.toDataURL(confirmUrl, {
-    margin: 1,
-    width: 512,
-    color: { dark: '#000000', light: '#ffffff' }
-  });
+  const confirmUrl = `${baseUrl}/pedido/confirmar/${label.id}`;
+  const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=96x96&data=${encodeURIComponent(confirmUrl)}`;
 
   return {
     id: label.id,
