@@ -229,7 +229,7 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
 
   // Delivery Window & Notes - High Contrast B&W
   if (data.deliveryWindow) {
-    drawHighContrastBadge(doc, contentX, currentY, contentWidth, `HORARIO: ${data.deliveryWindow}`);
+    drawHighContrastBadge(doc, contentX, currentY, contentWidth, `DÍAS Y HORARIOS: ${data.deliveryWindow}`);
     currentY += 12;
   }
 

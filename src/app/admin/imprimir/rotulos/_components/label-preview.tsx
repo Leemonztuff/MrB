@@ -64,32 +64,68 @@ export function LabelPreview({ labels, baseUrl }: LabelPreviewProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4 items-center bg-muted/20 p-8 min-h-screen">
-      {pages.map((pageLabels, pageIndex) => (
-        <div
-          key={pageIndex}
-          className="bg-white shadow-2xl overflow-hidden"
-          style={{
-            width: '210mm',
-            height: '297mm',
-            padding: '10mm',
-            display: 'grid',
-            gridTemplateColumns: '1fr',
-            gridTemplateRows: 'repeat(3, 1fr)',
-            gap: '6mm',
-            boxSizing: 'border-box',
-            pageBreakAfter: 'always',
-          }}
-        >
-          {pageLabels.map((label, labelIndex) => (
-            <CompactLabelCard
-              key={`${label.id}-${labelIndex}`}
-              label={label}
-              qrDataUrl={qrCodes[label.id]}
-            />
-          ))}
-        </div>
-      ))}
+    <div className="flex flex-col gap-8 items-center bg-muted/20 p-4 md:p-8 min-h-screen pb-20">
+      <style jsx global>{`
+        @media print {
+          body { 
+            margin: 0 !important; 
+            padding: 0 !important; 
+            background: white !important;
+          }
+          .no-print { display: none !important; }
+          .print-container { 
+            padding: 0 !important; 
+            margin: 0 !important;
+            gap: 0 !important;
+            background: white !important;
+          }
+          .print-page {
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 10mm !important;
+            page-break-after: always !important;
+            border: none !important;
+            width: 210mm !important;
+            height: 297mm !important;
+          }
+        }
+      `}</style>
+
+      <div className="no-print bg-black/80 text-white px-4 py-2 rounded-full text-xs font-bold mb-4 flex items-center gap-2 shadow-xl">
+        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+        VISTA DE PRESIÓN ADAPTADA (A4)
+      </div>
+
+      <div className="flex flex-col gap-10 print-container">
+        {pages.map((pageLabels, pageIndex) => (
+          <div
+            key={pageIndex}
+            className="bg-white shadow-2xl print-page transition-transform duration-500 hover:scale-[1.01]"
+            style={{
+              width: '210mm',
+              height: '297mm',
+              padding: '10mm',
+              display: 'grid',
+              gridTemplateColumns: '1fr',
+              gridTemplateRows: 'repeat(3, 1fr)',
+              gap: '8mm',
+              boxSizing: 'border-box',
+              position: 'relative',
+              // Add a scale for non-print view to fit screen
+              transform: typeof window !== 'undefined' && window.innerWidth < 1000 ? `scale(${window.innerWidth / 900})` : 'none',
+              transformOrigin: 'top center',
+            }}
+          >
+            {pageLabels.map((label, labelIndex) => (
+              <CompactLabelCard
+                key={`${label.id}-${labelIndex}`}
+                label={label}
+                qrDataUrl={qrCodes[label.id]}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -140,40 +176,42 @@ function CompactLabelCard({ label, qrDataUrl }: { label: LabelData; qrDataUrl?: 
         }}
       >
         {/* Info Area */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5mm', minWidth: 0 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4mm', minWidth: 0 }}>
           <div style={{
-            fontSize: '22pt',
+            fontSize: '24pt',
             fontWeight: 900,
             textTransform: 'uppercase',
             color: '#000',
-            lineHeight: 1.1,
-            marginBottom: '2mm',
+            lineHeight: 1,
+            marginBottom: '1mm',
           }}>
             {(label.client_name_cache || 'CLIENTE').toUpperCase()}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2mm' }}>
-            <span style={{ fontSize: '11pt', fontWeight: 900, color: '#000', opacity: 0.5, letterSpacing: '0.05em' }}>DIRECCION:</span>
-            <span style={{ fontSize: '15pt', fontWeight: 700, color: '#000', lineHeight: 1.3 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1mm' }}>
+            <span style={{ fontSize: '10pt', fontWeight: 900, color: '#000', opacity: 0.4, letterSpacing: '0.05em' }}>DIRECCION:</span>
+            <span style={{ fontSize: '15pt', fontWeight: 800, color: '#000', lineHeight: 1.2 }}>
               {label.clients?.address || 'SIN DATOS'}
             </span>
           </div>
 
           {label.clients?.delivery_window && (
-            <div
-              style={{
-                backgroundColor: '#000',
-                color: '#fff',
-                padding: '4mm 6mm',
-                borderRadius: '4px',
-                marginTop: 'auto',
-                display: 'inline-block',
-                width: 'fit-content',
-              }}
-            >
-              <span style={{ fontSize: '12pt', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                HORARIO: {label.clients.delivery_window}
-              </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1mm', marginTop: '2mm' }}>
+              <span style={{ fontSize: '10pt', fontWeight: 900, color: '#000', opacity: 0.4, letterSpacing: '0.05em' }}>DÍAS Y HORARIOS:</span>
+              <div
+                style={{
+                  backgroundColor: '#000',
+                  color: '#fff',
+                  padding: '3mm 5mm',
+                  borderRadius: '4px',
+                  display: 'inline-block',
+                  width: 'fit-content',
+                }}
+              >
+                <span style={{ fontSize: '13pt', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {label.clients.delivery_window}
+                </span>
+              </div>
             </div>
           )}
 
@@ -181,9 +219,9 @@ function CompactLabelCard({ label, qrDataUrl }: { label: LabelData; qrDataUrl?: 
             <div
               style={{
                 border: '2px solid #000',
-                padding: '4mm 6mm',
+                padding: '3mm 5mm',
                 borderRadius: '4px',
-                marginTop: label.clients?.delivery_window ? '2mm' : 'auto',
+                marginTop: 'auto',
               }}
             >
               <span style={{ fontSize: '11pt', color: '#000', fontWeight: 700 }}>
