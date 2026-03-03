@@ -105,9 +105,13 @@ export default function PortalOrdersPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h2 className="text-2xl font-bold">Mis Pedidos</h2>
-                <p className="text-muted-foreground">Historial de tus pedidos ({orders.length})</p>
+            <div className="space-y-4">
+                <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Mis <span className="text-primary">Pedidos</span></h2>
+                <div className="flex items-center gap-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Historial de tus pedidos ({orders.length})</p>
+                    <div className="h-px flex-1 bg-white/5" />
+                    <Badge variant="outline" className="text-[9px] font-black border-primary/20 bg-primary/5 text-primary px-2 py-0 h-5 rounded-full">BUILD V2.1</Badge>
+                </div>
             </div>
 
             <div className="space-y-4">

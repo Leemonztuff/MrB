@@ -31,15 +31,6 @@ export function RichEditor({ value, onChange, placeholder }: RichEditorProps) {
     const [products, setProducts] = useState<Product[]>([]);
     const productsRef = useRef<Product[]>([]);
 
-    useEffect(() => {
-        getProducts().then((res) => {
-            if (res.success && res.data) {
-                setProducts(res.data);
-                productsRef.current = res.data;
-            }
-        });
-    }, []);
-
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -123,10 +114,42 @@ export function RichEditor({ value, onChange, placeholder }: RichEditorProps) {
         immediatelyRender: false,
     });
 
+    // Fetch products and update editor options when editor is ready
+    useEffect(() => {
+        if (!editor) return; // Ensure editor is initialized
+
+        getProducts().then((res) => {
+            if (res.success && res.data) {
+                setProducts(res.data);
+                productsRef.current = res.data;
+
+                // Dynamically update editor items
+                editor.setOptions({
+                    extensions: editor.options.extensions.map(ext => {
+                        if (ext.name === 'mention') {
+                            return ext.configure({
+                                suggestion: {
+                                    items: ({ query }: { query: string }) => {
+                                        return (res.data || [])
+                                            .filter((item: Product) =>
+                                                item.name.toLowerCase().includes(query.toLowerCase())
+                                            )
+                                            .slice(0, 10);
+                                    }
+                                }
+                            });
+                        }
+                        return ext;
+                    })
+                });
+            }
+        });
+    }, [editor]); // Dependency on 'editor'
+
     // Sync value if changed externally (important for initial load/reset)
     useEffect(() => {
         if (editor && value !== editor.getHTML()) {
-            editor.commands.setContent(value, false);
+            editor.commands.setContent(value);
         }
     }, [value, editor]);
 
