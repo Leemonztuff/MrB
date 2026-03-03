@@ -229,13 +229,12 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
 
   // Delivery Window & Notes - High Contrast B&W
   if (data.deliveryWindow) {
-    drawHighContrastBadge(doc, contentX, currentY, contentWidth, `DÍAS Y HORARIOS: ${data.deliveryWindow}`);
-    currentY += 12;
+    const badgeH = drawHighContrastBadge(doc, contentX, currentY, contentWidth, `DÍAS Y HORARIOS: ${data.deliveryWindow}`);
+    currentY += badgeH + 2;
   }
 
   if (data.notes) {
     drawHighContrastBadge(doc, contentX, currentY, contentWidth, `NOTAS: ${data.notes}`, true);
-    currentY += 12;
   }
 
   // --- Footer Decoration ---
@@ -266,7 +265,7 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   doc.text(data.bundleText, badgeX + badgeW / 2, badgeY + 6.5, { align: 'center' });
 }
 
-function drawHighContrastBadge(doc: jsPDF, x: number, y: number, w: number, text: string, isItalic = false) {
+function drawHighContrastBadge(doc: jsPDF, x: number, y: number, w: number, text: string, isItalic = false): number {
   const padding = 3;
   doc.setFontSize(THEME.fonts.body - 1);
   doc.setFont('helvetica', isItalic ? 'italic' : 'bold');
@@ -285,4 +284,6 @@ function drawHighContrastBadge(doc: jsPDF, x: number, y: number, w: number, text
 
   doc.setTextColor(...THEME.colors.primaryText);
   doc.text(lines, x + padding + 1, y - 4 + padding + 2);
+
+  return h;
 }

@@ -196,19 +196,18 @@ function CompactLabelCard({ label, qrDataUrl }: { label: LabelData; qrDataUrl?: 
           </div>
 
           {label.clients?.delivery_window && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1mm', marginTop: '2mm' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1mm', marginTop: '1mm' }}>
               <span style={{ fontSize: '10pt', fontWeight: 900, color: '#000', opacity: 0.4, letterSpacing: '0.05em' }}>DÍAS Y HORARIOS:</span>
               <div
                 style={{
                   backgroundColor: '#000',
                   color: '#fff',
-                  padding: '3mm 5mm',
+                  padding: '3mm 4mm',
                   borderRadius: '4px',
-                  display: 'inline-block',
-                  width: 'fit-content',
+                  width: '100%',
                 }}
               >
-                <span style={{ fontSize: '13pt', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <span style={{ fontSize: '12pt', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1.2 }}>
                   {label.clients.delivery_window}
                 </span>
               </div>
@@ -219,12 +218,13 @@ function CompactLabelCard({ label, qrDataUrl }: { label: LabelData; qrDataUrl?: 
             <div
               style={{
                 border: '2px solid #000',
-                padding: '3mm 5mm',
+                padding: '3mm 4mm',
                 borderRadius: '4px',
                 marginTop: 'auto',
+                width: '100%',
               }}
             >
-              <span style={{ fontSize: '11pt', color: '#000', fontWeight: 700 }}>
+              <span style={{ fontSize: '10pt', color: '#000', fontWeight: 700, lineHeight: 1.2 }}>
                 NOTAS: {label.notes}
               </span>
             </div>
