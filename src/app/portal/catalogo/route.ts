@@ -1,19 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    // If no user, maybe it's a portal token session. 
-    // The portal uses a cookie-based session usually.
-    // Let's check the client record associated with the session.
-
-    const { data: client } = await supabase
-        .from('clients')
-        .select('agreement_id')
-        .eq('portal_token', request.cookies.get('portal_token')?.value || '')
-        .single();
+    const { getPortalClient } = await import("@/app/actions/portal.actions");
+    const client = await getPortalClient();
 
     const productId = request.nextUrl.searchParams.get('productId');
     const newsId = request.nextUrl.searchParams.get('newsId');
