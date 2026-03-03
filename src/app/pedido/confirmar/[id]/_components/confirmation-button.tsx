@@ -11,7 +11,7 @@ export function ConfirmationButton({ orderId }: { orderId: string }) {
     const router = useRouter();
 
     const handleConfirm = async () => {
-        if (token.length < 4) return;
+        if (token.length < 4) return; // Allow 4-6 characters if necessary, but typically 6
 
         setLoading(true);
         try {
@@ -46,14 +46,14 @@ export function ConfirmationButton({ orderId }: { orderId: string }) {
                 </label>
                 <input
                     type="text"
-                    maxLength={4}
-                    placeholder="0 0 0 0"
+                    maxLength={6}
+                    placeholder="0 0 0 0 0 0"
                     value={token}
                     onChange={(e) => setToken(e.target.value.replace(/\D/g, ""))}
                     className="w-full h-14 bg-white/5 border-white/10 rounded-xl text-center text-2xl font-black tracking-[0.5em] focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all placeholder:opacity-20"
                 />
                 <p className="text-[9px] text-center text-muted-foreground italic">
-                    Ingresá tu PIN de 4 dígitos para autorizar la recepción.
+                    Ingresá tu PIN de portal para autorizar la recepción.
                 </p>
             </div>
 
