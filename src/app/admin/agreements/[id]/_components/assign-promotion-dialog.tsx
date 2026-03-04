@@ -28,7 +28,7 @@ export function AssignPromotionDialog({
       entityName="la Promoción"
       entityNamePlural="Promociones"
       getUnassignedEntitiesAction={getUnassignedPromotions}
-      assignAction={assignMultiplePromotionsToAgreement}
+      assignAction={assignMultiplePromotionsToAgreement as any}
       assignPayloadKey="promotion_ids"
       renderItem={renderPromotion}
       creationFormConfig={promotionFormConfig}

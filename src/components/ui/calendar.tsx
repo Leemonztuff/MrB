@@ -53,13 +53,13 @@ function Calendar({
         day_hidden: "invisible",
         ...classNames,
       }}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       components={{
-        IconLeft: ({ className, ...props }) => (
-          <ChevronLeft className={cn("h-4 w-4", className)} {...props} />
-        ),
-        IconRight: ({ className, ...props }) => (
-          <ChevronRight className={cn("h-4 w-4", className)} {...props} />
-        ),
+        Chevron: ((props: any) => (
+          props.orientation === 'left' 
+            ? <ChevronLeft className={cn("h-4 w-4", props.className)} />
+            : <ChevronRight className={cn("h-4 w-4", props.className)} />
+        )) as any,
       }}
       {...props}
     />

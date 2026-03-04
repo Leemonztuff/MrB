@@ -1,19 +1,13 @@
 # AGENTS.md - Developer Guidelines
 
 ## Overview
-
-This is a Next.js 15 application (App Router) called "Blonde Orders" - an order management system with admin panel, client portal, and AI integration (Genkit).
+Next.js 15 (App Router) order management system with admin panel, client portal, and AI (Genkit).
 
 ## Tech Stack
-
-- **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript
+- **Framework**: Next.js 15 (App Router) | **Language**: TypeScript
 - **Styling**: Tailwind CSS + shadcn/ui + Radix UI
-- **Database/Auth**: Supabase
-- **State Management**: Zustand (client-side)
-- **Form Validation**: React Hook Form + Zod
-- **AI**: Genkit (Google AI)
-- **Testing**: Jest (configured but no tests currently exist)
+- **Database/Auth**: Supabase | **State**: Zustand
+- **Forms**: React Hook Form + Zod | **AI**: Genkit (Google AI)
 
 ---
 
@@ -28,39 +22,33 @@ npm run start        # Start production server
 
 ### Linting & Type Checking
 ```bash
-npm run lint         # Run ESLint
-npx tsc --noEmit      # TypeScript type check
+npm run lint         # Run Next.js ESLint
+npx tsc --noEmit     # TypeScript type check
 ```
 
 ### Testing
 ```bash
-npm test             # Run all tests
+npm test             # Run all tests (Jest)
 npm test -- --watch  # Watch mode
+npm test -- <file>   # Run single test file
+npm test -- -t "<name>"  # Run tests matching name pattern
 ```
-
-**Note**: The ARCHITECTURE.md mentions Jest config at `jest.config.js` but it doesn't exist in the repository. If you add tests, create the config first.
+**Note**: Tests require Jest configuration (`jest.config.js`). Currently no tests exist.
 
 ---
 
 ## Project Structure
-
 ```
 src/
 ├── ai/               # Genkit AI flows
-├── app/              # Next.js App Router pages
+├── app/              # Next.js App Router
 │   ├── (admin)/      # Protected admin routes
 │   ├── (auth)/       # Login/signup routes
-│   ├── actions/      # Server Actions (user actions)
-│   ├── admin/        # Admin panel with entity-specific actions
+│   ├── actions/      # Server Actions
 │   └── pedido/[id]/  # Public order page
-├── components/        # UI components
-│   ├── shared/       # Shared components (PageHeader, EmptyState)
-│   └── ui/           # shadcn/ui components
-├── hooks/            # Custom hooks (useCartStore with Zustand)
-├── lib/              # Utilities and Supabase clients
-│   ├── logic/        # Business logic (cart calculations)
-│   ├── supabase/     # DB clients (server, client, admin, middleware)
-│   └── validations/  # Zod schemas
+├── components/       # UI components (ui/, shared/)
+├── hooks/            # Zustand stores (useCartStore)
+├── lib/              # Utils, Supabase clients, Zod schemas
 └── types/            # TypeScript definitions
 ```
 
@@ -69,13 +57,8 @@ src/
 ## Code Style Guidelines
 
 ### Imports
-
-- Use path aliases (`@/` prefix) for absolute imports
-- Order imports: external → internal → relative
-- Group by: React imports → other imports → types → utils
-
+Use `@/` path aliases. Order: React → external → internal → types → utils.
 ```typescript
-// Good
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -84,116 +67,69 @@ import { useCartStore } from '@/hooks/use-cart-store';
 ```
 
 ### Types
-
-- Use explicit return types for Server Actions and public functions
+- Explicit return types for Server Actions and public functions
 - Prefer type aliases over interfaces for simple types
-- Use the `ActionResponse<T>` type for Server Action returns:
-
-```typescript
-// src/types/index.ts defines:
-export type ActionResponse<T = any> = {
-    success: boolean;
-    data?: T;
-    error?: {
-        message: string;
-        code?: string;
-    };
-};
-```
+- Use `ActionResponse<T>` for Server Action returns
 
 ### Naming Conventions
-
-- **Components**: PascalCase (`PageHeader`, `OrderSummary`)
+- **Components**: PascalCase (`PageHeader`)
 - **Hooks**: camelCase with `use` prefix (`useCartStore`)
-- **Server Actions**: camelCase, descriptive (`signupSuperAdmin`, `getOrderPageData`)
-- **Types**: PascalCase (`Product`, `Client`)
-- **Files**: kebab-case for utils, PascalCase for components
+- **Server Actions**: descriptive camelCase (`signupSuperAdmin`)
+- **Types**: PascalCase (`Product`)
+- **Files**: kebab-case (utils), PascalCase (components)
 
 ### Error Handling
-
-- Server Actions use `handleAction` wrapper (see `src/app/admin/actions/_helpers.ts`)
-- Always return `ActionResponse` for async actions
-- Use meaningful error messages in Spanish
-
+Use `handleAction` wrapper in Server Actions. Always return `ActionResponse`. Error messages in Spanish.
 ```typescript
 export async function myAction(data: Input): Promise<ActionResponse<Output>> {
     return handleAction(async () => {
-        // Logic here
         if (!valid) throw new Error('Mensaje de error descriptivo');
         return result;
     }, ['/admin/entities']);
 }
 ```
 
-### Component Patterns
-
-- Use `"use client"` directive for client components
-- shadcn/ui components follow Radix UI patterns
-- Use the `cn()` utility for conditional classes (from `tailwind-merge`)
-
+### Components
+- Use `"use client"` for client components
+- Use `cn()` utility for conditional classes:
 ```typescript
-import { cn } from '@/lib/utils';
-
-// Usage
-<div className={cn(
-    "base-classes",
-    condition && "conditional-class",
-    className  // allow overrides
-)} />
+<div className={cn("base", condition && "conditional", className)} />
 ```
 
 ### Zustand Store Pattern
-
-See `src/hooks/use-cart-store.ts` for the cart store - uses persist middleware:
-
 ```typescript
 export const useStore = create<StoreState>()(
-  persist(
-    (set, get) => ({
-      // state & actions
-    }),
-    { name: 'storage-key' }
-  )
+  persist((set, get) => ({ /* state & actions */ }), { name: 'storage-key' })
 );
 ```
 
 ### Server Actions
-
-- Place in `src/app/actions/` for general actions
-- Place in `src/app/admin/actions/` for admin-specific actions
-- Always add `"use server"` at the top
-- Use `handleAction` helper for consistent error handling
+- Place in `src/app/actions/` or `src/app/admin/actions/`
+- Add `"use server"` at the top
+- Use `handleAction` helper for error handling
 - Authenticate with `getSupabaseClientWithAuth()` helper
 
 ---
 
 ## Form Validation
-
-Uses Zod schemas with React Hook Form. Example from `src/lib/validations/client.schema.ts`:
-
+Zod schemas with React Hook Form:
 ```typescript
 export const onboardingSchema = z.object({
     contact_name: z.string().min(1, 'Requerido'),
     email: z.string().email('Email inválido'),
-    // ...
 });
 ```
 
 ---
 
 ## Database Patterns
-
-- Use Supabase service role client (`supabaseAdmin`) only in secure server contexts
-- Regular operations use `createServerClient()` or `createClient()`
-- RLS (Row Level Security) policies are set in Supabase
-- See `src/lib/supabase/` for client configurations
+- `supabaseAdmin` only in secure server contexts
+- Regular ops use `createServerClient()` or `createClient()`
+- RLS policies in Supabase
 
 ---
 
 ## Environment Variables
-
-Required in `.env.local`:
-
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
@@ -203,54 +139,21 @@ NEXT_PUBLIC_APP_URL=
 
 ---
 
-## CI/CD
-
-GitHub Actions workflow in `.github/workflows/ci-cd.yml`:
-
-1. **Lint & Type Check** - ESLint + TypeScript
-2. **Unit Tests** - Jest (if configured)
-3. **Build** - Next.js production build
-4. **Deploy** - Vercel (staging on `develop`, production on `main`)
-
----
-
 ## Useful Patterns
 
 ### Page Data Fetching
-Server Components call Server Actions to fetch data:
-
 ```typescript
-// In a page.tsx
 const data = await getData(id);
 if (!data.success) notFound();
 ```
 
 ### Client-State Sync
-After mutations, call `revalidatePath()` in Server Actions to refresh server data.
-
-### Middleware
-The `middleware.ts` handles:
-- Security headers
-- JWT validation
-- Rate limiting (see `src/lib/rate-limiter.ts`)
-- Route protection
-
----
-
-## Architecture Reference
-
-See `ARCHITECTURE.md` for detailed system documentation including:
-- Directory structure
-- Authentication flows
-- Order placement flow
-- Security implementations
-- Database schema
+After mutations, call `revalidatePath()` in Server Actions.
 
 ---
 
 ## Getting Started
-
-1. Copy `.env.example` to `.env.local` and fill in Supabase credentials
+1. Copy `.env.example` → `.env.local` and fill Supabase credentials
 2. Run `npm install`
-3. Run `npm run dev` - app runs on `http://localhost:9003`
+3. Run `npm run dev` → http://localhost:9003
 4. First visit redirects to `/signup` to create admin user

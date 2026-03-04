@@ -29,7 +29,7 @@ export function AssignSalesConditionDialog({
       entityName="la Condición"
       entityNamePlural="Condiciones"
       getUnassignedEntitiesAction={getUnassignedSalesConditions}
-      assignAction={assignMultipleSalesConditionsToAgreement}
+      assignAction={assignMultipleSalesConditionsToAgreement as any}
       assignPayloadKey="sales_condition_ids"
       renderItem={renderSalesCondition}
       creationFormConfig={salesConditionFormConfig}
