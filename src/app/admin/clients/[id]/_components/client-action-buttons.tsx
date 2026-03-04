@@ -3,15 +3,15 @@
 "use client"
 
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import type { Client } from "@/types";
@@ -29,11 +29,12 @@ type ClientActionButtonsProps = {
     clientStatus: Client['status'];
 }
 
-const ActionButton = ({ children, className, ...props }: React.ComponentProps<typeof Button>) => (
+const ActionButton = ({ children, className, variant = "secondary", ...props }: React.ComponentProps<typeof Button>) => (
     <Button
-        variant="secondary"
+        variant={variant}
+        size="sm"
         className={cn(
-            "flex flex-col items-center justify-center h-20 w-full gap-1 p-2 text-center text-xs sm:text-sm",
+            "h-9 px-3 gap-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all",
             className
         )}
         {...props}
@@ -42,63 +43,85 @@ const ActionButton = ({ children, className, ...props }: React.ComponentProps<ty
     </Button>
 );
 
-export function ClientActionButtons({ 
-    onArchive, 
-    isArchiving, 
-    onCopyLink, 
-    orderLink, 
+export function ClientActionButtons({
+    onArchive,
+    isArchiving,
+    onCopyLink,
+    orderLink,
     onboardingLink,
-    editDialog, 
+    editDialog,
     agreementDialog,
     clientStatus
 }: ClientActionButtonsProps) {
+    const portalLink = typeof window !== 'undefined' ? `${window.location.origin}/portal-cliente/login` : null;
+
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-            {editDialog}
-            
-            {agreementDialog}
+        <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 border-r border-white/10 pr-2 mr-2">
+                {editDialog}
+                {agreementDialog}
+            </div>
 
-            <ActionButton 
-                disabled={!onboardingLink || clientStatus !== 'pending_onboarding'}
-                onClick={() => onCopyLink(onboardingLink, 'Enlace de alta copiado!')}
-            >
-                <Copy className="h-5 w-5" />
-                <span>Link Alta</span>
-            </ActionButton>
+            <div className="flex items-center gap-2">
+                <ActionButton
+                    variant="outline"
+                    disabled={!onboardingLink || clientStatus !== 'pending_onboarding'}
+                    onClick={() => onCopyLink(onboardingLink, 'Enlace de alta copiado!')}
+                    className="border-primary/20 hover:border-primary/40 bg-primary/5"
+                >
+                    <Copy className="h-4 w-4" />
+                    <span>Enlace Alta</span>
+                </ActionButton>
 
-            <ActionButton disabled={!orderLink} onClick={() => onCopyLink(orderLink, 'Enlace de pedido copiado!')}>
-                <LinkIcon className="h-5 w-5" />
-                <span>Link Pedido</span>
-            </ActionButton>
+                <ActionButton
+                    variant="outline"
+                    disabled={!portalLink}
+                    onClick={() => onCopyLink(portalLink, 'Enlace del portal copiado!')}
+                >
+                    <LinkIcon className="h-4 w-4" />
+                    <span>Link Portal</span>
+                </ActionButton>
 
-            <AlertDialog>
-                <AlertDialogTrigger asChild>
-                     <ActionButton variant="destructive" className="bg-destructive/80 hover:bg-destructive text-destructive-foreground">
-                        <Archive className="h-5 w-5" />
-                        <span>Archivar</span>
-                    </ActionButton>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>¿Archivar Cliente?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Esta acción ocultará al cliente de la lista principal, pero no borrará sus pedidos asociados.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={onArchive} disabled={isArchiving} className="bg-destructive hover:bg-destructive/90">
-                            {isArchiving ? "Archivando..." : "Confirmar Archivo"}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                <ActionButton
+                    variant="outline"
+                    disabled={!orderLink}
+                    onClick={() => onCopyLink(orderLink, 'Enlace de pedido copiado!')}
+                >
+                    <LinkIcon className="h-4 w-4" />
+                    <span>Link Pedido</span>
+                </ActionButton>
+            </div>
+
+            <div className="ml-auto">
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <ActionButton variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                            <Archive className="h-4 w-4" />
+                            <span>Archivar</span>
+                        </ActionButton>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="glass border-white/5">
+                        <AlertDialogHeader>
+                            <AlertDialogTitle className="font-bold">¿Archivar Cliente?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Esta acción ocultará al cliente de la lista principal, pero no borrará sus pedidos asociados.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel className="rounded-xl border-white/5">Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={onArchive} disabled={isArchiving} className="bg-destructive hover:bg-destructive/90 rounded-xl">
+                                {isArchiving ? "Archivando..." : "Confirmar Archivo"}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </div>
         </div>
     )
 }
 
 const ActionButtonWrapper = ({ children }: { children: React.ReactNode }) => (
-     <ActionButton>
+    <ActionButton>
         {children}
     </ActionButton>
 );

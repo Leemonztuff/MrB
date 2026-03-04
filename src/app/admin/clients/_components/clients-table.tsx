@@ -111,8 +111,8 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start gap-4">
                     <div className="min-w-0">
-                      <CardTitle className="text-lg font-black italic tracking-tighter truncate">
-                        {client.contact_name || "Cliente pendiente"}
+                      <CardTitle className="text-lg font-bold tracking-tight">
+                        {client.contact_name || "Cliente sin nombre"}
                       </CardTitle>
                       {client.email && (
                         <CardDescription className="text-[10px] truncate uppercase font-bold tracking-widest opacity-60">
@@ -132,8 +132,8 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                   </div>
                 </CardHeader>
                 <CardContent className="pb-4">
-                  <p className="text-[8px] uppercase font-black tracking-widest text-muted-foreground/60">Convenio</p>
-                  <p className="font-headline font-black text-primary truncate">{client.agreements?.agreement_name || "Sin asignar"}</p>
+                  <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/60">Convenio</p>
+                  <p className="font-medium text-primary truncate">{client.agreements?.agreement_name || "Sin asignar"}</p>
                 </CardContent>
               </Link>
               <CardFooter className="flex flex-col gap-3 items-stretch p-4 pt-0">
@@ -192,10 +192,10 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
           <Table>
             <TableHeader>
               <TableRow className="border-white/5 hover:bg-transparent">
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 pl-6">Nombre</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Email</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Convenio</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Estado</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4 pl-6">Nombre</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Email</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Convenio</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Estado</TableHead>
                 <TableHead className="text-right pr-6">
                   <span className="sr-only">Acciones</span>
                 </TableHead>
@@ -208,12 +208,12 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                 return (
                   <TableRow key={client.id} className="border-white/5 hover:bg-white/5 transition-colors group">
                     <TableCell className="pl-6 py-4">
-                      <Link href={`/admin/clients/${client.id}`} className="font-black italic tracking-tighter text-base hover:text-primary transition-colors">
-                        {client.contact_name || "Cliente pendiente..."}
+                      <Link href={`/admin/clients/${client.id}`} className="font-bold tracking-tight text-base hover:text-primary transition-colors">
+                        {client.contact_name || "Cliente sin nombre"}
                       </Link>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground/80 font-medium">{client.email}</TableCell>
-                    <TableCell className="font-headline font-black text-primary/80">
+                    <TableCell className="font-medium text-primary/90">
                       {client.agreements?.agreement_name || (
                         <span className="text-muted-foreground/40 font-normal italic">Sin asignar</span>
                       )}

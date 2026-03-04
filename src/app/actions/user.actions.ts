@@ -278,6 +278,17 @@ export async function submitOnboardingForm(payload: any): Promise<ActionResponse
         const validated = onboardingSchema.parse(payload);
         const { onboarding_token, ...data } = validated;
 
+        // Check if token is expired before proceeding
+        const { data: clientCheck } = await supabase
+            .from('clients')
+            .select('onboarding_expires_at, status')
+            .eq('onboarding_token', onboarding_token)
+            .single();
+
+        if (clientCheck?.onboarding_expires_at && new Date(clientCheck.onboarding_expires_at) < new Date()) {
+            throw new Error("El enlace de invitación ha expirado.");
+        }
+
         const address = formatAddress(data);
         const delivery_window = formatDeliveryWindow(data);
 
@@ -298,7 +309,8 @@ export async function submitOnboardingForm(payload: any): Promise<ActionResponse
             address,
             delivery_window,
             instagram: data.instagram,
-            status: newStatus
+            status: newStatus,
+            onboarding_token: null // Invalidate token after use
         };
 
         if (data.cuit) {
@@ -326,7 +338,15 @@ export async function getOnboardingClient(token: string): Promise<ActionResponse
             .select('*')
             .eq('onboarding_token', token)
             .maybeSingle();
+
         if (error) throw error;
+        if (!data) return null;
+
+        // Check expiration
+        if (data.onboarding_expires_at && new Date(data.onboarding_expires_at) < new Date()) {
+            return null; // Treat expired as not found for security
+        }
+
         return data;
     });
 }

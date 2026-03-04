@@ -33,39 +33,43 @@ function formatWhatsAppMessage(
   notes?: string
 ) {
   const itemsText = cartItems
-    .map((item) => `- ${item.quantity}x ${item.product.name}`)
+    .map((item) => `• ${item.quantity}x ${item.product.name}`)
     .join("\n");
 
   const formatCurrency = (value: number) => `$${new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`;
 
   const messageParts = [
-    `✨ NUEVO PEDIDO #${orderId.slice(-4)} ✨\n`,
-    `👤 *Cliente:*\n${clientName}\n`,
+    `*🚀 NUEVO PEDIDO #${orderId.slice(-4)}* ✨\n`,
+    `👤 *Cliente:*`,
+    `${clientName}\n`,
   ];
 
   if (notes) {
-    messageParts.push(`📝 *Nota del Cliente:*\n${notes}\n`);
+    messageParts.push(`📝 *Nota del Cliente:*`);
+    messageParts.push(`${notes}\n`);
   }
 
-  messageParts.push(`📦 *Productos:* (${totalItems} unidades)\n${itemsText}\n`);
+  messageParts.push(`📦 *Productos:* (${totalItems} unidades)`);
+  messageParts.push(`${itemsText}\n`);
 
-  if (appliedPromotions.length > 0) {
+  if (appliedPromotions.length > 0 || Object.keys(bonusInfo).length > 0) {
     let promotionsText = "";
     const bonusText = Object.values(bonusInfo).map(info =>
-      `+${(info as any).bonusQuantity} un. de ${(info as any).productName}`
+      `🎁 *+${(info as any).bonusQuantity} un.* de ${(info as any).productName}`
     ).join('\n');
 
     const discountPromo = appliedPromotions.find(p => p.rules.type === 'min_amount_discount');
     if (discountPromo) {
-      promotionsText += `💸 *Descuento Aplicado (${discountPromo.rules.percentage}%):*\n-${formatCurrency(discountApplied)}\n`;
+      promotionsText += `💸 *Descuento Aplicado (${discountPromo.rules.percentage}%):* -${formatCurrency(discountApplied)}\n`;
     }
 
     if (bonusText) {
-      promotionsText += `\n🎁 *Bonificaciones:*\n${bonusText}\n`;
+      if (!promotionsText) promotionsText += `*Bonificaciones:* \n`;
+      promotionsText += `${bonusText}\n`;
     }
 
     if (appliedPromotions.some(p => p.rules.type === 'free_shipping')) {
-      promotionsText += `\n🚚 Envío Gratis.\n`;
+      promotionsText += `🚚 *Envío Gratis*\n`;
     }
 
     if (promotionsText) {
@@ -73,21 +77,15 @@ function formatWhatsAppMessage(
     }
   }
 
-
-  messageParts.push(
-    `*Resumen de Pago:*\n` +
-    `Subtotal: ${formatCurrency(subtotal)}\n`
-  );
+  messageParts.push(`*💰 Resumen de Pago:*`);
 
   if (discountApplied > 0) {
-    messageParts.push(`Descuento: -${formatCurrency(discountApplied)}\n`);
-    messageParts.push(`Subtotal c/ Descuento: ${formatCurrency(subtotalWithDiscount)}\n`);
+    messageParts.push(`Subtotal: ${formatCurrency(subtotal)}`);
+    messageParts.push(`Descuento: -${formatCurrency(discountApplied)}`);
+    messageParts.push(`*Total a Pagar: ${formatCurrency(totalPrice)}*`);
+  } else {
+    messageParts.push(`*Total a Pagar: ${formatCurrency(totalPrice)}*`);
   }
-
-  messageParts.push(
-    `IVA: ${formatCurrency(vatAmount)}\n` +
-    `*Total a Pagar: ${formatCurrency(totalPrice)}*`
-  );
 
   const message = messageParts.join("\n").trim();
 

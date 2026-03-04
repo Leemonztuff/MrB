@@ -76,18 +76,14 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
     };
 
     return (
-        <div className="max-w-7xl mx-auto w-full space-y-8 pb-20">
+        <div className="max-w-7xl mx-auto w-full space-y-6 pb-20">
             <div className="flex items-center justify-between">
-                <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" asChild>
+                <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground group transition-colors" asChild>
                     <Link href="/admin/clients">
-                        <ArrowLeft className="h-4 w-4" />
-                        Volver a la lista
+                        <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                        <span>Volver a Clientes</span>
                     </Link>
                 </Button>
-                <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="glass capitalize">{client.status.replace('_', ' ')}</Badge>
-                    {client.agreements && <Badge className="bg-primary text-primary-foreground font-bold">{client.agreements.agreement_name}</Badge>}
-                </div>
             </div>
 
             <ClientHeader

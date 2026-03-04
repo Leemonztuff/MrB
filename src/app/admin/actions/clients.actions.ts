@@ -61,10 +61,11 @@ export async function getClientById(
 
 export async function createClientForInvitation(payload: { name: string | null; agreementId: string | null }): Promise<ActionResponse<Pick<Client, "id" | "onboarding_token">>> {
   const placeholderName = payload.name || `Cliente Pendiente - ${new Date().toISOString()}`;
-  
+
   const createData: any = {
     status: 'pending_onboarding',
     onboarding_token: crypto.randomUUID(),
+    onboarding_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     contact_name: placeholderName,
     agreement_id: payload.agreementId,
   };
@@ -106,6 +107,7 @@ export async function upsertClient(
 
     if (!id) {
       finalPayload.onboarding_token = crypto.randomUUID();
+      finalPayload.onboarding_expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       if (clientData.cuit) {
         const cleanCuit = clientData.cuit.replace(/[^0-9]/g, '');
         if (cleanCuit.length >= 6) {
@@ -249,7 +251,7 @@ export async function geocodeAddressAndSave(clientId: string, address: string): 
 export async function getPendingChanges(): Promise<ActionResponse<any[]>> {
   return handleAction(async () => {
     const supabase = await getSupabaseClientWithAuth();
-    
+
     const { data, error } = await supabase
       .from('pending_changes')
       .select('*, clients(contact_name, email, cuit)')
@@ -264,7 +266,7 @@ export async function getPendingChanges(): Promise<ActionResponse<any[]>> {
 export async function approveChange(changeId: string): Promise<ActionResponse<null>> {
   return handleAction(async () => {
     const supabase = await getSupabaseClientWithAuth();
-    
+
     const { data: change, error: fetchError } = await supabase
       .from('pending_changes')
       .select('*')
@@ -272,7 +274,7 @@ export async function approveChange(changeId: string): Promise<ActionResponse<nu
       .single();
 
     if (fetchError || !change) throw new Error('Cambio no encontrado');
-    
+
     const { error: updateError } = await supabase
       .from('clients')
       .update({ [change.change_type]: change.new_value })
@@ -294,7 +296,7 @@ export async function approveChange(changeId: string): Promise<ActionResponse<nu
 export async function rejectChange(changeId: string): Promise<ActionResponse<null>> {
   return handleAction(async () => {
     const supabase = await getSupabaseClientWithAuth();
-    
+
     const { error } = await supabase
       .from('pending_changes')
       .update({ status: 'rejected', resolved_at: new Date().toISOString() })
@@ -324,7 +326,7 @@ export async function importClients(
 ): Promise<ActionResponse<{ imported: number; errors: string[] }>> {
   return handleAction(async () => {
     const supabase = await getSupabaseClientWithAuth();
-    
+
     const errors: string[] = [];
     let imported = 0;
 
@@ -341,6 +343,7 @@ export async function importClients(
           instagram: row.instagram?.trim() || null,
           contact_dni: row.contacto?.trim() || null,
           onboarding_token: crypto.randomUUID(),
+          onboarding_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
           status: 'pending_agreement',
         };
 

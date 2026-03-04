@@ -8,10 +8,19 @@ export type BonusInfo = {
     }
 }
 
+export type AppliedSalesCondition = {
+    id: string;
+    name: string;
+    type: string;
+    value: number | string;
+    description: string;
+};
+
 export const VOLUME_THRESHOLD = 150;
 
 /**
- * Calculates applied promotions and bonus items based on current cart items and subtotal.
+ * Domain-specific logic for calculating applied promotions and bonus items.
+ * This is a pure function that can be used on both client and server.
  */
 export const calculatePromotions = (items: CartItemType[], subtotal: number, promotions: Promotion[]) => {
     const totalItems = items.reduce((total, item) => total + item.quantity, 0);
@@ -62,14 +71,9 @@ export const calculatePromotions = (items: CartItemType[], subtotal: number, pro
     return { appliedPromotions, bonusInfo, discountPercentage };
 }
 
-export type AppliedSalesCondition = {
-    id: string;
-    name: string;
-    type: string;
-    value: number | string;
-    description: string;
-};
-
+/**
+ * Domain-specific logic for calculating sales conditions.
+ */
 export const calculateSalesConditions = (
     subtotal: number,
     salesConditions: SalesCondition[]
@@ -86,7 +90,7 @@ export const calculateSalesConditions = (
         if (!condition.rules) return;
 
         const rules = condition.rules;
-        
+
         switch (rules.type) {
             case 'discount':
                 if (rules.discount?.percentage) {
@@ -101,7 +105,7 @@ export const calculateSalesConditions = (
                     });
                 }
                 break;
-            
+
             case 'min_order_amount':
                 if (rules.min_order_amount?.minimum) {
                     const minimum = rules.min_order_amount.minimum;
@@ -119,7 +123,7 @@ export const calculateSalesConditions = (
                     });
                 }
                 break;
-            
+
             case 'net_days':
                 if (rules.net_days?.days) {
                     appliedConditions.push({
@@ -131,7 +135,7 @@ export const calculateSalesConditions = (
                     });
                 }
                 break;
-            
+
             case 'cash_on_delivery':
                 appliedConditions.push({
                     id: condition.id,
@@ -141,7 +145,7 @@ export const calculateSalesConditions = (
                     description: 'Contra reembolso'
                 });
                 break;
-            
+
             case 'installments':
                 if (rules.installments?.installments) {
                     appliedConditions.push({
@@ -153,7 +157,7 @@ export const calculateSalesConditions = (
                     });
                 }
                 break;
-            
+
             case 'split_payment':
                 if (rules.split_payment) {
                     appliedConditions.push({
@@ -172,9 +176,10 @@ export const calculateSalesConditions = (
 };
 
 /**
- * Single source of truth for all cart-related calculations (Subtotal, VAT, Discounts, Promos, Sales Conditions).
+ * Domain Pricing Engine: The single source of truth for all pricing calculations.
+ * This is used by the Cart Store (client) and Order Processing (server).
  */
-export const calculateCartTotals = (
+export const calculatePricing = (
     items: CartItemType[],
     pricesIncludeVat: boolean,
     promotions: Promotion[],
@@ -190,7 +195,7 @@ export const calculateCartTotals = (
     items.forEach(item => {
         const productPrice = item.product.price ?? 0;
         const productVolumePrice = item.product.volume_price ?? null;
-        
+
         const basePrice = (isVolumePricingActive && productVolumePrice != null && productVolumePrice < productPrice)
             ? productVolumePrice
             : productPrice;
@@ -208,9 +213,9 @@ export const calculateCartTotals = (
 
     const discountApplied = subtotal * ((discountPercentage ?? 0) / 100);
     const subtotalWithPromos = subtotal - discountApplied;
-    
-    const { appliedConditions, discountFromConditions } = calculateSalesConditions(subtotal, salesConditions);
-    
+
+    const { appliedConditions, discountFromConditions, minimumOrderValidation } = calculateSalesConditions(subtotal, salesConditions);
+
     const subtotalWithDiscount = subtotalWithPromos - (discountFromConditions ?? 0);
     const vatAmount = subtotalWithDiscount * vatRate;
     const totalPrice = subtotalWithDiscount + vatAmount;
@@ -226,6 +231,7 @@ export const calculateCartTotals = (
         isVolumePricingActive,
         appliedPromotions,
         appliedConditions,
-        bonusInfo
+        bonusInfo,
+        minimumOrderValidation
     };
 };

@@ -5,10 +5,10 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { ProductWithPrice, Promotion, CartItem as CartItemType, SalesCondition } from "@/types";
 import {
-  calculateCartTotals,
+  calculatePricing as calculateCartTotals,
   BonusInfo,
   AppliedSalesCondition
-} from "@/lib/logic/cart-calculations";
+} from "@/domain/pricing/calculator";
 
 type CartState = {
   items: CartItemType[];
