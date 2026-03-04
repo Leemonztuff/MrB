@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { UpsertClientForm } from "./upsert-client-form";
 import type { Client } from "@/types";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function UpsertClientDialog({
   children,
@@ -34,12 +35,16 @@ export function UpsertClientDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-3xl grid-rows-[auto_1fr_auto] p-0 max-h-[90vh]">
-        <DialogHeader className="p-6 pb-2">
+      <DialogContent className="sm:max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
-        <UpsertClientForm client={client} onSuccess={handleSuccess} onCancel={() => setIsOpen(false)} />
+        <ScrollArea className="flex-1 px-6 min-h-0">
+          <div className="pb-6 pr-3">
+            <UpsertClientForm client={client} onSuccess={handleSuccess} onCancel={() => setIsOpen(false)} />
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

@@ -136,7 +136,7 @@ export function AssignEntityDialog<T extends Entity>({
       if (!open) form.reset();
     }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Asignar {entityNamePlural}</DialogTitle>
           <DialogDescription>

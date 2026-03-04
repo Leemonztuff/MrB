@@ -105,13 +105,13 @@ export function EntityDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-lg grid-rows-[auto_1fr_auto] p-0 max-h-[90vh] flex flex-col">
-        <DialogHeader className="p-6 pb-2">
+      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
-        <ScrollArea className="h-full w-full">
-          <div className="px-6 pb-6">
+        <ScrollArea className="flex-1 px-6 min-h-0">
+          <div className="pb-6 pr-3">
             <FormProvider {...form}>
               <form
                 id={`entity-form-${entityName}`}
@@ -123,7 +123,7 @@ export function EntityDialog({
             </FormProvider>
           </div>
         </ScrollArea>
-        <DialogFooter className="p-6 pt-2 border-t mt-auto">
+        <DialogFooter className="shrink-0 px-6 pb-6 pt-2 border-t mt-auto">
           <DialogClose asChild>
             <Button variant="outline" type="button">
               Cancelar

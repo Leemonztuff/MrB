@@ -117,7 +117,7 @@ export function AssignAgreementDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Asignar Convenio</DialogTitle>
           <DialogDescription>
