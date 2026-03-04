@@ -45,17 +45,18 @@ import {
 import { Product } from "@/types";
 import { deleteProduct } from "@/app/admin/actions/products.actions";
 import { useToast } from "@/hooks/use-toast";
-import { formatDate } from "@/lib/utils";
+import { formatDate, cn } from "@/lib/utils";
 import { getImageUrl } from "@/lib/placeholder-images";
 import { EntityDialog } from "../../_components/entity-dialog";
 import { productFormConfig } from "./form-config";
 
 interface ProductsTableProps {
   products: Product[];
+  stockMap?: Record<string, any>;
   emptyState: React.ReactNode;
 }
 
-export default function ProductsTable({ products, emptyState }: ProductsTableProps) {
+export default function ProductsTable({ products, stockMap = {}, emptyState }: ProductsTableProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -101,10 +102,19 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
               <div className="flex-grow min-w-0">
                 <CardTitle className="text-lg font-black italic tracking-tighter truncate leading-tight">{product.name}</CardTitle>
                 {product.category && (
-                  <div className="mt-1">
+                  <div className="mt-1 flex gap-2 flex-wrap">
                     <Badge variant="outline" className="text-[8px] uppercase font-black tracking-widest py-0 px-2 bg-primary/5 border-primary/20 text-primary">
                       {product.category}
                     </Badge>
+                    {stockMap[product.id] && (
+                      <Badge variant="outline" className={cn(
+                        "text-[8px] uppercase font-black tracking-widest py-0 px-2 border-none",
+                        stockMap[product.id].availableStock < 10 ? "bg-amber-500/10 text-amber-500" : "bg-green-500/10 text-green-500",
+                        stockMap[product.id].availableStock <= 0 && "bg-red-500/10 text-red-500"
+                      )}>
+                        ST: {stockMap[product.id].availableStock}
+                      </Badge>
+                    )}
                   </div>
                 )}
               </div>
@@ -160,6 +170,7 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
                   <span className="sr-only">Imagen</span>
                 </TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Nombre</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Stock</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Descripción</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Creado el</TableHead>
                 <TableHead className="text-right pr-6">
@@ -182,6 +193,26 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
                     </div>
                   </TableCell>
                   <TableCell className="font-black italic tracking-tighter text-base group-hover:text-primary transition-colors">{product.name}</TableCell>
+                  <TableCell>
+                    {stockMap[product.id] ? (
+                      <div className="flex flex-col">
+                        <span className={cn(
+                          "font-mono font-bold text-base",
+                          stockMap[product.id].availableStock < 10 ? "text-amber-500" : "text-green-500",
+                          stockMap[product.id].availableStock <= 0 && "text-red-500"
+                        )}>
+                          {stockMap[product.id].availableStock}
+                        </span>
+                        {stockMap[product.id].reservedStock > 0 && (
+                          <span className="text-[8px] uppercase font-bold text-blue-500">
+                            Res: {stockMap[product.id].reservedStock}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground opacity-30 italic text-xs">Sin datos</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground/80 font-medium italic truncate max-w-md">
                     {product.description || "Sin descripción"}
                   </TableCell>

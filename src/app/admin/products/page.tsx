@@ -19,7 +19,13 @@ import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/types";
 
 export default async function ProductsPage() {
-  const { data: products, error } = await getProducts();
+  const [productsResult, stockResult] = await Promise.all([
+    getProducts(),
+    import("@/app/admin/actions/inventory.actions").then(m => m.getAllProductsStock())
+  ]);
+
+  const { data: products, error } = productsResult;
+  const stockMap = stockResult.data || {};
 
   if (error) {
     return <p className="text-destructive">{error.message}</p>;
@@ -103,6 +109,7 @@ export default async function ProductsPage() {
                 <AccordionContent className="p-0 border-t border-white/5 bg-black/20">
                   <ProductsTable
                     products={productsByCategory[category]}
+                    stockMap={stockMap}
                     emptyState={<></>}
                   />
                 </AccordionContent>

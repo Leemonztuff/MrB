@@ -11,6 +11,7 @@ import {
   Briefcase,
   History,
   Megaphone,
+  Box,
 } from "lucide-react";
 import {
   Tooltip,
@@ -33,6 +34,7 @@ const navItems: NavItem[] = [
   { href: "/admin", icon: Home, label: "Dashboard" },
   { href: "/admin/orders", icon: History, label: "Pedidos" },
   { href: "/admin/products", icon: Package, label: "Productos" },
+  { href: "/admin/inventory", icon: Box, label: "Inventario" },
   { href: "/admin/clients", icon: Users, label: "Clientes" },
   { href: "/admin/agreements", icon: FileText, label: "Convenios" },
   { href: "/admin/commercial-settings", icon: Briefcase, label: "Comercial" },

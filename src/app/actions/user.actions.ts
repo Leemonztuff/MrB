@@ -268,6 +268,20 @@ export async function submitOrder(payload: {
         const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
         if (itemsError) throw itemsError;
 
+        // --- Inventory Integration ---
+        // Record 'out' movements for all items in the order
+        const { recordBulkMovements } = await import('@/app/admin/actions/inventory.actions');
+        const inventoryMovements = payload.cart.map(item => ({
+            productId: item.product.id,
+            type: 'out' as const,
+            quantity: item.quantity,
+            reason: `Pedido #${order.id.slice(0, 8)}`,
+            referenceId: order.id,
+        }));
+
+        await recordBulkMovements(inventoryMovements);
+        // -----------------------------
+
         return { orderId: order.id };
     }, ['/admin']);
 }
