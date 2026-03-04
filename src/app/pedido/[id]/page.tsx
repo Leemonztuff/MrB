@@ -19,14 +19,7 @@ import { Button } from "@/components/ui/button";
 import { AgreementPromotion, ProductWithPrice } from "@/types";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-const categoryTranslations: Record<string, string> = {
-  "Wax": "Ceras",
-  "Powder": "Polvos",
-  "Shaving": "Afeitado",
-  "Hairstyle": "Cabello",
-  "Facial & Beard": "Barba",
-  "Shampoo & Conditioners": "Shampoo y Acondicionadores",
-};
+
 
 export default async function OrderPage({
   params,
@@ -54,26 +47,16 @@ export default async function OrderPage({
   }
 
   const { agreement, client, productsByCategory, vatPercentage, logoUrl, salesConditions = [], showProfitEstimation = false, showProductDuration = false, productDurations = {} } = data;
-  const categories = Object.keys(productsByCategory);
+  const customSortOrder = ["Cabello", "Rostro", "Merchandising"];
+  const categories = Object.keys(productsByCategory).sort((a, b) => {
+    const defaultIndex = 999;
+    const indexA = customSortOrder.indexOf(a) !== -1 ? customSortOrder.indexOf(a) : defaultIndex;
+    const indexB = customSortOrder.indexOf(b) !== -1 ? customSortOrder.indexOf(b) : defaultIndex;
+    return indexA - indexB;
+  });
   const promotions = (agreement.agreement_promotions || []).map((ap: AgreementPromotion) => ap.promotions);
 
-  const formatCategoryTitle = (category: string) => {
-    const translation = categoryTranslations[category];
-    if (!translation) {
-      return category;
-    }
 
-    // Explicitly handle the special formats
-    if (category === 'Hairstyle') {
-      return `Hairstyle / ${translation}`;
-    }
-    if (category === 'Facial & Beard') {
-      return `Facial & Beard / ${translation}`;
-    }
-
-    // Fallback for other translations
-    return translation;
-  }
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -106,7 +89,7 @@ export default async function OrderPage({
                   <Card className="glass border-white/5 overflow-hidden shadow-2xl">
                     <CardHeader className="p-0">
                       <AccordionTrigger className="px-6 py-5 text-lg font-black italic tracking-tighter hover:no-underline hover:bg-white/5 transition-colors uppercase">
-                        {formatCategoryTitle(category)}
+                        {category}
                       </AccordionTrigger>
                     </CardHeader>
                     <AccordionContent className="px-6 pb-6 pt-2">

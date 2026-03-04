@@ -34,7 +34,13 @@ export default async function ProductsPage() {
     return acc;
   }, {} as Record<string, Product[]>);
 
-  const categories = Object.keys(productsByCategory);
+  const customSortOrder = ["Cabello", "Rostro", "Merchandising"];
+  const categories = Object.keys(productsByCategory).sort((a, b) => {
+    const defaultIndex = 999;
+    const indexA = customSortOrder.indexOf(a) !== -1 ? customSortOrder.indexOf(a) : defaultIndex;
+    const indexB = customSortOrder.indexOf(b) !== -1 ? customSortOrder.indexOf(b) : defaultIndex;
+    return indexA - indexB;
+  });
 
   const emptyState = (
     <EmptyState

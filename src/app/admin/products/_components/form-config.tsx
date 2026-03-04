@@ -9,6 +9,8 @@ import { upsertProduct } from "@/app/admin/actions/products.actions";
 import type { FormConfig } from "../../_components/entity-dialog";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Categories } from "@/types"; // We will add Categories to types/index.ts in a second
 
 // 1. Esquema de validación para Producto
 const productSchema = z.object({
@@ -102,9 +104,18 @@ const renderProductFields = (form: any) => {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Categoría</FormLabel>
-            <FormControl>
-              <Input placeholder="e.g., Ceras, Shampoos" {...field} />
-            </FormControl>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona una categoría..." />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="Cabello">Cabello</SelectItem>
+                <SelectItem value="Rostro">Rostro</SelectItem>
+                <SelectItem value="Merchandising">Merchandising</SelectItem>
+              </SelectContent>
+            </Select>
             <FormMessage />
           </FormItem>
         )}

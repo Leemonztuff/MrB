@@ -13,6 +13,8 @@ export type AuthState = {
     } | null;
 };
 
+export type Categories = "Cabello" | "Rostro" | "Merchandising";
+
 export type Product = {
     id: string;
     name: string;
