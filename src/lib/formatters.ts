@@ -1,12 +1,12 @@
-
 /**
  * Formats currency in Argentine Pesos (ARS).
  */
 export function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat("es-AR", {
-        style: "currency",
-        currency: "ARS",
-    }).format(amount);
+    const formatter = new Intl.NumberFormat("es-AR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+    return `$ ${formatter.format(amount)}`;
 }
 
 /**
@@ -91,12 +91,12 @@ export function parseAddress(address: string | null): {
     province: string;
 } {
     if (!address) return { street_address: '', street_number: '', locality: '', province: '' };
-    
+
     const parts = address.split(',').map(p => p.trim());
     const province = argentinianProvinces.find(p => p === parts[parts.length - 1]);
     const locality = province && parts[parts.length - 2] ? parts[parts.length - 2] : '';
     const streetAndNumberMatch = (parts[0] || '').match(/^(.*?)(\s+\d+)?$/);
-    
+
     return {
         street_address: streetAndNumberMatch ? streetAndNumberMatch[1] : '',
         street_number: streetAndNumberMatch && streetAndNumberMatch[2] ? streetAndNumberMatch[2].trim() : '',
@@ -126,10 +126,10 @@ export function parseDeliveryWindow(deliveryWindow: string | null): {
     to: string;
 } {
     if (!deliveryWindow) return { days: [], from: '09:00', to: '18:00' };
-    
+
     const parts = deliveryWindow.split(' de ');
     if (parts.length < 2) return { days: [], from: '09:00', to: '18:00' };
-    
+
     const dayString = parts[0].toLowerCase();
     const days = deliveryDays
         .filter(day => dayString.includes(day.id.slice(0, 3)))
