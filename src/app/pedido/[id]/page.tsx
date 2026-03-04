@@ -1,10 +1,12 @@
 
 import { getOrderPageData } from "@/app/actions/user.actions";
+import { getPortalClient } from "@/app/actions/portal.actions";
 import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/app/logo";
 import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Package2 } from "lucide-react";
+import { Package2, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import {
   Accordion,
   AccordionContent,
@@ -32,7 +34,7 @@ export default async function OrderPage({
   const { newsId, promoId } = await searchParams;
   const { data, error } = await getOrderPageData(id, { newsId, promoId });
 
-  if (error || !data) {
+  if (error || !data || !data.agreement) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
         <h1 className="mb-4 text-2xl font-bold">Error al cargar el portal</h1>
@@ -40,11 +42,14 @@ export default async function OrderPage({
           {error?.message || "No se pudo encontrar la información necesaria para este pedido."}
         </p>
         <Button asChild>
-          <a href="/">Volver al inicio</a>
+          <Link href="/">Volver al inicio</Link>
         </Button>
       </div>
     );
   }
+
+  const portalSession = await getPortalClient();
+  const isFromPortal = portalSession?.agreement_id === data.agreement.id;
 
   const { agreement, client, productsByCategory, vatPercentage, logoUrl, salesConditions = [], showProfitEstimation = false, showProductDuration = false, productDurations = {} } = data;
   const customSortOrder = ["Cabello", "Rostro", "Merchandising"];
@@ -62,7 +67,25 @@ export default async function OrderPage({
     <div className="min-h-screen bg-transparent">
       <header className="sticky top-0 z-40 glass border-b border-white/5 dark:border-white/5 backdrop-blur-md">
         <div className="container mx-auto flex h-20 items-center justify-between px-6">
-          <Logo showText={true} logoUrl={logoUrl} />
+          <div className="flex items-center gap-4">
+            {isFromPortal && (
+              <Button
+                asChild
+                variant="ghost"
+                size="icon"
+                title="Volver al Portal"
+                className="h-10 w-10 shrink-0 md:h-10 md:w-auto md:px-4 rounded-full md:rounded-xl glass hover:bg-white/10 transition-all border border-white/10 shadow-lg"
+              >
+                <Link href="/portal">
+                  <ArrowLeft className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline font-black uppercase tracking-widest text-[10px]">Portal</span>
+                </Link>
+              </Button>
+            )}
+            <div className={`${isFromPortal ? "hidden md:block" : ""}`}>
+              <Logo showText={!isFromPortal} logoUrl={logoUrl} />
+            </div>
+          </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <div className="text-right">
