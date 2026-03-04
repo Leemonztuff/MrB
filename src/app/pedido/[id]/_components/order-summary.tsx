@@ -308,7 +308,7 @@ export function OrderSummary({
 
   if (orderSent) {
     return (
-      <Card className="glass border-white/5 overflow-hidden border-primary/30">
+      <Card className="glass border-border/50 overflow-hidden border-primary/30 shadow-xl">
         <CardHeader className="pb-4 text-center">
           <div className="flex justify-center mb-4">
             <div className="bg-primary/20 p-4 rounded-full">
@@ -342,16 +342,16 @@ export function OrderSummary({
   }
 
   return (
-    <Card className="glass border-white/5 overflow-hidden">
+    <Card className="glass border-border/50 overflow-hidden shadow-xl">
       <CardHeader className="pb-4">
-        <CardTitle className="text-xl font-black italic tracking-tighter">Resumen de Pedido</CardTitle>
+        <CardTitle className="text-xl font-black italic tracking-tighter text-foreground">Resumen de Pedido</CardTitle>
         {hasItems && <CardDescription className="text-xs uppercase font-bold tracking-widest opacity-60">Revisa tu orden antes de confirmar.</CardDescription>}
       </CardHeader>
       <CardContent>
         {hasItems ? (
           <div className="flex flex-col gap-6">
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center text-foreground">
                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Subtotal</span>
                 <span className="font-bold">{formatCurrency(subtotal)}</span>
               </div>
@@ -363,49 +363,49 @@ export function OrderSummary({
               )}
               {discountFromConditions > 0 && (
                 <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-green-400/70">Descuento condiciones</span>
-                  <span className="font-black text-green-400">-{formatCurrency(discountFromConditions)}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-green-400/80">Descuento condiciones</span>
+                  <span className="font-black text-green-500">-{formatCurrency(discountFromConditions)}</span>
                 </div>
               )}
               {appliedConditions.length > 0 && (
                 <div className="flex flex-col gap-1 py-2 bg-green-500/10 rounded-lg px-3 border border-green-500/20">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-green-400/70">Condiciones aplicadas:</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-green-500/80">Condiciones aplicadas:</span>
                   {appliedConditions.map((condition: any) => (
-                    <span key={condition.id} className="text-xs text-green-300/80">{condition.description}</span>
+                    <span key={condition.id} className="text-xs text-green-600 dark:text-green-300/80">{condition.description}</span>
                   ))}
                 </div>
               )}
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center text-foreground">
                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">IVA ({vatPercentage}%)</span>
                 <span className="font-bold">{formatCurrency(vatAmount)}</span>
               </div>
-              <Separator className="bg-white/5" />
+              <Separator className="bg-border/50" />
               <div className="flex justify-between items-center py-2">
-                <span className="text-sm font-black uppercase tracking-widest">Total Neto</span>
+                <span className="text-sm font-black uppercase tracking-widest text-foreground">Total Neto</span>
                 <span className="font-headline font-black text-2xl text-primary">{formatCurrency(totalPrice)}</span>
               </div>
-              <div className="flex justify-between items-center py-1 bg-white/5 rounded-lg px-3">
+              <div className="flex justify-between items-center py-1 bg-muted/50 rounded-lg px-3 text-foreground">
                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Unidades totales</span>
                 <span className="font-black italic text-sm">{totalItems}</span>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes" className="text-[10px] font-black uppercase tracking-widest opacity-60 pl-1">Notas del Pedido (Opcional)</Label>
+              <Label htmlFor="notes" className="text-[10px] font-black uppercase tracking-widest opacity-60 pl-1 text-foreground">Notas del Pedido (Opcional)</Label>
               <Textarea
                 id="notes"
                 placeholder="Ej: Instrucciones de entrega o facturación..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="glass border-white/10 focus:border-primary/50 min-h-[100px] text-sm italic font-medium placeholder:text-muted-foreground/30 rounded-xl"
+                className="glass border-border/50 focus:border-primary/50 min-h-[100px] text-sm italic font-medium placeholder:text-muted-foreground/30 rounded-xl text-foreground"
               />
             </div>
 
-            <Separator className="bg-white/5" />
+            <Separator className="bg-border/50" />
             <Button
               onClick={handleSend}
               size="lg"
-              className="w-full h-14 gap-3 font-black uppercase tracking-widest rounded-xl shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground group"
+              className="w-full h-14 gap-3 font-black uppercase tracking-widest rounded-xl shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground group transition-all"
               disabled={isPending}
             >
               {isPending ? "Procesando..." : "Enviar por WhatsApp"}
@@ -421,7 +421,7 @@ export function OrderSummary({
       {hasItems && appliedPromotions.length > 0 && (
         <>
           <div className="px-6 pb-2">
-            <Separator className="bg-white/5" />
+            <Separator className="bg-border/50" />
           </div>
           <CardFooter className="flex-col items-start gap-4 p-6 pt-2">
             <h3 className="text-xs font-black uppercase tracking-widest opacity-60">Beneficios Aplicados</h3>

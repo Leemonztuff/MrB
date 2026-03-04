@@ -57,7 +57,7 @@ export function ClientActionButtons({
 
     return (
         <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2 border-r border-white/10 pr-2 mr-2">
+            <div className="flex items-center gap-2 border-r border-border pr-2 mr-2">
                 {editDialog}
                 {agreementDialog}
             </div>
@@ -108,7 +108,7 @@ export function ClientActionButtons({
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel className="rounded-xl border-white/5">Cancelar</AlertDialogCancel>
+                            <AlertDialogCancel className="rounded-xl border-border/50">Cancelar</AlertDialogCancel>
                             <AlertDialogAction onClick={onArchive} disabled={isArchiving} className="bg-destructive hover:bg-destructive/90 rounded-xl">
                                 {isArchiving ? "Archivando..." : "Confirmar Archivo"}
                             </AlertDialogAction>

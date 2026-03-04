@@ -106,16 +106,16 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
         {clients.map((client) => {
           const onboardingLink = isClient ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
           return (
-            <Card key={client.id} className="glass border-white/5 hover:bg-white/5 transition-all duration-300">
+            <Card key={client.id} className="glass border-border/50 hover:bg-muted/20 transition-all duration-300">
               <Link href={`/admin/clients/${client.id}`}>
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start gap-4">
                     <div className="min-w-0">
-                      <CardTitle className="text-lg font-bold tracking-tight">
+                      <CardTitle className="text-lg font-bold tracking-tight text-foreground">
                         {client.contact_name || "Cliente sin nombre"}
                       </CardTitle>
                       {client.email && (
-                        <CardDescription className="text-[10px] truncate uppercase font-bold tracking-widest opacity-60">
+                        <CardDescription className="text-[10px] truncate uppercase font-bold tracking-widest text-muted-foreground/80">
                           {client.email}
                         </CardDescription>
                       )}
@@ -138,7 +138,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
               </Link>
               <CardFooter className="flex flex-col gap-3 items-stretch p-4 pt-0">
                 <AssignAgreementDialog client={client}>
-                  <Button variant="default" size="sm" className="w-full h-10 text-[10px] font-black uppercase tracking-widest bg-primary hover:bg-primary/90 rounded-xl shadow-lg shadow-primary/10">
+                  <Button variant="default" size="sm" className="w-full h-10 text-[10px] font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg shadow-primary/10 transition-all">
                     <FilePen className="mr-2 h-3.5 w-3.5" />
                     {client.agreement_id ? "Cambiar Convenio" : "Asignar Convenio"}
                   </Button>
@@ -147,7 +147,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-10 text-[9px] font-black uppercase tracking-widest rounded-xl bg-white/5 border-white/5 hover:bg-white/10"
+                    className="h-10 text-[9px] font-black uppercase tracking-widest rounded-xl bg-muted/50 border border-border/50 hover:bg-muted/80"
                     onClick={() => copyToClipboard(onboardingLink, 'Enlace de alta copiado!')}
                     disabled={client.status !== 'pending_onboarding' || !isClient}
                   >
@@ -160,7 +160,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                         <Archive className="mr-2 h-3.5 w-3.5" /> Archivar
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="glass border-white/5">
+                    <AlertDialogContent className="glass border-border/50">
                       <AlertDialogHeader>
                         <AlertDialogTitle className="font-black italic">¿Archivar Cliente?</AlertDialogTitle>
                         <AlertDialogDescription className="text-sm">
@@ -168,7 +168,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel className="rounded-xl border-white/5">Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel className="rounded-xl border-border/50">Cancelar</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => handleArchive(client.id)}
                           disabled={isPending}
@@ -187,11 +187,11 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
       </div>
 
       {/* Desktop View: Table */}
-      <Card className="hidden sm:block glass border-white/5 overflow-hidden">
+      <Card className="hidden sm:block glass border-border/50 overflow-hidden">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="border-white/5 hover:bg-transparent">
+              <TableRow className="border-border/50 hover:bg-transparent">
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4 pl-6">Nombre</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Email</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Convenio</TableHead>
@@ -206,14 +206,14 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                 const onboardingLink = isClient ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
                 const orderLink = isClient && client.agreement_id && client.status === 'active' ? `${window.location.origin}/pedido/${client.agreement_id}` : null;
                 return (
-                  <TableRow key={client.id} className="border-white/5 hover:bg-white/5 transition-colors group">
+                  <TableRow key={client.id} className="border-border/50 hover:bg-muted/30 transition-colors group">
                     <TableCell className="pl-6 py-4">
-                      <Link href={`/admin/clients/${client.id}`} className="font-bold tracking-tight text-base hover:text-primary transition-colors">
+                      <Link href={`/admin/clients/${client.id}`} className="font-bold tracking-tight text-base hover:text-primary transition-colors text-foreground">
                         {client.contact_name || "Cliente sin nombre"}
                       </Link>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground/80 font-medium">{client.email}</TableCell>
-                    <TableCell className="font-medium text-primary/90">
+                    <TableCell className="text-sm text-muted-foreground font-medium">{client.email}</TableCell>
+                    <TableCell className="font-medium text-primary">
                       {client.agreements?.agreement_name || (
                         <span className="text-muted-foreground/40 font-normal italic">Sin asignar</span>
                       )}
@@ -238,22 +238,22 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                             <span className="sr-only">Menú</span>
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="glass border-white/5 min-w-[180px]">
+                        <DropdownMenuContent align="end" className="glass border-border/50 min-w-[180px]">
                           <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest opacity-50 px-3 py-2">Acciones</DropdownMenuLabel>
-                          <DropdownMenuItem asChild className="focus:bg-white/5">
+                          <DropdownMenuItem asChild className="focus:bg-muted/50">
                             <Link href={`/admin/clients/${client.id}`} className="cursor-pointer font-bold py-2">Ver Detalles</Link>
                           </DropdownMenuItem>
                           <AssignAgreementDialog client={client}>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="focus:bg-white/5 cursor-pointer font-bold py-2">
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="focus:bg-muted/50 cursor-pointer font-bold py-2">
                               {client.agreement_id ? "Cambiar Convenio" : "Asignar Convenio"}
                             </DropdownMenuItem>
                           </AssignAgreementDialog>
-                          <DropdownMenuSeparator className="bg-white/5" />
+                          <DropdownMenuSeparator className="bg-border/50" />
                           <DropdownMenuItem
                             onSelect={(e) => e.preventDefault()}
                             onClick={() => copyToClipboard(orderLink, 'Enlace de pedido copiado!', 'El cliente debe estar activo para tener un enlace de pedido.')}
                             disabled={!orderLink}
-                            className="focus:bg-white/5 cursor-pointer font-bold py-2"
+                            className="focus:bg-muted/50 cursor-pointer font-bold py-2"
                           >
                             <LinkIcon className="mr-2 h-4 w-4 text-primary" />
                             Copiar Link Pedido
@@ -262,12 +262,12 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                             onSelect={(e) => e.preventDefault()}
                             onClick={() => copyToClipboard(onboardingLink, 'Enlace de alta copiado!')}
                             disabled={client.status !== 'pending_onboarding' || !isClient}
-                            className="focus:bg-white/5 cursor-pointer font-bold py-2"
+                            className="focus:bg-muted/50 cursor-pointer font-bold py-2"
                           >
                             <Copy className="mr-2 h-4 w-4 text-primary" />
                             Copiar Link de Alta
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-white/5" />
+                          <DropdownMenuSeparator className="bg-border/50" />
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <DropdownMenuItem
@@ -278,7 +278,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                                 Archivar
                               </DropdownMenuItem>
                             </AlertDialogTrigger>
-                            <AlertDialogContent className="glass border-white/5">
+                            <AlertDialogContent className="glass border-border/50">
                               <AlertDialogHeader>
                                 <AlertDialogTitle className="font-black italic">¿Archivar Cliente?</AlertDialogTitle>
                                 <AlertDialogDescription className="text-sm">
@@ -286,7 +286,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel className="rounded-xl border-white/5">Cancelar</AlertDialogCancel>
+                                <AlertDialogCancel className="rounded-xl border-border/50">Cancelar</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => handleArchive(client.id)}
                                   disabled={isPending}
@@ -306,8 +306,8 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
             </TableBody>
           </Table>
         </CardContent>
-        <CardFooter className="px-6 py-4 border-t border-white/5">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
+        <CardFooter className="px-6 py-4 border-t border-border/50">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">
             Mostrando <strong className="text-foreground">{clients.length}</strong> de <strong className="text-foreground">{clients.length}</strong> clientes.
           </div>
         </CardFooter>

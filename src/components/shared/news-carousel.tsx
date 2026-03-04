@@ -56,7 +56,7 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
     return (
       <>
         <Card
-          className="glass-card group border-white/5 overflow-hidden cursor-pointer hover:border-primary/20 transition-all hover:shadow-primary/5 shadow-2xl"
+          className="glass-card group border-border/50 overflow-hidden cursor-pointer hover:border-primary/20 transition-all hover:shadow-primary/5 shadow-2xl"
           onClick={() => setSelectedNews(item)}
         >
           <div className="flex">
@@ -71,7 +71,7 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
               </div>
             )}
             <CardContent className="p-4 flex flex-col justify-center">
-              <h3 className="font-black italic text-lg tracking-tight mb-1 uppercase group-hover:text-primary transition-colors">{item.title}</h3>
+              <h3 className="font-black italic text-lg tracking-tight mb-1 uppercase group-hover:text-primary transition-colors text-foreground">{item.title}</h3>
               <RichContent content={item.content} />
             </CardContent>
           </div>
@@ -146,7 +146,7 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
             <Button
               variant="secondary"
               size="icon"
-              className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-black/40 hover:bg-primary/80 backdrop-blur-md text-white border border-white/10 rounded-xl transition-all"
+              className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-background/60 hover:bg-primary hover:text-primary-foreground backdrop-blur-md text-foreground border border-border/50 rounded-xl transition-all shadow-lg"
               onClick={(e) => {
                 e.stopPropagation();
                 goToPrevious();
@@ -157,7 +157,7 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
             <Button
               variant="secondary"
               size="icon"
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-black/40 hover:bg-primary/80 backdrop-blur-md text-white border border-white/10 rounded-xl transition-all"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-background/60 hover:bg-primary hover:text-primary-foreground backdrop-blur-md text-foreground border border-border/50 rounded-xl transition-all shadow-lg"
               onClick={(e) => {
                 e.stopPropagation();
                 goToNext();

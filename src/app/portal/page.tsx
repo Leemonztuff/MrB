@@ -110,13 +110,13 @@ export default function PortalPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {infoCards.map((card, idx) => (
-          <Card key={card.label} className={cn("glass-card group border-white/5", `animation-delay-${(idx + 1) * 100}`)}>
+          <Card key={card.label} className={cn("glass-card group border-border/50", `animation-delay-${(idx + 1) * 100}`)}>
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{card.label}</span>
               <card.icon className="h-4 w-4 text-primary opacity-50 group-hover:scale-110 group-hover:opacity-100 transition-all" />
             </CardHeader>
             <CardContent>
-              <p className="text-sm font-bold truncate leading-none" title={card.value}>{card.value}</p>
+              <p className="text-sm font-bold truncate leading-none text-foreground" title={card.value}>{card.value}</p>
             </CardContent>
           </Card>
         ))}
@@ -125,7 +125,7 @@ export default function PortalPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="glass-card border-none bg-primary/5 hover:bg-primary/10 transition-all group">
           <CardHeader>
-            <CardTitle className="flex items-center gap-3 text-sm font-black uppercase tracking-widest">
+            <CardTitle className="flex items-center gap-3 text-sm font-black uppercase tracking-widest text-foreground">
               <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                 <ShoppingCart className="h-5 w-5" />
               </div>
@@ -133,18 +133,18 @@ export default function PortalPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-2">
-            <p className="text-2xl font-black italic tracking-tight mb-6">
+            <p className="text-2xl font-black italic tracking-tight mb-6 text-foreground">
               {client.agreements?.agreement_name || 'Sin convenio'}
             </p>
             {client.agreement_id ? (
-              <Button asChild className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest shadow-lg shadow-primary/20 rounded-xl group/btn">
+              <Button asChild className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest shadow-lg shadow-primary/20 rounded-xl group/btn transition-all">
                 <Link href={`/pedido/${client.agreement_id}`}>
                   <span>Ir al Catálogo</span>
                   <ArrowRight className="h-4 w-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
                 </Link>
               </Button>
             ) : (
-              <div className="p-4 rounded-xl bg-white/5 border border-white/5">
+              <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
                 <p className="text-xs text-muted-foreground font-medium text-center italic">
                   Contactá al administrador para que te asigne un convenio.
                 </p>
@@ -153,24 +153,24 @@ export default function PortalPage() {
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-white/5">
+        <Card className="glass-card border-border/50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-3 text-sm font-black uppercase tracking-widest">
-              <div className="p-2 rounded-lg bg-white/5 text-primary">
+            <CardTitle className="flex items-center gap-3 text-sm font-black uppercase tracking-widest text-foreground">
+              <div className="p-2 rounded-lg bg-muted/50 text-primary">
                 <FileText className="h-5 w-5" />
               </div>
               Accesos Rápidos
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 pt-2">
-            <Button variant="outline" className="w-full h-11 justify-start border-white/10 hover:bg-white/5 rounded-xl group font-bold" asChild>
+            <Button variant="outline" className="w-full h-11 justify-start border-border/50 hover:bg-muted/30 rounded-xl group font-bold text-foreground transition-all" asChild>
               <Link href="/portal/profile">
                 <UserIcon className="h-4 w-4 mr-3 text-primary" />
                 <span className="text-xs uppercase tracking-widest text-[10px]">Editar Mi Perfil</span>
                 <ChevronRight className="h-4 w-4 ml-auto opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
               </Link>
             </Button>
-            <Button variant="outline" className="w-full h-11 justify-start border-white/10 hover:bg-white/5 rounded-xl group font-bold" asChild>
+            <Button variant="outline" className="w-full h-11 justify-start border-border/50 hover:bg-muted/30 rounded-xl group font-bold text-foreground transition-all" asChild>
               <Link href="/portal/orders">
                 <FileText className="h-4 w-4 mr-3 text-primary" />
                 <span className="text-xs uppercase tracking-widest text-[10px]">Mis Pedidos</span>

@@ -15,17 +15,16 @@ export function Logo({
   logoUrl?: string | null;
 }) {
   const textStyle: React.CSSProperties = {
-    filter: 'drop-shadow(1px 2px 1px hsl(41 47% 57% / 0.7))',
-    color: '#FFFFFF'
+    filter: 'drop-shadow(1px 2px 1px hsl(var(--primary) / 0.4))',
   };
 
   const IconOrLogo = () => {
     if (logoUrl) {
       return (
-        <Image 
-          src={logoUrl} 
-          alt="App Logo" 
-          fill 
+        <Image
+          src={logoUrl}
+          alt="App Logo"
+          fill
           className="object-contain p-1"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           priority={showText}
@@ -37,19 +36,19 @@ export function Logo({
 
   if (showText) {
     return (
-        <div
+      <div
         className={cn(
-            "flex items-center gap-2 text-lg font-bold font-headline",
-            className
+          "flex items-center gap-2 text-lg font-bold font-headline",
+          className
         )}
-        >
-            <div className="bg-primary text-primary-foreground p-1.5 rounded-md relative h-8 w-8">
-                <IconOrLogo />
-            </div>
-            <span style={textStyle} className={cn("font-extrabold tracking-tighter text-xl")}>
-                MR. BLONDE
-            </span>
+      >
+        <div className="bg-primary text-primary-foreground p-1.5 rounded-md relative h-8 w-8">
+          <IconOrLogo />
         </div>
+        <span style={textStyle} className={cn("font-extrabold tracking-tighter text-xl text-foreground uppercase")}>
+          MR. BLONDE
+        </span>
+      </div>
     );
   }
 

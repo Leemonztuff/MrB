@@ -95,14 +95,14 @@ export function ClientHeader({
             <div className="hidden sm:flex items-center gap-3">
               <h2 className="text-2xl font-bold tracking-tight truncate">{client.contact_name}</h2>
               <div className="flex items-center gap-2">
-                <div className="h-4 w-px bg-white/10 mx-1" />
+                <div className="h-4 w-px bg-border/60 mx-1" />
                 <span className="text-xs font-bold uppercase tracking-widest text-primary">
                   {client.agreements?.agreement_name || 'Sin Convenio'}
                 </span>
-                <div className="h-4 w-px bg-white/10 mx-1" />
+                <div className="h-4 w-px bg-border/60 mx-1" />
                 <span className={cn(
-                  "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border",
-                  client.status === 'active' ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground border-transparent"
+                  "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-border/50",
+                  client.status === 'active' ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground"
                 )}>
                   {status.label}
                 </span>
@@ -117,7 +117,7 @@ export function ClientHeader({
         </div>
 
         {/* Toolbar Section */}
-        <div className="mt-6 pt-6 border-t border-white/5">
+        <div className="mt-6 pt-6 border-t border-border/50">
           <ClientActionButtons
             onArchive={onArchive}
             isArchiving={isArchiving}

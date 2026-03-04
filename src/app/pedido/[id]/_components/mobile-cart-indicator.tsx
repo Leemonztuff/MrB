@@ -32,12 +32,12 @@ export function MobileCartIndicator() {
         <div className="fixed bottom-6 left-4 right-4 z-50 lg:hidden animate-in fade-in slide-in-from-bottom-10 duration-300">
             <Button
                 onClick={scrollToSummary}
-                className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/20 flex items-center justify-between px-6 rounded-2xl group"
+                className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-border/50 flex items-center justify-between px-6 rounded-2xl group transition-all"
             >
                 <div className="flex items-center gap-3">
                     <div className="relative">
                         <ShoppingCart className="h-6 w-6" />
-                        <span className="absolute -top-2 -right-2 bg-white text-primary text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
+                        <span className="absolute -top-2 -right-2 bg-primary-foreground text-primary text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
                             {totalItems}
                         </span>
                     </div>

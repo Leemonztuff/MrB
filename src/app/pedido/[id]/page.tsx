@@ -65,7 +65,7 @@ export default async function OrderPage({
 
   return (
     <div className="min-h-screen bg-transparent">
-      <header className="sticky top-0 z-40 glass border-b border-white/5 dark:border-white/5 backdrop-blur-md">
+      <header className="sticky top-0 z-40 glass border-b border-border/50 backdrop-blur-md">
         <div className="container mx-auto flex h-20 items-center justify-between px-6">
           <div className="flex items-center gap-4">
             {isFromPortal && (
@@ -74,7 +74,7 @@ export default async function OrderPage({
                 variant="ghost"
                 size="icon"
                 title="Volver al Portal"
-                className="h-10 w-10 shrink-0 md:h-10 md:w-auto md:px-4 rounded-full md:rounded-xl glass hover:bg-white/10 transition-all border border-white/10 shadow-lg"
+                className="h-10 w-10 shrink-0 md:h-10 md:w-auto md:px-4 rounded-full md:rounded-xl glass hover:bg-muted/30 transition-all border border-border/50 shadow-lg"
               >
                 <Link href="/portal">
                   <ArrowLeft className="h-4 w-4 md:mr-2" />
@@ -109,9 +109,9 @@ export default async function OrderPage({
             <Accordion type="multiple" defaultValue={categories} className="w-full space-y-6">
               {categories.map((category) => (
                 <AccordionItem key={category} value={category} className="border-none">
-                  <Card className="glass border-white/5 overflow-hidden shadow-2xl">
+                  <Card className="glass border-border/50 overflow-hidden shadow-2xl">
                     <CardHeader className="p-0">
-                      <AccordionTrigger className="px-6 py-5 text-lg font-black italic tracking-tighter hover:no-underline hover:bg-white/5 transition-colors uppercase">
+                      <AccordionTrigger className="px-6 py-5 text-lg font-black italic tracking-tighter hover:no-underline hover:bg-muted/10 transition-colors uppercase">
                         {category}
                       </AccordionTrigger>
                     </CardHeader>
@@ -145,7 +145,7 @@ export default async function OrderPage({
         {/* Columna Derecha: Resumen */}
         <div id="order-summary-container" className="lg:col-span-1 lg:sticky lg:top-28 space-y-6 pb-24 lg:pb-0">
           <Suspense fallback={
-            <div className="glass p-8 rounded-2xl border-white/10 animate-pulse text-center italic font-bold">
+            <div className="glass p-8 rounded-2xl border-border/50 animate-pulse text-center italic font-bold">
               Cargando resumen maestro...
             </div>
           }>
