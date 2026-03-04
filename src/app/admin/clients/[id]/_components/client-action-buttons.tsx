@@ -120,8 +120,8 @@ export function ClientActionButtons({
     )
 }
 
-const ActionButtonWrapper = ({ children }: { children: React.ReactNode }) => (
-    <ActionButton>
+const ActionButtonWrapper = ({ children, ...props }: { children: React.ReactNode } & React.ComponentProps<typeof ActionButton>) => (
+    <ActionButton {...props}>
         {children}
     </ActionButton>
 );
