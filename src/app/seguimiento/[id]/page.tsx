@@ -117,6 +117,3 @@ export default async function TrackingPage({ params }: { params: Promise<{ id: s
         </div>
     );
 }
-
-// Fixed import for cn and helper
-import { cn } from '@/lib/utils';
