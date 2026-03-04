@@ -34,5 +34,16 @@ export const onboardingSchema = z.object({
     onboarding_token: z.string().uuid(),
 });
 
+export const onboardingMinimalSchema = z.object({
+    contact_name: z.string().min(2, "Nombre requerido"),
+    phone: z.string().min(8, "Teléfono inválido"),
+    street_address: z.string().min(1, "Dirección requerida"),
+    street_number: z.string().min(1, "Número requerido"),
+    locality: z.string().min(1, "Localidad requerida"),
+    province: z.string().min(1, "Provincia requerida"),
+    onboarding_token: z.string().uuid(),
+});
+
 export type ClientInput = z.infer<typeof clientSchema>;
 export type OnboardingInput = z.infer<typeof onboardingSchema>;
+export type OnboardingMinimalInput = z.infer<typeof onboardingMinimalSchema>;

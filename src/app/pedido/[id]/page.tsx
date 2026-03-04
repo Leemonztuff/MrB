@@ -20,8 +20,7 @@ import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { AgreementPromotion, ProductWithPrice } from "@/types";
 import { ThemeToggle } from "@/components/theme-toggle";
-
-
+import { OnboardingInline } from "./_components/onboarding-inline";
 
 export default async function OrderPage({
   params,
@@ -34,24 +33,50 @@ export default async function OrderPage({
   const { newsId, promoId } = await searchParams;
   const { data, error } = await getOrderPageData(id, { newsId, promoId });
 
-  if (error || !data || !data.agreement) {
+  if (error || !data) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
-        <h1 className="mb-4 text-2xl font-bold">Error al cargar el portal</h1>
-        <p className="mb-8 text-muted-foreground">
-          {error?.message || "No se pudo encontrar la información necesaria para este pedido."}
+        <h1 className="mb-4 text-2xl font-bold italic tracking-tighter">Acceso Protegido</h1>
+        <p className="mb-8 text-muted-foreground text-sm max-w-xs font-medium italic">
+          {error?.message || "No se pudo encontrar la sesión solicitada. Verifica tu enlace."}
         </p>
-        <Button asChild>
+        <Button asChild className="rounded-xl">
           <Link href="/">Volver al inicio</Link>
         </Button>
       </div>
     );
   }
 
-  const portalSession = await getPortalClient();
-  const isFromPortal = portalSession?.agreement_id === data.agreement.id;
+  const { mode, agreement, client, productsByCategory, vatPercentage, logoUrl, salesConditions = [], showProfitEstimation = false, showProductDuration = false, productDurations = {} } = data;
 
-  const { agreement, client, productsByCategory, vatPercentage, logoUrl, salesConditions = [], showProfitEstimation = false, showProductDuration = false, productDurations = {} } = data;
+  if (mode === 'onboarding') {
+    return (
+      <OnboardingInline
+        token={id}
+        clientName={client?.contact_name}
+        logoUrl={logoUrl}
+      />
+    );
+  }
+
+  if (!agreement) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
+        <Logo showText logoUrl={logoUrl} className="mb-8" />
+        <h1 className="mb-4 text-2xl font-bold italic tracking-tighter text-primary">Convenio Pendiente</h1>
+        <p className="mb-8 text-muted-foreground text-sm max-w-sm font-medium italic leading-relaxed">
+          Tus datos han sido registrados con éxito, pero aún no tienes un convenio asignado para ver precios.
+          Te notificaremos por WhatsApp cuando tu cuenta esté activa.
+        </p>
+        <Button asChild variant="outline" className="rounded-xl">
+          <Link href="/portal/login">Ir al Portal</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const portalSession = await getPortalClient();
+  const isFromPortal = portalSession?.agreement_id === agreement.id;
   const customSortOrder = ["Cabello", "Rostro", "Merchandising"];
   const categories = Object.keys(productsByCategory).sort((a, b) => {
     const defaultIndex = 999;

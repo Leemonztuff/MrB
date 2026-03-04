@@ -57,9 +57,28 @@ export async function logout() {
     redirect('/login');
 }
 
-export async function getOrderPageData(agreementId: string, options?: { newsId?: string, promoId?: string }): Promise<ActionResponse<any>> {
+export async function getOrderPageData(id: string, options?: { newsId?: string, promoId?: string }): Promise<ActionResponse<any>> {
     return handleAction(async () => {
+        const { resolveSessionState } = await import('@/domain/order-session/session');
+        const session = await resolveSessionState(id);
+
+        if (session.state === 'INVALID') {
+            throw new Error(session.error || "Enlace inválido.");
+        }
+
         const supabase = await createServerClient();
+        const agreementId = session.agreement?.id || session.client?.agreement_id;
+
+        if (!agreementId) {
+            // Case where we have a client from onboarding but no agreement assigned yet
+            return {
+                mode: 'onboarding',
+                client: session.client,
+                agreement: null,
+                productsByCategory: {},
+                settings: {}
+            };
+        }
 
         const [agreementResult, settingsResult, newsPromoResult] = await Promise.all([
             supabase.from('agreements').select('*, agreement_promotions(promotions(*)), agreement_sales_conditions(sales_conditions(*)), price_lists(*)').eq('id', agreementId).maybeSingle(),
@@ -73,8 +92,6 @@ export async function getOrderPageData(agreementId: string, options?: { newsId?:
         let newsLinkedPromotion = null;
         if (options?.newsId && newsPromoResult.data) {
             const { promotion_id, target_client_type } = newsPromoResult.data;
-
-            // Validate client type if targeted
             if (!target_client_type || target_client_type === agreement.client_type) {
                 if (promotion_id) {
                     const { data: promo } = await supabase.from('promotions').select('*').eq('id', promotion_id).single();
@@ -93,7 +110,6 @@ export async function getOrderPageData(agreementId: string, options?: { newsId?:
         if (itemsError) throw new Error("Error al cargar productos.");
 
         let consumerPrices: Record<string, { price: number; volume_price: number | null }> = {};
-
         if (agreement.client_type === 'distribuidor') {
             const { data: barberiaAgreements } = await supabase
                 .from('agreements')
@@ -148,21 +164,10 @@ export async function getOrderPageData(agreementId: string, options?: { newsId?:
             return acc;
         }, {});
 
-        // SECURE IDENTITY ENFORCEMENT:
-        // Try to get the definitively authenticated client session.
-        const portalSession = await getPortalClient();
-        let client = null;
-
-        if (portalSession && portalSession.agreement_id === agreementId) {
-            client = portalSession;
-        } else {
-            // Fallback for anonymous public links: try to find a generic client
-            const { data } = await supabase.from('clients').select('*').eq('agreement_id', agreementId).limit(1).maybeSingle();
-            client = data;
-        }
+        // Use the resolved client from the session
+        let client = session.client;
 
         let productDurations: Record<string, number> = {};
-
         if (agreement.client_type === 'barberia' && client?.id) {
             const { data: orderItems } = await supabase
                 .from('order_items')
@@ -176,13 +181,10 @@ export async function getOrderPageData(agreementId: string, options?: { newsId?:
 
             if (orderItems && orderItems.length > 0) {
                 const productPurchaseDates: Record<string, string[]> = {};
-
                 orderItems.forEach((item: any) => {
                     const productId = item.products?.id;
                     if (productId) {
-                        if (!productPurchaseDates[productId]) {
-                            productPurchaseDates[productId] = [];
-                        }
+                        if (!productPurchaseDates[productId]) productPurchaseDates[productId] = [];
                         productPurchaseDates[productId].push(item.created_at);
                     }
                 });
@@ -199,22 +201,19 @@ export async function getOrderPageData(agreementId: string, options?: { newsId?:
                             totalDays += diffDays;
                             count++;
                         }
-                        if (count > 0) {
-                            productDurations[productId] = Math.round(totalDays / count);
-                        }
+                        if (count > 0) productDurations[productId] = Math.round(totalDays / count);
                     }
                 });
             }
         }
 
         const promotions = (agreement.agreement_promotions || []).map((ap: any) => ap.promotions);
-        if (newsLinkedPromotion) {
-            promotions.push(newsLinkedPromotion);
-        }
+        if (newsLinkedPromotion) promotions.push(newsLinkedPromotion);
 
         const salesConditions = agreement.agreement_sales_conditions?.map((asc: any) => asc.sales_conditions).filter(Boolean) || [];
 
         return {
+            mode: session.state === 'ONBOARDING' ? 'onboarding' : 'catalog',
             agreement,
             client,
             productsByCategory,
@@ -337,6 +336,39 @@ export async function submitOnboardingForm(payload: any): Promise<ActionResponse
         const { error } = await supabase
             .from('clients')
             .update(updateData)
+            .eq('onboarding_token', onboarding_token);
+
+        if (error) throw error;
+        return null;
+    }, ['/admin']);
+}
+
+export async function submitMinimalOnboarding(payload: any): Promise<ActionResponse<null>> {
+    return handleAction(async () => {
+        const supabase = await createServerClient();
+        const { onboardingMinimalSchema } = await import('@/lib/validations/client.schema');
+        const validated = onboardingMinimalSchema.parse(payload);
+        const { onboarding_token, street_address, street_number, locality, province, ...data } = validated;
+
+        const address = `${street_address} ${street_number}, ${locality}, ${province}`;
+
+        const clientBeforeUpdate = await supabase
+            .from('clients')
+            .select('agreement_id')
+            .eq('onboarding_token', onboarding_token)
+            .single();
+
+        const newStatus = clientBeforeUpdate.data?.agreement_id ? 'active' : 'pending_agreement';
+
+        const { error } = await supabase
+            .from('clients')
+            .update({
+                contact_name: data.contact_name?.toUpperCase(),
+                phone: data.phone,
+                address,
+                status: newStatus,
+                onboarding_token: null // Invalidate token after use
+            })
             .eq('onboarding_token', onboarding_token);
 
         if (error) throw error;

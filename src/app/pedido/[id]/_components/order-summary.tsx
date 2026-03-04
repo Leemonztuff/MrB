@@ -37,34 +37,35 @@ function formatWhatsAppMessage(
     .join("\n");
 
   const formatCurrency = (value: number) => `$${new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`;
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const trackingUrl = `${baseUrl}/seguimiento/${orderId}`;
 
   const messageParts = [
-    `*🚀 NUEVO PEDIDO #${orderId.slice(-4)}* ✨\n`,
+    `*✅ PEDIDO REGISTRADO #${orderId.slice(-6).toUpperCase()}* 🚀\n`,
     `👤 *Cliente:*`,
     `${clientName}\n`,
   ];
 
   if (notes) {
-    messageParts.push(`📝 *Nota del Cliente:*`);
+    messageParts.push(`📝 *Nota:*`);
     messageParts.push(`${notes}\n`);
   }
 
-  messageParts.push(`📦 *Productos:* (${totalItems} unidades)`);
+  messageParts.push(`📦 *Detalle del Pedido:* (${totalItems} unidades)`);
   messageParts.push(`${itemsText}\n`);
 
   if (appliedPromotions.length > 0 || Object.keys(bonusInfo).length > 0) {
-    let promotionsText = "";
+    let promotionsText = "✨ *Beneficios Aplicados:* \n";
     const bonusText = Object.values(bonusInfo).map(info =>
-      `🎁 *+${(info as any).bonusQuantity} un.* de ${(info as any).productName}`
+      `🎁 *Bonificación:* +${(info as any).bonusQuantity} un. ${(info as any).productName}`
     ).join('\n');
 
     const discountPromo = appliedPromotions.find(p => p.rules.type === 'min_amount_discount');
     if (discountPromo) {
-      promotionsText += `💸 *Descuento Aplicado (${discountPromo.rules.percentage}%):* -${formatCurrency(discountApplied)}\n`;
+      promotionsText += `💸 *Descuento:* -${formatCurrency(discountApplied)}\n`;
     }
 
     if (bonusText) {
-      if (!promotionsText) promotionsText += `*Bonificaciones:* \n`;
       promotionsText += `${bonusText}\n`;
     }
 
@@ -72,20 +73,13 @@ function formatWhatsAppMessage(
       promotionsText += `🚚 *Envío Gratis*\n`;
     }
 
-    if (promotionsText) {
-      messageParts.push(promotionsText);
-    }
+    messageParts.push(promotionsText);
   }
 
-  messageParts.push(`*💰 Resumen de Pago:*`);
-
-  if (discountApplied > 0) {
-    messageParts.push(`Subtotal: ${formatCurrency(subtotal)}`);
-    messageParts.push(`Descuento: -${formatCurrency(discountApplied)}`);
-    messageParts.push(`*Total a Pagar: ${formatCurrency(totalPrice)}*`);
-  } else {
-    messageParts.push(`*Total a Pagar: ${formatCurrency(totalPrice)}*`);
-  }
+  messageParts.push(`💰 *Total a confirmar: ${formatCurrency(totalPrice)}*\n`);
+  messageParts.push(`🕒 *Seguimiento y Estado:*`);
+  messageParts.push(`${trackingUrl}\n`);
+  messageParts.push(`_Mr. Blonde - Distribuidora Oficial_`);
 
   const message = messageParts.join("\n").trim();
 
