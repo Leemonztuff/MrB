@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { getPublicNews } from '@/app/actions/news.actions';
 import { NewsCarousel } from '@/components/shared/news-carousel';
 import { NewsPost } from '@/types';
+import { PageLoader } from '@/components/loading';
 
 interface Client {
   id: string;
@@ -41,7 +42,6 @@ export default function PortalPage() {
         return res.json();
       })
       .then(data => {
-        console.log('Client data:', data);
         setClient(data.client);
         setLoading(false);
       })
@@ -50,18 +50,13 @@ export default function PortalPage() {
         router.push('/portal-cliente/login');
       });
 
-    // Fetch news
     getPublicNews().then(res => {
       if (res.data) setNews(res.data);
     });
   }, [router]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse">Cargando...</div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!client) {
@@ -71,7 +66,7 @@ export default function PortalPage() {
   const infoCards = [
     { label: 'CUIT', value: formatCuit(client.cuit), icon: FileText },
     { label: 'Email', value: client.email || 'No registrado', icon: Mail },
-    { label: 'Dirección', value: client.address || 'No registrada', icon: MapPin },
+    { label: 'Direccion', value: client.address || 'No registrada', icon: MapPin },
     { label: 'Cliente desde', value: client.created_at ? formatDate(client.created_at) : '-', icon: Calendar },
   ];
 
@@ -85,7 +80,7 @@ export default function PortalPage() {
             Hola, <span className="text-primary">{client.contact_name?.split(' ')[0]}</span>
           </h2>
           <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest opacity-60">
-            Gestiona tu información y pedidos desde aquí
+            Gestiona tu informacion y pedidos desde aqui
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -96,7 +91,7 @@ export default function PortalPage() {
               isActive ? "bg-primary/20 text-primary border-primary/20" : ""
             )}
           >
-            {isActive ? '✓ Cliente Activo' : client.status}
+            {isActive ? 'Cliente Activo' : client.status}
           </Badge>
           <ThemeToggle />
         </div>
@@ -113,7 +108,7 @@ export default function PortalPage() {
           <Card key={card.label} className={cn("glass-card group border-border/50", `animation-delay-${(idx + 1) * 100}`)}>
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{card.label}</span>
-              <card.icon className="h-4 w-4 text-primary opacity-50 transition-opacity duration-200" />
+              <card.icon className="h-4 w-4 text-primary opacity-50" />
             </CardHeader>
             <CardContent>
               <p className="text-sm font-bold truncate leading-none text-foreground" title={card.value}>{card.value}</p>
@@ -123,10 +118,10 @@ export default function PortalPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="glass-card border-none bg-primary/5 hover:bg-primary/10 transition-colors duration-200 group">
+        <Card className="glass-card border-none bg-primary/5 group">
           <CardHeader>
             <CardTitle className="flex items-center gap-3 text-sm font-black uppercase tracking-widest text-foreground">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-200">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
                 <ShoppingCart className="h-5 w-5" />
               </div>
               Mi Convenio
@@ -137,16 +132,16 @@ export default function PortalPage() {
               {client.agreements?.agreement_name || 'Sin convenio'}
             </p>
             {client.agreement_id ? (
-              <Button asChild className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest shadow-lg shadow-primary/20 rounded-xl group/btn transition-all">
+              <Button asChild className="w-full h-11 bg-primary text-primary-foreground font-black uppercase tracking-widest shadow-lg shadow-primary/20 rounded-xl">
                 <Link href="/portal/catalogo">
-                  <span>Ir al Catálogo</span>
-                  <ArrowRight className="h-4 w-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                  <span>Ir al Catalogo</span>
+                  <ArrowRight className="h-4 w-4 ml-2" />
                 </Link>
               </Button>
             ) : (
               <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
                 <p className="text-xs text-muted-foreground font-medium text-center italic">
-                  Contactá al administrador para que te asigne un convenio.
+                  Contacta al administrador para que te asigne un convenio.
                 </p>
               </div>
             )}
@@ -159,18 +154,18 @@ export default function PortalPage() {
               <div className="p-2 rounded-lg bg-muted/50 text-primary">
                 <FileText className="h-5 w-5" />
               </div>
-              Accesos Rápidos
+              Accesos Rapidos
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 pt-2">
-            <Button variant="outline" className="w-full h-11 justify-start border-border/50 hover:bg-muted/30 rounded-xl group font-bold text-foreground transition-colors duration-200" asChild>
+            <Button variant="outline" className="w-full h-11 justify-start border-border/50 rounded-xl font-bold text-foreground" asChild>
               <Link href="/portal/profile">
                 <UserIcon className="h-4 w-4 mr-3 text-primary" />
                 <span className="text-xs uppercase tracking-widest text-[10px]">Editar Mi Perfil</span>
                 <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground" />
               </Link>
             </Button>
-            <Button variant="outline" className="w-full h-11 justify-start border-border/50 hover:bg-muted/30 rounded-xl group font-bold text-foreground transition-colors duration-200" asChild>
+            <Button variant="outline" className="w-full h-11 justify-start border-border/50 rounded-xl font-bold text-foreground" asChild>
               <Link href="/portal/orders">
                 <FileText className="h-4 w-4 mr-3 text-primary" />
                 <span className="text-xs uppercase tracking-widest text-[10px]">Mis Pedidos</span>
@@ -190,7 +185,7 @@ export default function PortalPage() {
               </div>
               <p className="text-yellow-500 font-bold uppercase tracking-widest text-[10px]">Cuenta Pendiente</p>
               <p className="text-muted-foreground text-xs max-w-md">
-                Tu cuenta está pendiente de activación. Contactá al administrador para habilitar todas las funciones.
+                Tu cuenta esta pendiente de activacion. Contacta al administrador para habilitar todas las funciones.
               </p>
             </div>
           </CardContent>

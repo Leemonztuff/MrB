@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { formatCuit } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 import { User, Package, ShoppingCart, LogOut, Newspaper } from 'lucide-react';
+import { PageLoader } from '@/components/loading';
 
 interface Client {
     id: string;
@@ -54,14 +55,7 @@ export default function PortalLayout({
     }, [router]);
 
     if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-background">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-muted-foreground">Cargando...</p>
-                </div>
-            </div>
-        );
+        return <PageLoader />;
     }
 
     if (!client) {
@@ -90,7 +84,7 @@ export default function PortalLayout({
     if (canOrder) {
         navItems.push({
             href: '/portal/catalogo',
-            label: 'Catálogo',
+            label: 'Catalogo',
             icon: ShoppingCart,
             exact: false,
         });
@@ -144,8 +138,8 @@ export default function PortalLayout({
                             })}
                         </nav>
                         
-                        <Link href="/api/portal/logout" title="Cerrar Sessión">
-                            <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all">
+                        <Link href="/api/portal/logout" title="Cerrar Sesion">
+                            <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl">
                                 <LogOut className="h-5 w-5" />
                             </Button>
                         </Link>
@@ -154,12 +148,12 @@ export default function PortalLayout({
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-6 md:py-8 pb-32 md:pb-8 animate-in fade-in slide-in-from-bottom-8 duration-500">
+            <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-6 md:py-8 pb-32 md:pb-8">
                 {children}
             </main>
 
             {/* Mobile Bottom Navigation */}
-            <nav className="md:hidden fixed bottom-6 left-4 right-4 z-50 glass border border-white/10 rounded-3xl shadow-2xl p-2 flex items-center justify-between gap-1 overflow-x-auto">
+            <nav className="md:hidden fixed bottom-6 left-4 right-4 z-50 glass border border-white/10 rounded-3xl shadow-2xl p-2 flex items-center justify-between gap-1">
                 {navItems.map((item) => {
                     const active = isNavActive(item.href, item.exact);
                     return (
@@ -173,7 +167,7 @@ export default function PortalLayout({
                                     : "text-muted-foreground hover:text-primary hover:bg-white/5"
                             )}
                         >
-                            <item.icon className={cn("h-5 w-5 mb-0.5 transition-transform", active && "scale-110")} />
+                            <item.icon className="h-5 w-5 mb-0.5" />
                             <span className="text-[8px] font-black uppercase tracking-widest truncate w-full text-center">
                                 {item.label}
                             </span>
