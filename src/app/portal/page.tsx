@@ -138,7 +138,7 @@ export default function PortalPage() {
             </p>
             {client.agreement_id ? (
               <Button asChild className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest shadow-lg shadow-primary/20 rounded-xl group/btn transition-all">
-                <Link href={`/pedido/${client.agreement_id}`}>
+                <Link href="/portal/catalogo">
                   <span>Ir al Catálogo</span>
                   <ArrowRight className="h-4 w-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
                 </Link>

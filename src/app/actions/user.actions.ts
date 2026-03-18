@@ -72,7 +72,7 @@ export async function getOrderPageData(id: string, options?: { newsId?: string, 
         if (!agreementId) {
             // Case where we have a client from onboarding but no agreement assigned yet
             return {
-                mode: 'onboarding',
+                mode: session.state === 'PENDING_AGREEMENT' ? 'pending' : 'onboarding',
                 client: session.client,
                 agreement: null,
                 productsByCategory: {},
@@ -213,7 +213,7 @@ export async function getOrderPageData(id: string, options?: { newsId?: string, 
         const salesConditions = agreement.agreement_sales_conditions?.map((asc: any) => asc.sales_conditions).filter(Boolean) || [];
 
         return {
-            mode: session.state === 'ONBOARDING' ? 'onboarding' : 'catalog',
+            mode: session.state === 'ONBOARDING' ? 'onboarding' : (session.state === 'PENDING_AGREEMENT' ? 'pending' : 'catalog'),
             agreement,
             client,
             productsByCategory,
@@ -368,8 +368,7 @@ export async function submitMinimalOnboarding(payload: any): Promise<ActionRespo
                 contact_name: data.contact_name?.toUpperCase(),
                 phone: data.phone,
                 address,
-                status: newStatus,
-                onboarding_token: null // Invalidate token after use
+                status: newStatus
             })
             .eq('onboarding_token', onboarding_token);
 

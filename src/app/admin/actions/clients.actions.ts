@@ -108,7 +108,17 @@ export async function upsertClient(
     if (!id) {
       finalPayload.onboarding_token = crypto.randomUUID();
       finalPayload.onboarding_expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-      if (clientData.cuit) {
+    }
+
+    if (clientData.cuit) {
+      let existingPortalToken = null;
+      if (id) {
+        const supabase = await getSupabaseClientWithAuth();
+        const { data: existingClient } = await supabase.from('clients').select('portal_token').eq('id', id).single();
+        existingPortalToken = existingClient?.portal_token;
+      }
+      
+      if (!existingPortalToken) {
         const cleanCuit = clientData.cuit.replace(/[^0-9]/g, '');
         if (cleanCuit.length >= 6) {
           finalPayload.portal_token = cleanCuit.slice(0, 6);

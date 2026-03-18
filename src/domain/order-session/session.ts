@@ -1,7 +1,7 @@
 
 import { createClient as createServerClient } from '@/lib/supabase/server';
 
-export type SessionState = 'ONBOARDING' | 'ACTIVE_CATALOG' | 'INVALID';
+export type SessionState = 'ONBOARDING' | 'PENDING_AGREEMENT' | 'ACTIVE_CATALOG' | 'INVALID';
 
 export interface ResolvedSession {
     state: SessionState;
@@ -25,8 +25,8 @@ export async function resolveSessionState(id: string): Promise<ResolvedSession> 
         .maybeSingle();
 
     if (onboardingClient) {
-        // Check expiration
-        if (onboardingClient.onboarding_expires_at && new Date(onboardingClient.onboarding_expires_at) < new Date()) {
+        // Check expiration only if they haven't onboarded yet
+        if (onboardingClient.status !== 'active' && onboardingClient.onboarding_expires_at && new Date(onboardingClient.onboarding_expires_at) < new Date()) {
             return { state: 'INVALID', error: 'El enlace de invitación ha expirado.' };
         }
 
@@ -37,6 +37,13 @@ export async function resolveSessionState(id: string): Promise<ResolvedSession> 
                 state: 'ACTIVE_CATALOG',
                 client: onboardingClient,
                 agreement: onboardingClient.agreements
+            };
+        }
+
+        if (onboardingClient.status === 'pending_agreement') {
+            return {
+                state: 'PENDING_AGREEMENT',
+                client: onboardingClient
             };
         }
 

@@ -49,6 +49,25 @@ export default async function OrderPage({
 
   const { mode, agreement, client, productsByCategory, vatPercentage, logoUrl, salesConditions = [], showProfitEstimation = false, showProductDuration = false, productDurations = {} } = data;
 
+  if (mode === 'pending') {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
+        <Logo showText logoUrl={logoUrl} className="mb-8 scale-110" />
+        <Card className="w-full max-w-md glass border-white/10 shadow-2xl overflow-hidden p-6">
+          <h2 className="text-2xl font-black italic tracking-tighter mb-2 text-primary">¡Gracias por registrarte!</h2>
+          <p className="text-muted-foreground text-sm font-medium">
+            Tus datos han sido recibidos. Un administrador te asignará una lista de precios a la brevedad para que puedas comenzar a realizar tus pedidos.
+          </p>
+          <div className="mt-8">
+            <Button asChild className="w-full h-12 rounded-xl text-xs uppercase tracking-widest font-black">
+              <Link href="/">Volver al inicio</Link>
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   if (mode === 'onboarding') {
     return (
       <OnboardingInline

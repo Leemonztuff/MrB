@@ -1,15 +1,17 @@
+'use client';
 
-"use client";
-
-import { useCartStore } from "@/hooks/use-cart-store";
-import { Button } from "@/components/ui/button";
-import { ShoppingCart, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
+import { useCartStore } from '@/hooks/use-cart-store';
+import { Button } from '@/components/ui/button';
+import { ShoppingCart, ArrowRight } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 export function MobileCartIndicator() {
     const { totalItems, totalPrice } = useCartStore();
     const [isMounted, setIsMounted] = useState(false);
+    const pathname = usePathname();
+    const isPortalCatalog = pathname?.startsWith('/portal/catalogo');
 
     useEffect(() => {
         setIsMounted(true);
@@ -28,7 +30,10 @@ export function MobileCartIndicator() {
     if (!isMounted || totalItems === 0) return null;
 
     return (
-        <div className="fixed bottom-6 left-4 right-4 z-50 lg:hidden animate-in fade-in slide-in-from-bottom-10 duration-300">
+        <div className={cn(
+            "fixed z-50 lg:hidden animate-in fade-in slide-in-from-bottom-10 duration-300 left-4 right-4",
+            isPortalCatalog ? "bottom-28" : "bottom-6"
+        )}>
             <Button
                 onClick={scrollToSummary}
                 className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-border/50 flex items-center justify-between px-6 rounded-2xl group transition-all"
