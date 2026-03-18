@@ -18,79 +18,20 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Logo } from "@/app/logo";
 import { logout } from "@/app/actions/user.actions";
 import { Notifications } from "./_components/notifications";
-import { getNotificationData, getDashboardData } from "@/app/admin/actions/dashboard.actions";
+import { getDashboardData } from "@/app/admin/actions/dashboard.actions";
 import { getSettings } from "@/app/admin/actions/settings.actions";
 import { AppNav } from "./_components/app-nav";
 import type { DashboardStats } from "@/types";
 import { PageLoader } from "@/components/loading";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-const createNotifications = (
-  pendingOrdersCount: number,
-  pendingClientsCount: number,
-  overdueOrdersCount: number,
-  pendingChangesCount: number
-) => {
-  const notifications = [];
-
-  if (pendingOrdersCount > 0) {
-    notifications.push({
-      id: "pending-orders",
-      type: "order" as const,
-      title: `${pendingOrdersCount} Pedido(s) Nuevo(s)`,
-      description: "Tienes nuevos pedidos para procesar.",
-      createdAt: new Date(),
-    });
-  }
-
-  if (pendingClientsCount > 0) {
-    notifications.push({
-      id: "pending-clients",
-      type: "client" as const,
-      title: `${pendingClientsCount} Cliente(s) Pendiente(s)`,
-      description: "Nuevos clientes esperan asignación de convenio.",
-      createdAt: new Date(),
-    });
-  }
-
-  if (overdueOrdersCount > 0) {
-    notifications.push({
-      id: "overdue-orders",
-      type: "overdue" as const,
-      title: `${overdueOrdersCount} Pedido(s) Vencido(s)`,
-      description: "Hay pedidos cuya gestión está demorada.",
-      createdAt: new Date(),
-    });
-  }
-
-  if (pendingChangesCount > 0) {
-    notifications.push({
-      id: "pending-changes",
-      type: "change" as const,
-      title: `${pendingChangesCount} Cambio(s) de Cliente(s)`,
-      description: "Clientes esperan aprobación de cambios en su perfil.",
-      createdAt: new Date(),
-    });
-  }
-
-  return notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-};
-
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { pending_orders_count, pending_clients_count, overdue_orders_count, pending_changes_count } = await getNotificationData();
   const { stats } = await getDashboardData();
   const { logo_url } = await getSettings();
-
-  const notifications = createNotifications(
-    pending_orders_count,
-    pending_clients_count,
-    overdue_orders_count,
-    pending_changes_count
-  );
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background/95">
@@ -148,7 +89,7 @@ export default async function AdminLayout({
           </div>
           <div className="ml-auto flex items-center gap-4">
             <ThemeToggle />
-            <Notifications notifications={notifications} />
+            <Notifications />
             <Sheet>
               <SheetTrigger asChild>
                 <Button

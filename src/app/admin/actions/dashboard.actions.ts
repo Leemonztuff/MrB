@@ -5,7 +5,122 @@ import { revalidatePath } from "next/cache";
 import { getSupabaseClientWithAuth } from "./_helpers";
 import type { DashboardStats, Order, OrderWithItems, Client } from "@/types";
 
-// --- New Dashboard Data Types ---
+// --- Notification Types ---
+
+export type NotificationItem = {
+    id: string;
+    type: 'new_order' | 'overdue_order' | 'new_client' | 'pending_changes';
+    title: string;
+    description: string;
+    clientName?: string;
+    amount?: number;
+    itemCount?: number;
+    createdAt: string;
+    href: string;
+};
+
+export async function getNotificationItems(): Promise<NotificationItem[]> {
+    const supabase = await getSupabaseClientWithAuth();
+    const notifications: NotificationItem[] = [];
+    const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+
+    // Get pending orders (new)
+    const { data: pendingOrders } = await supabase
+        .from('orders')
+        .select('id, client_name_cache, total_amount, created_at, order_items(count)')
+        .eq('status', 'armado')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+    pendingOrders?.forEach((order: any) => {
+        notifications.push({
+            id: `order-${order.id}`,
+            type: 'new_order',
+            title: 'Nuevo Pedido',
+            description: `${order.order_items?.[0]?.count || 0} productos`,
+            clientName: order.client_name_cache,
+            amount: order.total_amount,
+            createdAt: order.created_at,
+            href: '/admin',
+        });
+    });
+
+    // Get overdue orders
+    const { data: overdueOrders } = await supabase
+        .from('orders')
+        .select('id, client_name_cache, total_amount, created_at, order_items(count)')
+        .eq('status', 'armado')
+        .lt('created_at', twoDaysAgo)
+        .order('created_at', { ascending: true })
+        .limit(3);
+
+    overdueOrders?.forEach((order: any) => {
+        notifications.push({
+            id: `overdue-${order.id}`,
+            type: 'overdue_order',
+            title: 'Pedido Vencido',
+            description: `Sin atender hace más de 48hs`,
+            clientName: order.client_name_cache,
+            amount: order.total_amount,
+            createdAt: order.created_at,
+            href: '/admin',
+        });
+    });
+
+    // Get new clients (pending agreement)
+    const { data: newClients } = await supabase
+        .from('clients')
+        .select('id, contact_name, email, created_at')
+        .eq('status', 'pending_agreement')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+    newClients?.forEach((client) => {
+        notifications.push({
+            id: `client-${client.id}`,
+            type: 'new_client',
+            title: 'Nuevo Cliente',
+            description: client.email || 'Sin email',
+            clientName: client.contact_name,
+            createdAt: client.created_at,
+            href: `/admin/clients/${client.id}`,
+        });
+    });
+
+    // Get pending changes
+    const { data: pendingChanges } = await supabase
+        .from('pending_changes')
+        .select('id, client_id, change_type, new_value, created_at, clients(contact_name)')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+    pendingChanges?.forEach((change: any) => {
+        const changeLabels: Record<string, string> = {
+            contact_name: 'Nombre',
+            email: 'Email',
+            phone: 'Teléfono',
+            address: 'Dirección',
+            instagram: 'Instagram',
+        };
+        notifications.push({
+            id: `change-${change.id}`,
+            type: 'pending_changes',
+            title: `Cambio en ${changeLabels[change.change_type] || change.change_type}`,
+            description: change.new_value || '',
+            clientName: change.clients?.contact_name,
+            createdAt: change.created_at,
+            href: `/admin/clients/${change.client_id}`,
+        });
+    });
+
+    // Sort by created_at descending
+    return notifications.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+}
+
+// --- Dashboard Metrics ---
 
 export interface DashboardMetrics {
     orders: {

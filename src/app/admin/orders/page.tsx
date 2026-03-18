@@ -9,6 +9,15 @@ import { formatDate } from "@/lib/utils";
 import { ShippingLabelButton } from "../_components/shipping-label-button";
 import { OrderStatusBadge } from "../_components/order-status-badge";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+
+const statusFilters = [
+    { label: 'Todos', value: 'all' },
+    { label: 'Armado', value: 'armado' },
+    { label: 'En Tránsito', value: 'transito' },
+    { label: 'Entregado', value: 'entregado' },
+];
 
 export default async function OrdersHistoryPage({
   searchParams,
@@ -16,8 +25,9 @@ export default async function OrdersHistoryPage({
   searchParams?: Promise<{ status?: string; query?: string }>;
 }) {
   const filters = await searchParams;
+  const currentStatus = filters?.status || 'all';
   const { data: result } = await getOrders({
-    status: filters?.status,
+    status: currentStatus === 'all' ? undefined : currentStatus,
     query: filters?.query
   });
   const orders = result?.orders || [];
@@ -33,6 +43,22 @@ export default async function OrdersHistoryPage({
         <CardHeader className="pb-4">
           <CardTitle className="text-xl font-black italic tracking-tighter">Todos los Pedidos</CardTitle>
           <CardDescription className="text-xs uppercase font-bold tracking-widest opacity-60">Control histórico de transacciones.</CardDescription>
+          <div className="flex gap-1 mt-4 flex-wrap">
+            {statusFilters.map((filter) => (
+              <Link
+                key={filter.value}
+                href={filter.value === 'all' ? '/admin/orders' : `/admin/orders?status=${filter.value}`}
+                className={cn(
+                  "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-colors",
+                  currentStatus === filter.value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-white/5 text-muted-foreground hover:bg-white/10"
+                )}
+              >
+                {filter.label}
+              </Link>
+            ))}
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <Table>

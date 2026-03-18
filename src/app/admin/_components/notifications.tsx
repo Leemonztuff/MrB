@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -10,127 +10,172 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Bell, Check, Package, UserPlus, Clock } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Bell, Check, Package, UserPlus, Clock, RefreshCw, GitBranch } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-type Notification = {
+type NotificationItem = {
     id: string;
-    type: 'order' | 'client' | 'overdue' | 'change';
+    type: 'new_order' | 'overdue_order' | 'new_client' | 'pending_changes';
     title: string;
     description: string;
-    createdAt: Date;
+    clientName?: string;
+    amount?: number;
+    itemCount?: number;
+    createdAt: string;
+    href: string;
 }
 
-const getNotificationConfig = (notification: Notification) => {
-    switch (notification.type) {
-        case 'order':
-            return {
-                icon: Package,
-                href: `/admin`,
-                bgColorClass: "bg-blue-500",
-            };
-        case 'client':
-            return {
-                icon: UserPlus,
-                href: `/admin/clients`,
-                bgColorClass: "bg-green-500",
-            };
-        case 'overdue':
-             return {
-                icon: Clock,
-                href: `/admin`, // Could link to a specific "overdue" page later
-                bgColorClass: "bg-amber-500",
-            };
-        case 'change':
-            return {
-                icon: UserPlus,
-                href: `/admin/clients?filter=pending-changes`,
-                bgColorClass: "bg-purple-500",
-            };
+const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
+}
+
+function NotificationIcon({ type }: { type: NotificationItem['type'] }) {
+    const iconClass = "h-4 w-4";
+    switch (type) {
+        case 'new_order':
+            return <Package className={iconClass} />;
+        case 'overdue_order':
+            return <Clock className={iconClass} />;
+        case 'new_client':
+            return <UserPlus className={iconClass} />;
+        case 'pending_changes':
+            return <GitBranch className={iconClass} />;
         default:
-            return {
-                icon: Bell,
-                href: '#',
-                bgColorClass: "bg-primary"
-            }
+            return <Bell className={iconClass} />;
     }
 }
 
+function NotificationDot({ type }: { type: NotificationItem['type'] }) {
+    return (
+        <div className={cn(
+            "mt-1 h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
+            type === 'new_order' && "bg-blue-500/10 text-blue-500",
+            type === 'overdue_order' && "bg-destructive/10 text-destructive",
+            type === 'new_client' && "bg-green-500/10 text-green-500",
+            type === 'pending_changes' && "bg-purple-500/10 text-purple-500",
+        )}>
+            <NotificationIcon type={type} />
+        </div>
+    );
+}
 
-export function Notifications({ notifications }: { notifications: Notification[]}) {
-  const [hasUnread, setHasUnread] = useState(notifications.length > 0);
+export function Notifications() {
+    const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [open, setOpen] = useState(false);
 
-  const handleMarkAsRead = () => {
-    setHasUnread(false);
-  };
+    const fetchNotifications = async () => {
+        try {
+            const { getNotificationItems } = await import('@/app/admin/actions/dashboard.actions');
+            const items = await getNotificationItems();
+            setNotifications(items);
+        } catch (error) {
+            console.error('Error fetching notifications:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="icon" className="relative shrink-0">
-          <Bell className="h-5 w-5" />
-          {hasUnread && (
-            <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-destructive ring-2 ring-background" />
-          )}
-          <span className="sr-only">Abrir notificaciones</span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        <Card className="border-0 shadow-none">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Notificaciones</CardTitle>
-            {hasUnread && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleMarkAsRead}
-                className="h-auto p-1 text-xs"
-              >
-                <Check className="mr-1 h-3 w-3" />
-                Marcar como leídas
-              </Button>
-            )}
-          </CardHeader>
-          <ScrollArea className="h-96">
-            <div className="flex flex-col gap-1 p-2">
-                {notifications.length > 0 ? (
-                    notifications.map((notification) => {
-                        const { icon: Icon, href, bgColorClass } = getNotificationConfig(notification);
-                        return (
-                            <Link key={notification.id} href={href} className="block rounded-lg hover:bg-muted/50 p-2">
-                                <div className="flex items-start gap-3">
-                                    <div className={cn("mt-1 flex h-2 w-2 translate-y-1.5 shrink-0 rounded-full", bgColorClass)} />
-                                    <div className="grid gap-0.5">
-                                        <p className="font-semibold text-sm">{notification.title}</p>
-                                        <p className="text-xs text-muted-foreground">{notification.description}</p>
-                                        <p className="text-xs text-muted-foreground/70">
-                                            {formatDistanceToNow(notification.createdAt, { addSuffix: true, locale: es })}
-                                        </p>
-                                    </div>
+    useEffect(() => {
+        fetchNotifications();
+        const interval = setInterval(fetchNotifications, 60000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const unreadCount = notifications.length;
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button variant="outline" size="icon" className="relative shrink-0">
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black flex items-center justify-center">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                    )}
+                    <span className="sr-only">Abrir notificaciones</span>
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-96 p-0" align="end">
+                <Card className="border-0 shadow-none">
+                    <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
+                        <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                            <Bell className="h-4 w-4" />
+                            Notificaciones
+                            {unreadCount > 0 && (
+                                <span className="h-5 w-5 rounded-full bg-primary/10 text-primary text-[10px] font-black flex items-center justify-center">
+                                    {unreadCount}
+                                </span>
+                            )}
+                        </CardTitle>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={fetchNotifications}
+                        >
+                            <RefreshCw className="h-3 w-3" />
+                        </Button>
+                    </CardHeader>
+                    <ScrollArea className="max-h-[400px]">
+                        <div className="flex flex-col">
+                            {loading ? (
+                                <div className="p-8 text-center">
+                                    <RefreshCw className="h-6 w-6 mx-auto animate-spin text-muted-foreground" />
                                 </div>
-                            </Link>
-                        )
-                    })
-                ) : (
-                    <div className="py-12 text-center text-sm text-muted-foreground">
-                        <Bell className="mx-auto h-8 w-8 mb-2" />
-                        <p>No hay notificaciones nuevas.</p>
-                    </div>
-                )}
-            </div>
-          </ScrollArea>
-           {notifications.length > 0 && (
-             <CardFooter>
-                <p className="text-xs text-muted-foreground/80 text-center w-full">
-                    Mostrando las últimas {notifications.length} notificaciones.
-                </p>
-            </CardFooter>
-           )}
-        </Card>
-      </PopoverContent>
-    </Popover>
-  );
+                            ) : notifications.length > 0 ? (
+                                notifications.map((notification) => (
+                                    <a
+                                        key={notification.id}
+                                        href={notification.href}
+                                        onClick={() => setOpen(false)}
+                                        className="flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border/30 last:border-0"
+                                    >
+                                        <NotificationDot type={notification.type} />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <p className="font-semibold text-sm truncate">{notification.title}</p>
+                                                <span className="text-[10px] text-muted-foreground shrink-0">
+                                                    {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale: es })}
+                                                </span>
+                                            </div>
+                                            {notification.clientName && (
+                                                <p className="text-xs font-medium text-primary mt-0.5">
+                                                    {notification.clientName}
+                                                </p>
+                                            )}
+                                            <p className="text-xs text-muted-foreground truncate">
+                                                {notification.description}
+                                            </p>
+                                            {notification.amount && (
+                                                <p className="text-xs font-bold text-primary mt-1">
+                                                    {formatCurrency(notification.amount)}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </a>
+                                ))
+                            ) : (
+                                <div className="py-12 text-center text-sm text-muted-foreground">
+                                    <Bell className="mx-auto h-8 w-8 mb-2 opacity-30" />
+                                    <p>No hay notificaciones nuevas.</p>
+                                    <p className="text-xs mt-1 opacity-60">Te avisaremos cuando haya algo importante.</p>
+                                </div>
+                            )}
+                        </div>
+                    </ScrollArea>
+                    {notifications.length > 0 && (
+                        <CardFooter className="py-2 px-4 border-t border-border/30">
+                            <p className="text-[10px] text-muted-foreground/60 text-center w-full">
+                                Haz click en una notificación para ir directo al detalle.
+                            </p>
+                        </CardFooter>
+                    )}
+                </Card>
+            </PopoverContent>
+        </Popover>
+    );
 }
