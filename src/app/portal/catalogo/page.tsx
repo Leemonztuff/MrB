@@ -17,7 +17,7 @@ import { MobileCartIndicator } from '@/app/pedido/[id]/_components/mobile-cart-i
 export default async function PortalCatalogoPage({
     searchParams,
 }: {
-    searchParams: Promise<{ newsId?: string; promoId?: string }>;
+    searchParams: Promise<{ newsId?: string; promoId?: string; repeat_order?: string }>;
 }) {
     const client = await getPortalClient();
 
@@ -25,8 +25,8 @@ export default async function PortalCatalogoPage({
         redirect('/portal');
     }
 
-    const { newsId, promoId } = await searchParams;
-    const { data, error } = await getOrderPageData(client.agreement_id, { newsId, promoId });
+    const { newsId, promoId, repeat_order } = await searchParams;
+    const { data, error } = await getOrderPageData(client.agreement_id, { newsId, promoId, repeatOrderId: repeat_order });
 
     if (error || !data) {
         return (
@@ -36,7 +36,7 @@ export default async function PortalCatalogoPage({
         );
     }
 
-    if (data.mode !== 'active' || !data.agreement) {
+    if (data.mode !== 'catalog' || !data.agreement) {
         redirect('/portal');
     }
 
