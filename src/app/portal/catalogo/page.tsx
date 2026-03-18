@@ -40,7 +40,7 @@ export default async function PortalCatalogoPage({
         redirect('/portal');
     }
 
-    const { agreement, client: clientData, productsByCategory, vatPercentage, salesConditions = [], showProfitEstimation = false, showProductDuration = false, productDurations = {} } = data;
+    const { agreement, client: clientData, productsByCategory, vatPercentage, salesConditions = [], showProductDuration = false, productDurations = {} } = data;
 
     const customSortOrder = ["Cabello", "Rostro", "Merchandising"];
     const categories = Object.keys(productsByCategory).sort((a, b) => {
@@ -78,7 +78,6 @@ export default async function PortalCatalogoPage({
                                                         key={product.id}
                                                         product={product}
                                                         promotions={promotions}
-                                                        showProfitEstimation={showProfitEstimation}
                                                         showProductDuration={showProductDuration}
                                                         productDurations={productDurations}
                                                     />

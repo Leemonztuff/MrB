@@ -41,13 +41,11 @@ interface ProductWithConsumerPrice extends ProductWithPrice {
 const ProductCardComponent = ({
   product,
   promotions,
-  showProfitEstimation = false,
   showProductDuration = false,
   productDurations = {}
 }: {
   product: ProductWithConsumerPrice,
   promotions: Promotion[],
-  showProfitEstimation?: boolean,
   showProductDuration?: boolean,
   productDurations?: Record<string, number>
 }) => {
@@ -75,8 +73,6 @@ const ProductCardComponent = ({
   }
 
   const consumerPrice = product.consumer_price || null;
-  const profitPerUnit = consumerPrice && displayPrice ? consumerPrice - displayPrice : null;
-  const profitPercentage = profitPerUnit && displayPrice ? Math.round((profitPerUnit / displayPrice) * 100) : null;
 
   const productDuration = showProductDuration ? (productDurations[product.id] || null) : null;
 
@@ -125,12 +121,6 @@ const ProductCardComponent = ({
                 <p className="text-xs font-bold text-muted-foreground/50 line-through">
                   {formatCurrency(product.price)}
                 </p>
-              )}
-              {showProfitEstimation && profitPerUnit && profitPerUnit > 0 && (
-                <div className="flex items-center gap-1 text-green-500" title={`Precio consumidor: ${formatCurrency(consumerPrice!)}`}>
-                  <TrendingUp className="h-3 w-3" />
-                  <span className="text-xs font-bold">+{formatCurrency(profitPerUnit)} ({profitPercentage}%)</span>
-                </div>
               )}
               {showProductDuration && productDuration && (
                 <div className="flex items-center gap-1 text-amber-500" title={`Basado en tu historial de compras`}>

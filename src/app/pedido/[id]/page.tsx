@@ -47,7 +47,7 @@ export default async function OrderPage({
     );
   }
 
-  const { mode, agreement, client, productsByCategory, vatPercentage, logoUrl, salesConditions = [], showProfitEstimation = false, showProductDuration = false, productDurations = {} } = data;
+  const { mode, agreement, client, productsByCategory, vatPercentage, logoUrl, salesConditions = [], showProductDuration = false, productDurations = {} } = data;
 
   if (mode === 'pending') {
     return (
@@ -166,7 +166,6 @@ export default async function OrderPage({
                             key={product.id}
                             product={product}
                             promotions={promotions}
-                            showProfitEstimation={showProfitEstimation}
                             showProductDuration={showProductDuration}
                             productDurations={productDurations}
                           />

@@ -57,7 +57,7 @@ export async function logout() {
     redirect('/login');
 }
 
-export async function getOrderPageData(id: string, options?: { newsId?: string, promoId?: string }): Promise<ActionResponse<any>> {
+export async function getOrderPageData(id: string, options?: { newsId?: string, promoId?: string, repeatOrderId?: string }): Promise<ActionResponse<any>> {
     return handleAction(async () => {
         const { resolveSessionState } = await import('@/domain/order-session/session');
         const session = await resolveSessionState(id);
@@ -220,7 +220,6 @@ export async function getOrderPageData(id: string, options?: { newsId?: string, 
             vatPercentage: settings.vat_percentage || 21,
             logoUrl: settings.logo_url,
             salesConditions,
-            showProfitEstimation: agreement.client_type === 'distribuidor',
             showProductDuration: agreement.client_type === 'barberia',
             productDurations
         };
