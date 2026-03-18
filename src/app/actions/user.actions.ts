@@ -269,16 +269,18 @@ export async function submitOrder(payload: {
 
         // --- Inventory Integration ---
         // Record 'out' movements for all items in the order
-        const { recordBulkMovements } = await import('@/app/admin/actions/inventory.actions');
         const inventoryMovements = payload.cart.map(item => ({
-            productId: item.product.id,
+            product_id: item.product.id,
             type: 'out' as const,
             quantity: item.quantity,
             reason: `Pedido #${order.id.slice(0, 8)}`,
-            referenceId: order.id,
+            reference_id: order.id,
         }));
 
-        await recordBulkMovements(inventoryMovements);
+        const { error: inventoryError } = await supabase.from('inventory_movements').insert(inventoryMovements);
+        if (inventoryError) {
+             console.error("Critical: Failed to register inventory movements for order", order.id, inventoryError);
+        }
         // -----------------------------
 
         return { orderId: order.id };

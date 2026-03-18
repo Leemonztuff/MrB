@@ -181,9 +181,12 @@ export function OrderSummary({
   const [notes, setNotes] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [orderSent, setOrderSent] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     getPublicWhatsappNumber().then(setWhatsappNumber);
+
   }, []);
 
   useEffect(() => {
@@ -299,6 +302,20 @@ export function OrderSummary({
 
   const hasItems = items.length > 0;
   const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
+
+  if (!isMounted) {
+    return (
+      <Card className="glass border-border/50 overflow-hidden shadow-xl animate-pulse">
+        <CardHeader className="pb-4">
+          <div className="h-6 bg-white/10 rounded w-1/3 mb-2"></div>
+          <div className="h-4 bg-white/5 rounded w-1/2"></div>
+        </CardHeader>
+        <CardContent>
+          <div className="h-32 bg-white/5 rounded-xl"></div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (orderSent) {
     return (

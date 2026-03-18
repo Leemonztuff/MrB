@@ -9,12 +9,11 @@ import { useEffect, useState } from "react";
 
 export function MobileCartIndicator() {
     const { totalItems, totalPrice } = useCartStore();
-    const [isVisible, setIsVisible] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
-        // Solo mostrar si hay items en el carrito
-        setIsVisible(totalItems > 0);
-    }, [totalItems]);
+        setIsMounted(true);
+    }, []);
 
     const formatCurrency = (value: number) =>
         new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
@@ -26,7 +25,7 @@ export function MobileCartIndicator() {
         }
     };
 
-    if (!isVisible) return null;
+    if (!isMounted || totalItems === 0) return null;
 
     return (
         <div className="fixed bottom-6 left-4 right-4 z-50 lg:hidden animate-in fade-in slide-in-from-bottom-10 duration-300">
