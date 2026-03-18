@@ -79,7 +79,7 @@ const ProductCardComponent = ({
   return (
     <Card
       id={`product-${product.id}`}
-      className="flex flex-col sm:flex-row w-full overflow-hidden glass border-border/50 hover:bg-muted/20 transition-all duration-300 group scroll-mt-24 shadow-sm"
+      className="flex flex-col sm:flex-row w-full overflow-hidden glass border-border/50 transition-colors duration-200 group scroll-mt-24"
     >
       <CardContent className="p-0 flex flex-col sm:flex-row items-center gap-4 p-4 w-full">
         <div className="relative aspect-square w-full sm:w-24 sm:h-24 flex-shrink-0">
@@ -88,14 +88,14 @@ const ProductCardComponent = ({
             alt={product.name}
             width={96}
             height={96}
-            className="rounded-xl object-cover border border-border/50 group-hover:border-primary/50 transition-colors shadow-lg"
+            className="rounded-xl object-cover border border-border/50 shadow-lg"
             data-ai-hint="product image"
           />
         </div>
 
         <div className="flex flex-col justify-between w-full gap-2">
           <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-2">
-            <h3 className="text-lg font-black italic tracking-tighter leading-tight group-hover:text-primary transition-colors">{product.name}</h3>
+            <h3 className="text-lg font-black italic tracking-tighter leading-tight">{product.name}</h3>
             {product.category && (
               <div className="mt-1 sm:mt-0">
                 <Badge variant="outline" className="text-[8px] uppercase font-black tracking-widest py-0 px-2 bg-primary/5 border-primary/20 text-primary">

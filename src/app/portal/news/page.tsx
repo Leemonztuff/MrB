@@ -131,7 +131,7 @@ export default function NewsPage() {
                     src={item.image_url}
                     alt={item.title}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                    className="object-cover transition-opacity duration-200"
                     sizes="(max-width: 672px) 100vw, 672px"
                   />
                   {/* Gradient overlay at bottom for readability */}

@@ -107,7 +107,7 @@ export default function PortalLayout({
             <header className="glass border-b border-primary/10 sticky top-0 z-40 backdrop-blur-md flex-none">
                 <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
                     <Link href="/portal" className="flex items-center gap-3 group">
-                        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform text-primary-foreground font-black text-lg italic tracking-tighter">
+                        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 text-primary-foreground font-black text-lg italic tracking-tighter">
                             MB
                         </div>
                         <div>

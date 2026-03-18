@@ -56,7 +56,7 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
     return (
       <>
         <Card
-          className="glass-card group border-border/50 overflow-hidden cursor-pointer hover:border-primary/20 transition-all hover:shadow-primary/5 shadow-2xl"
+          className="glass-card group border-border/50 overflow-hidden cursor-pointer transition-colors duration-200"
           onClick={() => setSelectedNews(item)}
         >
           <div className="flex">
@@ -66,12 +66,12 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
                   src={item.image_url}
                   alt={item.title}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="object-cover transition-opacity duration-200"
                 />
               </div>
             )}
             <CardContent className="p-4 flex flex-col justify-center">
-              <h3 className="font-black italic text-lg tracking-tight mb-1 uppercase group-hover:text-primary transition-colors text-foreground">{item.title}</h3>
+              <h3 className="font-black italic text-lg tracking-tight mb-1 uppercase text-foreground">{item.title}</h3>
               <RichContent content={item.content} />
             </CardContent>
           </div>
@@ -117,7 +117,7 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
     <>
       <div className="relative">
         <Card
-          className="glass-card group border-white/5 overflow-hidden cursor-pointer hover:border-primary/20 transition-all hover:shadow-primary/5 shadow-2xl"
+          className="glass-card group border-white/5 overflow-hidden cursor-pointer transition-colors duration-200"
           onClick={() => setSelectedNews(currentItem)}
         >
           <div className="flex">
@@ -127,12 +127,12 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
                   src={currentItem.image_url}
                   alt={currentItem.title}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="object-cover transition-opacity duration-200"
                 />
               </div>
             )}
             <CardContent className="p-4 flex flex-col justify-center flex-1">
-              <h3 className="font-black italic text-lg tracking-tight mb-1 uppercase group-hover:text-primary transition-colors">{currentItem.title}</h3>
+              <h3 className="font-black italic text-lg tracking-tight mb-1 uppercase">{currentItem.title}</h3>
               <RichContent content={currentItem.content} />
               {currentItem.promotion_id && (
                 <NewsPromoButton newsId={currentItem.id} promoId={currentItem.promotion_id} />

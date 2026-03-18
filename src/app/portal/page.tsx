@@ -113,7 +113,7 @@ export default function PortalPage() {
           <Card key={card.label} className={cn("glass-card group border-border/50", `animation-delay-${(idx + 1) * 100}`)}>
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{card.label}</span>
-              <card.icon className="h-4 w-4 text-primary opacity-50 group-hover:scale-110 group-hover:opacity-100 transition-all" />
+              <card.icon className="h-4 w-4 text-primary opacity-50 transition-opacity duration-200" />
             </CardHeader>
             <CardContent>
               <p className="text-sm font-bold truncate leading-none text-foreground" title={card.value}>{card.value}</p>
@@ -123,10 +123,10 @@ export default function PortalPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="glass-card border-none bg-primary/5 hover:bg-primary/10 transition-all group">
+        <Card className="glass-card border-none bg-primary/5 hover:bg-primary/10 transition-colors duration-200 group">
           <CardHeader>
             <CardTitle className="flex items-center gap-3 text-sm font-black uppercase tracking-widest text-foreground">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-200">
                 <ShoppingCart className="h-5 w-5" />
               </div>
               Mi Convenio
