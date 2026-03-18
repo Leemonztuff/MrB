@@ -420,7 +420,7 @@ export function OrderSummary({
               disabled={isPending}
             >
               {isPending ? "Procesando..." : "Enviar por WhatsApp"}
-              <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="h-5 w-5" />
             </Button>
           </div>
         ) : (

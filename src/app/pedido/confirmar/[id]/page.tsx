@@ -103,7 +103,7 @@ export default async function OrderConfirmationPortal({
               {order.order_items?.map((item: any, idx: number) => (
                 <div
                   key={idx}
-                  className="flex items-center gap-4 p-4 bg-white border border-black/5 rounded-2xl shadow-sm hover:shadow-md transition-shadow"
+                  className="flex items-center gap-4 p-4 bg-white border border-black/5 rounded-2xl shadow-sm"
                 >
                   {/* Quantity Badge - High Visibility */}
                   <div className="flex-shrink-0 w-12 h-12 bg-black rounded-xl flex flex-col items-center justify-center text-white">

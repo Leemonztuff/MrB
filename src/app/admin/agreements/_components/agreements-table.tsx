@@ -173,7 +173,7 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
                       {agreement.agreement_name}
                     </Link>
                   </TableCell>
-                  <TableCell className="text-center group-hover:scale-105 transition-transform">
+                  <TableCell className="text-center">
                     <Badge variant="outline" className="text-[8px] uppercase font-black tracking-widest py-0.5 px-2 bg-primary/5 border-primary/20 text-primary">
                       {agreement.client_type}
                     </Badge>

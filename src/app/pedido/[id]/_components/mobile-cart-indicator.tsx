@@ -53,7 +53,7 @@ export function MobileCartIndicator() {
 
                 <div className="flex items-center gap-2 font-bold text-sm">
                     Ver Resumen
-                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="h-4 w-4" />
                 </div>
             </Button>
         </div>

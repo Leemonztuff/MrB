@@ -204,7 +204,7 @@ export default function PortalOrdersPage() {
                                                             <img
                                                                 src={item.products.image_url}
                                                                 alt={item.products.name}
-                                                                className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                                className="h-full w-full object-cover transition-opacity duration-200"
                                                             />
                                                         ) : (
                                                             <div className="h-full w-full flex items-center justify-center">

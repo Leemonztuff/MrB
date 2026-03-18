@@ -67,7 +67,7 @@ export function ConfirmationButton({ orderId }: { orderId: string }) {
                     <Loader2 className="h-6 w-6 animate-spin" />
                 ) : (
                     <>
-                        <PackageCheck className="h-6 w-6 group-hover:scale-110 transition-transform" />
+                        <PackageCheck className="h-6 w-6" />
                         Confirmar Recepción
                     </>
                 )}

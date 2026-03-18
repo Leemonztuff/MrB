@@ -109,7 +109,7 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
                 className="h-28 flex flex-col gap-1 rounded-2xl glass border-white/5 hover:bg-white/5 transition-all group"
                 onClick={() => setView('manual')}
               >
-                <UserPlus className="h-8 w-8 text-primary group-hover:scale-110 transition-transform" />
+                <UserPlus className="h-8 w-8 text-primary" />
                 <span className="font-black italic tracking-tighter text-lg">Crear Manualmente</span>
                 <span className="text-[10px] uppercase font-bold tracking-widest opacity-60">
                   (Tú cargas todos los datos)
@@ -121,7 +121,7 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
                 className="h-28 flex flex-col gap-1 rounded-2xl glass border-white/5 hover:bg-white/5 transition-all group"
                 onClick={() => setView('invitation_config')}
               >
-                <Link2 className="h-8 w-8 text-primary group-hover:scale-110 transition-transform" />
+                <Link2 className="h-8 w-8 text-primary" />
                 <span className="font-black italic tracking-tighter text-lg">Generar Enlace de Invitación</span>
                 <span className="text-[10px] uppercase font-bold tracking-widest opacity-60">
                   (El cliente carga sus datos)

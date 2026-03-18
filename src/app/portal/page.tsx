@@ -163,18 +163,18 @@ export default function PortalPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 pt-2">
-            <Button variant="outline" className="w-full h-11 justify-start border-border/50 hover:bg-muted/30 rounded-xl group font-bold text-foreground transition-all" asChild>
+            <Button variant="outline" className="w-full h-11 justify-start border-border/50 hover:bg-muted/30 rounded-xl group font-bold text-foreground transition-colors duration-200" asChild>
               <Link href="/portal/profile">
                 <UserIcon className="h-4 w-4 mr-3 text-primary" />
                 <span className="text-xs uppercase tracking-widest text-[10px]">Editar Mi Perfil</span>
-                <ChevronRight className="h-4 w-4 ml-auto opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground" />
               </Link>
             </Button>
-            <Button variant="outline" className="w-full h-11 justify-start border-border/50 hover:bg-muted/30 rounded-xl group font-bold text-foreground transition-all" asChild>
+            <Button variant="outline" className="w-full h-11 justify-start border-border/50 hover:bg-muted/30 rounded-xl group font-bold text-foreground transition-colors duration-200" asChild>
               <Link href="/portal/orders">
                 <FileText className="h-4 w-4 mr-3 text-primary" />
                 <span className="text-xs uppercase tracking-widest text-[10px]">Mis Pedidos</span>
-                <ChevronRight className="h-4 w-4 ml-auto opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground" />
               </Link>
             </Button>
           </CardContent>

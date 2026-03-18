@@ -190,7 +190,7 @@ export function OnboardingInline({ token, clientName, logoUrl }: OnboardingInlin
                                 {isPending ? "Registrando..." : (
                                     <span className="flex items-center gap-2">
                                         Continuar al Catálogo
-                                        <span className="group-hover:translate-x-1 transition-transform">→</span>
+                                        <span className="group-hover:translate-x-1">→</span>
                                     </span>
                                 )}
                             </Button>

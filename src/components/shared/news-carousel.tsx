@@ -15,7 +15,7 @@ interface NewsCarouselProps {
 
 function NewsPromoButton({ newsId, promoId }: { newsId: string, promoId: string }) {
   return (
-    <Button asChild size="sm" className="mt-4 bg-primary text-primary-foreground font-black uppercase tracking-tighter rounded-full px-6 hover:scale-105 transition-transform shadow-lg shadow-primary/20">
+    <Button asChild size="sm" className="mt-4 bg-primary text-primary-foreground font-black uppercase tracking-tighter rounded-full px-6 shadow-lg shadow-primary/20">
       <Link href={`/portal/catalogo?newsId=${newsId}&promoId=${promoId}`}>
         <Ticket className="h-4 w-4 mr-2" />
         Ver Promoción

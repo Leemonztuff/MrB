@@ -98,7 +98,7 @@ export default async function ProductsPage() {
                 <CardHeader className="p-0">
                   <AccordionTrigger className="px-6 py-4 text-xl font-black italic tracking-tighter hover:no-underline hover:bg-white/5 transition-colors group">
                     <div className="flex items-center gap-3">
-                      <span className="text-primary group-hover:scale-110 transition-transform">#</span>
+                      <span className="text-primary">#</span>
                       {category}
                       <Badge variant="outline" className="ml-2 text-[10px] font-black tracking-widest bg-primary/5 border-primary/20 text-primary">
                         {productsByCategory[category].length}

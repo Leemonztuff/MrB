@@ -93,19 +93,19 @@ export function ImageUpload({
                             src={value}
                             alt="Preview"
                             fill
-                            className="object-cover transition-transform group-hover:scale-105"
+                            className="object-cover"
                         />
                     </div>
                 ) : (
                     <div
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex flex-col items-center justify-center aspect-video w-full rounded-lg border-2 border-dashed border-border bg-muted/20 hover:bg-muted/40 hover:border-primary/50 transition-all cursor-pointer group"
+                        className="flex flex-col items-center justify-center aspect-video w-full rounded-lg border-2 border-dashed border-border bg-muted/20 hover:bg-muted/40 hover:border-primary/50 transition-colors cursor-pointer group"
                     >
                         {isUploading ? (
                             <Loader2 className="h-8 w-8 text-primary animate-spin" />
                         ) : (
                             <>
-                                <div className="p-3 rounded-full bg-primary/10 mb-3 group-hover:scale-110 transition-transform">
+                                <div className="p-3 rounded-full bg-primary/10 mb-3">
                                     <UploadCloud className="h-6 w-6 text-primary" />
                                 </div>
                                 <p className="text-sm font-medium text-foreground">Click para subir imagen</p>

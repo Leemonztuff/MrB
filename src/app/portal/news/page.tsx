@@ -180,7 +180,7 @@ export default function NewsPage() {
                   <div className="mt-4 pt-4 border-t border-border/30">
                     <Button
                       asChild
-                      className="w-full sm:w-auto bg-primary text-primary-foreground font-black uppercase tracking-tighter rounded-xl px-6 h-11 hover:scale-[1.02] transition-transform shadow-lg shadow-primary/20"
+                      className="w-full sm:w-auto bg-primary text-primary-foreground font-black uppercase tracking-tighter rounded-xl px-6 h-11 shadow-lg shadow-primary/20"
                     >
                       <Link href={`/portal/catalogo?newsId=${item.id}&promoId=${item.promotion_id}`}>
                         <Ticket className="h-4 w-4 mr-2" />

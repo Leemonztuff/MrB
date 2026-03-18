@@ -100,7 +100,7 @@ export function LabelPreview({ labels, baseUrl }: LabelPreviewProps) {
         {pages.map((pageLabels, pageIndex) => (
           <div
             key={pageIndex}
-            className="bg-white shadow-2xl print-page transition-transform duration-500 hover:scale-[1.01]"
+            className="bg-white shadow-2xl print-page"
             style={{
               width: '210mm',
               height: '297mm',
