@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription, FormMessage } from '@/components/ui/form';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from '@/hooks/use-toast';
 import { updateSettings } from '@/app/admin/actions/settings.actions';
 import type { AppSettings } from '@/types';
@@ -17,6 +18,7 @@ import { LogoUploader } from './LogoUploader';
 const settingsSchema = z.object({
     whatsapp_number: z.string().min(10, "Debe ser un número válido."),
     vat_percentage: z.coerce.number().min(0, "Debe ser un número positivo."),
+    enable_stock_management: z.boolean(),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -30,6 +32,7 @@ export function SettingsForm({ settings }: { settings: AppSettings }) {
         defaultValues: {
             whatsapp_number: settings.whatsapp_number || "",
             vat_percentage: settings.vat_percentage || 21,
+            enable_stock_management: settings.enable_stock_management ?? false,
         },
     });
 
@@ -38,6 +41,7 @@ export function SettingsForm({ settings }: { settings: AppSettings }) {
             const formData = new FormData();
             formData.append('whatsapp_number', values.whatsapp_number);
             formData.append('vat_percentage', String(values.vat_percentage));
+            formData.append('enable_stock_management', String(values.enable_stock_management));
             
             const result = await updateSettings(formData);
 
@@ -90,6 +94,26 @@ export function SettingsForm({ settings }: { settings: AppSettings }) {
                                             Este porcentaje se usará para calcular el total de los pedidos.
                                         </FormDescription>
                                         <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="enable_stock_management"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5">
+                                            <FormLabel>Gestión de Inventario</FormLabel>
+                                            <FormDescription>
+                                                Controla el stock físico de productos. Desactiva si usas otro sistema.
+                                            </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
                                     </FormItem>
                                 )}
                             />

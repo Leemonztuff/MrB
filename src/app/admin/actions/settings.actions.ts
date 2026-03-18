@@ -12,7 +12,7 @@ export async function getSettings(): Promise<AppSettings> {
 
     if (error) {
         console.error("getSettings error:", error.message);
-        return { whatsapp_number: "", vat_percentage: 21, logo_url: null };
+        return { whatsapp_number: "", vat_percentage: 21, logo_url: null, enable_stock_management: false };
     }
 
     const settings = (data || []).reduce((acc: any, { key, value }: { key: string, value: any }) => {
@@ -24,6 +24,7 @@ export async function getSettings(): Promise<AppSettings> {
         whatsapp_number: settings.whatsapp_number || "",
         vat_percentage: settings.vat_percentage || 21,
         logo_url: settings.logo_url || null,
+        enable_stock_management: settings.enable_stock_management ?? false,
     };
 }
 
@@ -72,10 +73,12 @@ export async function updateSettings(formData: FormData): Promise<{ error?: stri
 
     const whatsapp_number = formData.get('whatsapp_number') as string;
     const vat_percentage = formData.get('vat_percentage') as string;
+    const enable_stock_management = formData.get('enable_stock_management') === 'true';
 
     const settingsToUpsert = [
         { key: 'whatsapp_number', value: whatsapp_number },
         { key: 'vat_percentage', value: vat_percentage },
+        { key: 'enable_stock_management', value: enable_stock_management },
     ];
 
     const { error } = await supabase.from('app_settings').upsert(settingsToUpsert, { onConflict: 'key' });

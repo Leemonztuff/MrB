@@ -30,7 +30,7 @@ type NavItem = {
   incompleteTooltip?: string;
 };
 
-const navItems: NavItem[] = [
+const baseNavItems: NavItem[] = [
   { href: "/admin", icon: Home, label: "Dashboard" },
   { href: "/admin/orders", icon: History, label: "Pedidos" },
   { href: "/admin/products", icon: Package, label: "Productos" },
@@ -41,8 +41,10 @@ const navItems: NavItem[] = [
   { href: "/admin/news", icon: Megaphone, label: "Noticias" },
 ];
 
-export function AppNav({ isMobile, stats }: { isMobile: boolean, stats: DashboardStats }) {
+export function AppNav({ isMobile, stats, enableStock = false }: { isMobile: boolean, stats: DashboardStats, enableStock?: boolean }) {
   const pathname = usePathname();
+  
+  const navItems = enableStock ? baseNavItems : baseNavItems.filter(item => item.href !== "/admin/inventory");
 
   const renderNavItem = (item: NavItem) => {
     const isActive = pathname.startsWith(item.href) && (item.href !== '/admin' || pathname === '/admin');

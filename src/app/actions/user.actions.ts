@@ -11,6 +11,16 @@ import { getPortalClient } from '@/app/actions/portal.actions';
 import { onboardingSchema } from '@/lib/validations/client.schema';
 import { formatAddress, formatDeliveryWindow } from '@/lib/formatters';
 
+async function isStockManagementEnabled(): Promise<boolean> {
+    const supabase = await createServerClient();
+    const { data } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'enable_stock_management')
+        .single();
+    return data?.value === true;
+}
+
 export async function hasUsers(): Promise<boolean> {
     if (process.env.VERCEL_ENV === 'production' && !process.env.SUPABASE_SERVICE_ROLE_KEY) return true;
     if (!supabaseAdmin) return true;
@@ -284,18 +294,21 @@ export async function submitOrder(payload: {
         if (itemsError) throw itemsError;
 
         // --- Inventory Integration ---
-        // Record 'out' movements for all items in the order
-        const inventoryMovements = payload.cart.map(item => ({
-            product_id: item.product.id,
-            type: 'out' as const,
-            quantity: item.quantity,
-            reason: `Pedido #${order.id.slice(0, 8)}`,
-            reference_id: order.id,
-        }));
+        // Only record inventory movements if stock management is enabled
+        const stockEnabled = await isStockManagementEnabled();
+        if (stockEnabled) {
+            const inventoryMovements = payload.cart.map(item => ({
+                product_id: item.product.id,
+                type: 'out' as const,
+                quantity: item.quantity,
+                reason: `Pedido #${order.id.slice(0, 8)}`,
+                reference_id: order.id,
+            }));
 
-        const { error: inventoryError } = await supabase.from('inventory_movements').insert(inventoryMovements);
-        if (inventoryError) {
-             console.error("Critical: Failed to register inventory movements for order", order.id, inventoryError);
+            const { error: inventoryError } = await supabase.from('inventory_movements').insert(inventoryMovements);
+            if (inventoryError) {
+                console.error("Failed to register inventory movements for order", order.id, inventoryError);
+            }
         }
         // -----------------------------
 

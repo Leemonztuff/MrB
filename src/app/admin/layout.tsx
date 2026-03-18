@@ -31,7 +31,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const { stats } = await getDashboardData();
-  const { logo_url } = await getSettings();
+  const settings = await getSettings();
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background/95">
@@ -41,10 +41,10 @@ export default async function AdminLayout({
             href="/admin"
             className="group flex h-12 w-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-primary/10 transition-all hover:bg-primary/20 active:scale-95"
           >
-            <Logo logoUrl={logo_url} />
+            <Logo logoUrl={settings.logo_url} />
             <span className="sr-only">MR. BLONDE</span>
           </Link>
-          <AppNav isMobile={false} stats={stats as DashboardStats} />
+          <AppNav isMobile={false} stats={stats as DashboardStats} enableStock={settings.enable_stock_management} />
         </nav>
         <nav className="mt-auto flex flex-col items-center gap-6 px-2 py-8">
           <TooltipProvider>
@@ -107,7 +107,7 @@ export default async function AdminLayout({
                   <SheetDescription className="sr-only">Navegación principal de la aplicación para dispositivos móviles.</SheetDescription>
                 </SheetHeader>
                 <nav className="grid gap-6 text-base font-medium">
-                  <AppNav isMobile={true} stats={stats as DashboardStats} />
+                  <AppNav isMobile={true} stats={stats as DashboardStats} enableStock={settings.enable_stock_management} />
                 </nav>
                 <div className="absolute bottom-4 left-4 right-4 grid gap-4">
                   <Link
