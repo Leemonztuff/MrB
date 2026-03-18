@@ -236,10 +236,27 @@ export async function submitOrder(payload: {
 }): Promise<ActionResponse<{ orderId: string }>> {
     return handleAction(async () => {
         const supabase = await createServerClient();
-        // Safe access for clientId, defaulting to null if 'generic' or falsy
         const finalClientId = payload.clientId === 'generic' || !payload.clientId ? null : payload.clientId;
-        // Safe access for clientName, defaulting to "Cliente" if falsy
-        const finalClientName = payload.clientName || "Cliente";
+        
+        let finalClientName = payload.clientName;
+        if (!finalClientName && finalClientId) {
+            const { data: clientData } = await supabase
+                .from('clients')
+                .select('contact_name, email, phone')
+                .eq('id', finalClientId)
+                .single();
+            
+            if (clientData?.contact_name) {
+                finalClientName = clientData.contact_name;
+            } else if (clientData?.email) {
+                finalClientName = clientData.email.split('@')[0];
+            } else if (clientData?.phone) {
+                finalClientName = `Cliente ${clientData.phone.slice(-4)}`;
+            }
+        }
+        if (!finalClientName) {
+            finalClientName = `Cliente ${finalClientId?.slice(-4) || Date.now().toString().slice(-4)}`;
+        }
 
         const { data: order, error: orderError } = await supabase
             .from('orders')
