@@ -9,6 +9,10 @@ import { ShoppingCart, Package, ChevronDown, RefreshCw, Clock, Sparkles } from '
 import { formatCurrency } from '@/lib/formatters';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { PortalPageHeader } from '@/components/shared/portal-page-header';
+import { PortalListSkeleton } from '@/components/shared/portal-skeleton';
+import { PortalEmptyState } from '@/components/shared/portal-empty-state';
+import { Card } from '@/components/ui/card';
 
 interface OrderItem {
     id: string;
@@ -41,23 +45,6 @@ const statusConfig: Record<string, { label: string; color: string; dotColor: str
     transito: { label: 'En Tránsito', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', dotColor: 'bg-blue-500' },
     entregado: { label: 'Entregado', color: 'bg-green-500/10 text-green-500 border-green-500/20', dotColor: 'bg-green-500' },
 };
-
-function OrderSkeleton() {
-    return (
-        <div className="glass-card p-4 animate-pulse">
-            <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                    <div className="h-3 w-28 bg-muted/50 rounded" />
-                    <div className="h-5 w-20 bg-muted/50 rounded" />
-                </div>
-                <div className="flex items-center gap-3">
-                    <div className="h-6 w-20 bg-muted/50 rounded-full" />
-                    <div className="h-8 w-8 bg-muted/50 rounded-lg" />
-                </div>
-            </div>
-        </div>
-    );
-}
 
 export default function PortalOrdersPage() {
     const router = useRouter();
@@ -93,40 +80,20 @@ export default function PortalOrdersPage() {
 
     return (
         <div className="space-y-6 max-w-2xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-                    <Package className="h-5 w-5" />
-                </div>
-                <div>
-                    <h2 className="text-2xl font-black italic tracking-tighter uppercase leading-none">
-                        Mis Pedidos
-                    </h2>
-                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">
-                        Historial y seguimiento
-                    </p>
-                </div>
-            </div>
+            <PortalPageHeader
+                icon={Package}
+                title="Mis Pedidos"
+                description="Historial y seguimiento"
+            />
 
-            {/* Content */}
             {isLoading ? (
-                <div className="space-y-3">
-                    <OrderSkeleton />
-                    <OrderSkeleton />
-                    <OrderSkeleton />
-                </div>
+                <PortalListSkeleton items={3} />
             ) : orders.length === 0 ? (
-                <div className="glass-card p-12 text-center">
-                    <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-                        <Sparkles className="h-8 w-8 text-primary" />
-                    </div>
-                    <h3 className="font-black italic text-lg tracking-tight uppercase mb-2">
-                        Sin pedidos todavía
-                    </h3>
-                    <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                        Cuando realices tu primer pedido, aparecerá acá con todo su detalle.
-                    </p>
-                </div>
+                <PortalEmptyState
+                    icon={Package}
+                    title="Sin pedidos todavía"
+                    description="Cuando realices tu primer pedido, aparecerá acá con todo su detalle."
+                />
             ) : (
                 <div className="space-y-3">
                     {orders.map((order, idx) => {

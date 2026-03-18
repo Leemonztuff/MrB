@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { formatCuit } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
@@ -25,6 +26,9 @@ import {
     Lock,
     Loader2,
 } from 'lucide-react';
+import { PortalPageHeader } from '@/components/shared/portal-page-header';
+import { PortalProfileSkeleton } from '@/components/shared/portal-skeleton';
+import { PortalEmptyState } from '@/components/shared/portal-empty-state';
 
 interface ClientData {
     id: string;
@@ -58,30 +62,6 @@ const changeTypeLabels: Record<string, string> = {
     contact_dni: 'DNI',
     fiscal_status: 'Situación fiscal',
 };
-
-function ProfileSkeleton() {
-    return (
-        <div className="space-y-6 max-w-2xl mx-auto">
-            <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-muted/50 animate-pulse" />
-                <div className="space-y-2">
-                    <div className="h-5 w-32 bg-muted/50 rounded animate-pulse" />
-                    <div className="h-3 w-48 bg-muted/50 rounded animate-pulse" />
-                </div>
-            </div>
-            <div className="glass-card p-6 animate-pulse space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                        <div key={i} className="space-y-2">
-                            <div className="h-3 w-20 bg-muted/50 rounded" />
-                            <div className="h-4 w-full bg-muted/50 rounded" />
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
 
 export default function PortalProfilePage() {
     const { toast } = useToast();
@@ -199,10 +179,23 @@ export default function PortalProfilePage() {
         }
     }
 
-    if (isLoading) return <ProfileSkeleton />;
+    if (isLoading) return (
+        <div className="space-y-6 max-w-2xl mx-auto">
+            <PortalPageHeader icon={UserIcon} title="Mi Perfil" description="Cargando..." />
+            <PortalProfileSkeleton />
+        </div>
+    );
 
     if (!client) {
-        return <div className="text-center py-8 text-muted-foreground">No se encontró el cliente</div>;
+        return (
+            <div className="max-w-2xl mx-auto">
+                <PortalEmptyState
+                    icon={UserIcon}
+                    title="Cliente no encontrado"
+                    description="No se pudo cargar la información del cliente."
+                />
+            </div>
+        );
     }
 
     const infoFields = [
@@ -219,22 +212,11 @@ export default function PortalProfilePage() {
 
     return (
         <div className="space-y-6 max-w-2xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-                        <UserIcon className="h-5 w-5" />
-                    </div>
-                    <div>
-                        <h2 className="text-2xl font-black italic tracking-tighter uppercase leading-none">
-                            Mi Perfil
-                        </h2>
-                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">
-                            Gestiona tu información personal
-                        </p>
-                    </div>
-                </div>
-                {!isEditing && (
+            <PortalPageHeader
+                icon={UserIcon}
+                title="Mi Perfil"
+                description="Gestiona tu información personal"
+                action={!isEditing && (
                     <Button
                         onClick={() => setIsEditing(true)}
                         size="sm"
@@ -245,7 +227,7 @@ export default function PortalProfilePage() {
                         Editar
                     </Button>
                 )}
-            </div>
+            />
 
             {/* Pending Changes */}
             {pendingChanges.length > 0 && (
