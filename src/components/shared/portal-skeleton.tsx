@@ -62,3 +62,19 @@ export function PortalProfileSkeleton() {
         </div>
     );
 }
+
+export function PortalNewsCardSkeleton() {
+    return (
+        <div className="space-y-4 animate-pulse">
+            <div className="w-full aspect-[16/9] bg-white/5 rounded-2xl" />
+            <div className="p-4 space-y-3">
+                <div className="h-3 w-24 bg-white/10 rounded" />
+                <div className="h-5 w-3/4 bg-white/10 rounded" />
+                <div className="space-y-2">
+                    <div className="h-3 w-full bg-white/5 rounded" />
+                    <div className="h-3 w-5/6 bg-white/5 rounded" />
+                </div>
+            </div>
+        </div>
+    );
+}
