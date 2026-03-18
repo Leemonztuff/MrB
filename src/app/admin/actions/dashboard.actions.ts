@@ -5,7 +5,116 @@ import { revalidatePath } from "next/cache";
 import { getSupabaseClientWithAuth } from "./_helpers";
 import type { DashboardStats, Order, OrderWithItems, Client } from "@/types";
 
-// --- Consolidated Dashboard Actions ---
+// --- New Dashboard Data Types ---
+
+export interface DashboardMetrics {
+    orders: {
+        pending: number;
+        in_transit: number;
+        delivered: number;
+        total_units: number;
+        average_order_value: number;
+    };
+    clients: {
+        active: number;
+        pending: number;
+        new_this_month: number;
+    };
+    top_products: {
+        name: string;
+        total_quantity: number;
+    }[];
+}
+
+export async function getDashboardMetrics(): Promise<DashboardMetrics> {
+    const supabase = await getSupabaseClientWithAuth();
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+    // Orders stats
+    const { count: pendingOrders } = await supabase
+        .from("orders")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "armado");
+
+    const { count: inTransitOrders } = await supabase
+        .from("orders")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "transito");
+
+    const { count: deliveredOrders } = await supabase
+        .from("orders")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "entregado");
+
+    // Order items for units and average
+    const { data: orderItems } = await supabase
+        .from("order_items")
+        .select("quantity, price_per_unit, created_at, orders(total_amount)");
+
+    const totalUnits = orderItems?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+    
+    const { data: allOrders } = await supabase
+        .from("orders")
+        .select("total_amount");
+
+    const totalOrderValue = allOrders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+    const orderCount = allOrders?.length || 0;
+    const averageOrderValue = orderCount > 0 ? totalOrderValue / orderCount : 0;
+
+    // Clients stats
+    const { count: activeClients } = await supabase
+        .from("clients")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "active");
+
+    const { count: pendingClients } = await supabase
+        .from("clients")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending_agreement");
+
+    const { count: newClientsThisMonth } = await supabase
+        .from("clients")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", startOfMonth);
+
+    // Top 5 products
+    const { data: topProductsData } = await supabase
+        .from("order_items")
+        .select("quantity, products(name)");
+
+    const productMap: Record<string, { name: string; quantity: number }> = {};
+    topProductsData?.forEach((item: any) => {
+        const name = item.products?.name || "Sin nombre";
+        if (!productMap[name]) {
+            productMap[name] = { name, quantity: 0 };
+        }
+        productMap[name].quantity += item.quantity || 0;
+    });
+
+    const topProducts = Object.values(productMap)
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 5);
+
+    return {
+        orders: {
+            pending: pendingOrders || 0,
+            in_transit: inTransitOrders || 0,
+            delivered: deliveredOrders || 0,
+            total_units: totalUnits,
+            average_order_value: Math.round(averageOrderValue),
+        },
+        clients: {
+            active: activeClients || 0,
+            pending: pendingClients || 0,
+            new_this_month: newClientsThisMonth || 0,
+        },
+        top_products: topProducts,
+    };
+}
+
+// --- Legacy Dashboard Actions (kept for compatibility) ---
 
 export async function getDashboardData() {
     const supabase = await getSupabaseClientWithAuth();

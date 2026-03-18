@@ -12,10 +12,9 @@ import {
 import { DashboardStats } from "./_components/dashboard-stats";
 import { RecentOrders } from "./_components/recent-orders";
 import { PendingClients } from "./_components/pending-clients";
-import type { DashboardStats as Stats } from "@/types";
 
 export default async function AdminDashboardPage() {
-    const { stats, pendingOrders, pendingClients } = await getDashboardData();
+    const { pendingOrders, pendingClients } = await getDashboardData();
 
     return (
         <div className="grid flex-1 items-start gap-6 md:gap-10 pb-10">
@@ -24,7 +23,7 @@ export default async function AdminDashboardPage() {
                 description="Un resumen de la actividad de tu negocio."
             />
 
-            <DashboardStats stats={stats as Stats} />
+            <DashboardStats />
 
             <div className="grid gap-6 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 items-start">
                 <div className="xl:col-span-2 space-y-6">
