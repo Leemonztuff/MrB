@@ -5,7 +5,7 @@
 import { useEffect, useTransition, useState } from "react";
 import { useCartStore } from "@/hooks/use-cart-store";
 import type { CartItem as CartItemType } from "@/types";
-import type { BonusInfo } from "@/lib/logic/cart-calculations";
+import type { BonusInfo } from "@/domain/pricing/calculator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
