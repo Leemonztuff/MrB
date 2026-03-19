@@ -129,23 +129,56 @@ Genera mensaje WhatsApp → Admin recibe → Prepara → Imprime rótulos → En
 
 ## Stack Tecnológico
 
-| Tecnología | Propósito |
+| Tecnologia | Proposito |
 |------------|-----------|
 | **Next.js 15** | Framework React con App Router |
-| **TypeScript** | Tipado estático |
+| **TypeScript** | Tipado estatico |
 | **Supabase** | Base de datos PostgreSQL + Auth |
 | **Tailwind CSS** | Estilos utility-first |
 | **shadcn/ui** | Componentes UI basados en Radix |
 | **Zustand** | Estado global del cliente (carrito) |
-| **React Hook Form + Zod** | Validación de formularios |
-| **Google Genkit** | IA (análisis de clientes, comandos) |
+| **React Hook Form + Zod** | Validacion de formularios |
+| **Google Genkit** | IA (analisis de clientes, comandos) |
 | **Sonner** | Notificaciones toast |
-| **Jest** | Testing unitario |
 
 ---
 
 ## Estructura del Proyecto
 
+```
+Mrblondeapp-main/
+├── src/
+│   ├── ai/                  # Configuracion y flujos de Genkit
+│   ├── app/                # Paginas de Next.js (App Router)
+│   │   ├── admin/          # Panel de administracion
+│   │   ├── portal/         # Portal de cliente
+│   │   ├── portal-cliente/ # Login del portal
+│   │   └── pedido/[id]/  # Pagina publica de pedido
+│   ├── components/
+│   │   ├── shared/         # Componentes compartidos
+│   │   │   ├── page-header.tsx
+│   │   │   ├── empty-state.tsx
+│   │   │   ├── skeleton.tsx
+│   │   │   ├── portal-page-header.tsx
+│   │   │   ├── portal-empty-state.tsx
+│   │   │   └── portal-skeleton.tsx
+│   │   └── ui/             # Componentes shadcn/ui
+│   ├── contexts/          # React contexts
+│   ├── domain/            # Logica de negocio (inventory, pricing)
+│   ├── hooks/             # Custom hooks y Zustand stores
+│   ├── lib/
+│   │   ├── supabase/     # Clientes de Supabase
+│   │   └── formatters.ts # Formatos de moneda/fecha
+│   └── types/             # Definiciones de TypeScript
+├── public/
+├── .env.example
+├── package.json
+├── tailwind.config.ts
+├── next.config.ts
+├── middleware.ts
+├── AGENTS.md
+├── ARCHITECTURE.md
+└── README.md
 ```
 Mrblondeapp-main/
 ├── .github/
@@ -299,49 +332,9 @@ Si quieres datos de prueba:
 ## Testing
 
 ```bash
-# Ejecutar todos los tests
+# Ejecutar tests
 npm test
-
-# Ejecutar en modo watch
-npm test -- --watch
-
-# Ejecutar con cobertura
-npm test -- --coverage
 ```
-
-### Configuración de Tests
-
-- **Framework**: Jest
-- **Ubicación**: `src/lib/__tests__/` (por crear)
-- **Setup**: `jest.setup.ts` (por crear)
-
-> **Nota**: Actualmente no existen tests. El proyecto está configurado para Jest pero falta implementación.
-
----
-
-## Seguridad
-
-### Middleware (`middleware.ts`)
-
-El middleware implementa múltiples capas de seguridad:
-
-- **Headers de Protección**:
-  - X-Frame-Options: DENY
-  - X-Content-Type-Options: nosniff
-  - Referrer-Policy: strict-origin-when-cross-origin
-  - Permissions-Policy
-
-- **Validación JWT**: Verificación de tokens en cada request
-
-- **Rate Limiting**:
-  - `authLimiter`: 10 requests/15min (rutas auth)
-  - `apiLimiter`: 100 requests/1min (APIs)
-  - `orderLimiter`: 20 requests/1min (pedidos)
-
-### Base de Datos
-
-- **RLS (Row Level Security)**: Políticas activas en todas las tablas
-- **Service Role**: Solo usado en Server Actions autenticadas
 
 ---
 
@@ -354,47 +347,13 @@ npm run dev
 # App disponible en http://localhost:9003
 ```
 
-### Producción
+### Produccion
 
-El proyecto incluye CI/CD con GitHub Actions (`.github/workflows/ci-cd.yml`):
+El proyecto usa Vercel para despliegue:
 
-#### Flujo de CI/CD
-
-```
-┌─────────────┐    ┌─────────────────┐    ┌─────────────┐
-│   Push      │───▶│  Lint + Types   │───▶│   Tests     │
-│             │    │  + Build        │    │  (Jest)     │
-└─────────────┘    └─────────────────┘    └─────────────┘
-                                               │
-                                               ▼
-┌─────────────┐    ┌─────────────────┐    ┌─────────────┐
-│  Staging    │◀───│   Deploy        │◀───│   Build     │
-│  (develop)  │    │   Vercel        │    │   OK        │
-└─────────────┘    └─────────────────┘    └─────────────┘
-                                               │
-                                               ▼
-┌─────────────┐    ┌─────────────────┐
-│  Production │◀───│   Deploy        │
-│  (main)     │    │   Vercel        │
-└─────────────┘    └─────────────────┘
-```
-
-#### Ramas
-
-- `main` → Deploy automático a **Producción**
-- `develop` → Deploy automático a **Staging**
-- PRs a `main` → CI completo
-
-#### Variables de Secrets (GitHub)
-
-Configura en Settings → Secrets and variables → Actions:
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `VERCEL_TOKEN`
-- `VERCEL_ORG_ID`
-- `VERCEL_PROJECT_ID`
+1. Conectar repositorio en [vercel.com](https://vercel.com)
+2. Configurar variables de entorno
+3. Deploy automatico en push a main
 
 ---
 
@@ -424,7 +383,7 @@ Usamos commit messages convencionales:
 
 Este proyecto es un **prototipo funcional** para **Mr. Blonde**.
 
-Todos los derechos reservados © 2024 Mr. Blonde.
+Todos los derechos reservados © 2026 Mr. Blonde.
 
 ---
 

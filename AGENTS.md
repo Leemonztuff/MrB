@@ -28,12 +28,8 @@ npx tsc --noEmit     # TypeScript type check
 
 ### Testing
 ```bash
-npm test             # Run all tests (Jest)
-npm test -- --watch  # Watch mode
-npm test -- <file>   # Run single test file
-npm test -- -t "<name>"  # Run tests matching name pattern
+npm test             # Run all tests
 ```
-**Note**: Tests require Jest configuration (`jest.config.js`). Currently no tests exist.
 
 ---
 
@@ -42,15 +38,46 @@ npm test -- -t "<name>"  # Run tests matching name pattern
 src/
 ├── ai/               # Genkit AI flows
 ├── app/              # Next.js App Router
-│   ├── (admin)/      # Protected admin routes
-│   ├── (auth)/       # Login/signup routes
-│   ├── actions/      # Server Actions
+│   ├── admin/        # Admin panel routes
+│   │   ├── _components/  # Admin-specific components
+│   │   │   └── notifications.tsx
+│   │   └── actions/       # Admin server actions
+│   ├── portal/       # Client portal routes
+│   │   ├── catalogo/ # Product catalog
+│   │   ├── news/     # News/promotions
+│   │   ├── orders/   # Order history
+│   │   └── profile/  # Client profile
+│   ├── portal-cliente/  # Client login portal
+│   ├── actions/      # Shared server actions
 │   └── pedido/[id]/  # Public order page
-├── components/       # UI components (ui/, shared/)
-├── hooks/            # Zustand stores (useCartStore)
-├── lib/              # Utils, Supabase clients, Zod schemas
+├── components/
+│   ├── ui/           # shadcn/ui components
+│   └── shared/       # Shared components (page-header, empty-state, skeletons, etc.)
+├── contexts/         # React contexts
+├── domain/           # Domain logic (inventory, order-session, pricing)
+├── hooks/            # Zustand stores + custom hooks
+│   └── use-*.ts      # Custom hooks
+├── lib/
+│   ├── supabase/    # Supabase clients
+│   └── formatters.ts # Formatting utilities
 └── types/            # TypeScript definitions
 ```
+
+---
+
+## Shared Components
+
+### Page Headers
+- `PageHeader` - Admin page headers
+- `PortalPageHeader` - Portal page headers with icon, title, description
+
+### Empty States
+- `EmptyState` - Admin empty states
+- `PortalEmptyState` - Portal empty states
+
+### Skeletons
+- `skeleton.tsx` - Admin skeletons (Skeleton, SkeletonCard, SkeletonTable, SkeletonPageHeader)
+- `portal-skeleton.tsx` - Portal skeletons (PortalCardSkeleton, PortalListSkeleton, PortalProductSkeleton, etc.)
 
 ---
 
@@ -126,6 +153,15 @@ export const onboardingSchema = z.object({
 - `supabaseAdmin` only in secure server contexts
 - Regular ops use `createServerClient()` or `createClient()`
 - RLS policies in Supabase
+
+---
+
+## App Settings
+Settings stored in `app_settings` table:
+- `vat_percentage` - VAT percentage for orders
+- `whatsapp_number` - WhatsApp for order notifications
+- `logo_url` - Brand logo URL
+- `enable_stock_management` - Toggle stock feature
 
 ---
 

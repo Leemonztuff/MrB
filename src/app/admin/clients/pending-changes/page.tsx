@@ -135,7 +135,7 @@ export default function PendingChangesPage() {
             {changes.length === 0 ? (
                 <Card>
                     <CardContent className="py-12 text-center">
-                        <p className="text-gray-500">No hay cambios pendientes de aprobación.</p>
+                        <p className="text-muted-foreground">No hay cambios pendientes de aprobacion.</p>
                     </CardContent>
                 </Card>
             ) : (
@@ -148,7 +148,7 @@ export default function PendingChangesPage() {
                                         <p className="font-medium">
                                             {change.clients?.contact_name || 'Cliente'}
                                         </p>
-                                        <p className="text-sm text-gray-500">
+                                        <p className="text-sm text-muted-foreground">
                                             {change.clients?.email || 'Sin email'}
                                         </p>
                                     </div>
@@ -159,18 +159,18 @@ export default function PendingChangesPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="flex items-center gap-4 mb-4">
-                                    <div className="flex-1 p-3 bg-gray-50 rounded-lg">
-                                        <p className="text-xs text-gray-500 mb-1">Valor Actual</p>
-                                        <p className="text-sm">{change.old_value || '(vacío)'}</p>
+                                    <div className="flex-1 p-3 bg-muted/30 rounded-lg">
+                                        <p className="text-xs text-muted-foreground mb-1">Valor Actual</p>
+                                        <p className="text-sm">{change.old_value || '(vacio)'}</p>
                                     </div>
-                                    <div className="text-gray-400">→</div>
-                                    <div className="flex-1 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                                        <p className="text-xs text-blue-600 mb-1">Nuevo Valor</p>
+                                    <div className="text-muted-foreground">→</div>
+                                    <div className="flex-1 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                                        <p className="text-xs text-primary mb-1">Nuevo Valor</p>
                                         <p className="text-sm font-medium">{change.new_value}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <p className="text-xs text-gray-400">
+                                    <p className="text-xs text-muted-foreground/60">
                                         Solicitado {formatDistanceToNow(new Date(change.created_at), { addSuffix: true, locale: es })}
                                     </p>
                                     <div className="flex gap-2">

@@ -30,8 +30,36 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { stats } = await getDashboardData();
-  const settings = await getSettings();
+  let stats = {
+    total_revenue: 0,
+    month_revenue: 0,
+    active_clients: 0,
+    pending_orders_count: 0,
+    total_clients: 0,
+    total_pricelists: 0,
+    total_promotions: 0,
+    total_sales_conditions: 0,
+    overdue_orders_count: 0
+  };
+  let settings = {
+    whatsapp_number: "",
+    vat_percentage: 21,
+    logo_url: null as string | null,
+    enable_stock_management: false
+  };
+
+  try {
+    const dashboardResult = await getDashboardData();
+    stats = dashboardResult.stats;
+  } catch (e) {
+    console.error("Error loading dashboard data:", e);
+  }
+
+  try {
+    settings = await getSettings();
+  } catch (e) {
+    console.error("Error loading settings:", e);
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background/95">
@@ -84,7 +112,7 @@ export default async function AdminLayout({
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 glass border-b-0 border-white/5 px-4 sm:static sm:h-auto sm:bg-transparent sm:px-8 sm:py-6 sm:backdrop-blur-none">
           <div className="sm:hidden">
             <Link href="/admin" className="flex items-center gap-2 text-lg font-semibold">
-              <Logo logoUrl={logo_url} showText={true} />
+              <Logo logoUrl={settings.logo_url} showText={true} />
             </Link>
           </div>
           <div className="ml-auto flex items-center gap-4">

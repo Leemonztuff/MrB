@@ -210,7 +210,8 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
 
     const topProducts = Object.values(productMap)
         .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 5);
+        .slice(0, 5)
+        .map(p => ({ name: p.name, total_quantity: p.quantity }));
 
     return {
         orders: {

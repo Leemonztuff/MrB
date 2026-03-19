@@ -254,3 +254,4 @@ CREATE POLICY "Allow read/insert for portal" ON public.pending_changes FOR ALL U
 -- 7. INITIAL SETTINGS
 INSERT INTO public.app_settings (key, value) VALUES ('vat_percentage', '21'::jsonb) ON CONFLICT (key) DO NOTHING;
 INSERT INTO public.app_settings (key, value) VALUES ('whatsapp_number', '"5491144276120"'::jsonb) ON CONFLICT (key) DO NOTHING;
+INSERT INTO public.app_settings (key, value) VALUES ('enable_stock_management', 'false'::jsonb) ON CONFLICT (key) DO NOTHING;
