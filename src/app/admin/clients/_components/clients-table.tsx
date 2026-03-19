@@ -35,7 +35,7 @@ import {
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { useSonner } from "@/hooks/use-sonner";
 import { deleteClient } from "@/app/admin/actions/clients.actions";
 import type { Client } from "@/types";
 import { AssignAgreementDialog } from "./assign-agreement-dialog";
@@ -55,7 +55,7 @@ interface ClientsTableProps {
 
 export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
   const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
+  const { toast } = useSonner();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
