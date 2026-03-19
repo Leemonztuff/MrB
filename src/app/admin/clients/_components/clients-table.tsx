@@ -204,7 +204,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
             <TableBody>
               {clients.map((client) => {
                 const onboardingLink = isClient ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
-                const orderLink = isClient && client.agreement_id && client.status === 'active' ? `${window.location.origin}/pedido/${client.agreement_id}` : null;
+                const orderLink = isClient && client.agreement_id && client.status === 'active' ? `${window.location.origin}/portal/catalogo` : null;
                 return (
                   <TableRow key={client.id} className="border-border/50 hover:bg-muted/30 transition-colors group">
                     <TableCell className="pl-6 py-4">
