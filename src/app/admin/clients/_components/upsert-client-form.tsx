@@ -263,7 +263,7 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Cli
                   <FormField control={form.control} name="province" render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">Provincia</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} defaultValue={field.value || '__none__'}>
                         <FormControl>
                           <SelectTrigger className="h-12 glass border-white/10 rounded-xl">
                             <SelectValue placeholder="Seleccione..." />
@@ -279,7 +279,7 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Cli
                   <FormField control={form.control} name="locality" render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">Localidad</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''} disabled={!watchedProvince}>
+                      <Select onValueChange={field.onChange} defaultValue={field.value || '__none__'} disabled={!watchedProvince}>
                         <FormControl>
                           <SelectTrigger className="h-12 glass border-white/10 rounded-xl">
                             <SelectValue placeholder={watchedProvince ? "Localidad..." : "Elija provincia"} />
