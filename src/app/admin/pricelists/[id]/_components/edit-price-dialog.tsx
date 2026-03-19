@@ -179,14 +179,17 @@ export function PriceListItemEditDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Promoción Específica</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select 
+                    onValueChange={(val) => field.onChange(val === '__none__' ? '' : val)} 
+                    defaultValue={field.value || '__none__'}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar promoción (opcional)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Sin promoción específica</SelectItem>
+                      <SelectItem value="__none__">Sin promoción específica</SelectItem>
                       {promotions.map(promo => (
                         <SelectItem key={promo.id} value={promo.id}>
                           {promo.name}
