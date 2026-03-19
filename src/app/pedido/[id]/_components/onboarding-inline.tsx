@@ -117,7 +117,7 @@ export function OnboardingInline({ token, clientName, logoUrl }: OnboardingInlin
                                                 </FormControl>
                                                 <SelectContent className="glass border-white/10">
                                                     <ScrollArea className="h-72">
-                                                        {provinces.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                                                        {provinces.filter(Boolean).map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                                                     </ScrollArea>
                                                 </SelectContent>
                                             </Select>
@@ -139,7 +139,7 @@ export function OnboardingInline({ token, clientName, logoUrl }: OnboardingInlin
                                                 </FormControl>
                                                 <SelectContent className="glass border-white/10">
                                                     <ScrollArea className="h-72">
-                                                        {availableLocalities.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                                                        {availableLocalities.filter(Boolean).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                                                     </ScrollArea>
                                                 </SelectContent>
                                             </Select>

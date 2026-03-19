@@ -270,7 +270,7 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Cli
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="glass border-white/5 max-h-60">
-                          <ScrollArea className="h-60">{provinces.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</ScrollArea>
+                          <ScrollArea className="h-60">{provinces.filter(Boolean).map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</ScrollArea>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -286,7 +286,7 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Cli
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="glass border-white/5">
-                          <ScrollArea className="h-60">{availableLocalities.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</ScrollArea>
+                          <ScrollArea className="h-60">{availableLocalities.filter(Boolean).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</ScrollArea>
                         </SelectContent>
                       </Select>
                       <FormMessage />
