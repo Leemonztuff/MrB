@@ -17,8 +17,16 @@ import {
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/types";
+import { SearchInput } from "@/components/shared/search-input";
 
-export default async function ProductsPage() {
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ query?: string }>;
+}) {
+  const { query: queryParam } = await searchParams;
+  const query = queryParam?.toLowerCase() || "";
+
   const [productsResult, stockResult] = await Promise.all([
     getProducts(),
     import("@/app/admin/actions/inventory.actions").then(m => m.getAllProductsStock())
@@ -31,7 +39,15 @@ export default async function ProductsPage() {
     return <p className="text-destructive">{error.message}</p>;
   }
 
-  const productsByCategory = (products ?? []).reduce((acc, product) => {
+  const filteredProducts = query 
+    ? (products ?? []).filter(p => 
+        p.name.toLowerCase().includes(query) ||
+        p.category?.toLowerCase().includes(query) ||
+        p.description?.toLowerCase().includes(query)
+      )
+    : products ?? [];
+
+  const productsByCategory = filteredProducts.reduce((acc, product) => {
     const category = product.category || "Sin Categoría";
     if (!acc[category]) {
       acc[category] = [];
@@ -63,6 +79,14 @@ export default async function ProductsPage() {
     </EmptyState>
   );
 
+  const noResultsState = (
+    <EmptyState
+      icon={Package}
+      title="No hay resultados"
+      description={`No se encontraron productos que coincidan con "${query}"`}
+    />
+  );
+
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
       <PageHeader
@@ -70,6 +94,7 @@ export default async function ProductsPage() {
         description="Gestión pro de catálogo e inventario."
       >
         <div className="flex items-center gap-3">
+          <SearchInput placeholder="Buscar por nombre, categoría..." />
           <ImportProductsDialog />
           <EntityDialog formConfig={productFormConfig}>
             <Button size="sm" className="h-10 gap-2 font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground">
@@ -82,7 +107,7 @@ export default async function ProductsPage() {
         </div>
       </PageHeader>
 
-      {products && products.length > 0 ? (
+      {filteredProducts.length > 0 ? (
         <Accordion
           type="multiple"
           defaultValue={categories}
@@ -117,6 +142,8 @@ export default async function ProductsPage() {
             </AccordionItem>
           ))}
         </Accordion>
+      ) : query ? (
+        noResultsState
       ) : (
         emptyState
       )}

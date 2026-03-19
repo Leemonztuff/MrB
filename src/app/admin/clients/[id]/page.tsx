@@ -7,6 +7,7 @@ import { getClientOrders } from "@/app/admin/actions/dashboard.actions";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import dynamic from "next/dynamic";
+import { BreadcrumbList } from "@/components/shared/breadcrumb";
 
 const ClientDetailsLoader = dynamic(
   () => import('./_components/client-details-client'),
@@ -73,6 +74,11 @@ export default async function ClientDetailPage({
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
+      <BreadcrumbList items={[
+        { label: 'Admin', href: '/admin' },
+        { label: 'Clientes', href: '/admin/clients' },
+        { label: client.contact_name || client.email || 'Cliente' }
+      ]} />
       <Suspense fallback={<ClientDetailsSkeleton />}>
         <ClientDetailsLoader
           client={client}

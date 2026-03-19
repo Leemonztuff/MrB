@@ -16,6 +16,7 @@ import { AssignProductToPriceListDialog } from "./_components/assign-product-dia
 import { EntityDialog } from "../../_components/entity-dialog";
 import { priceListFormConfig } from "../_components/form-config";
 import type { Promotion } from "@/types";
+import { BreadcrumbList } from "@/components/shared/breadcrumb";
 
 export default async function PriceListDetailPage({
   params,
@@ -53,13 +54,12 @@ export default async function PriceListDetailPage({
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
+      <BreadcrumbList items={[
+        { label: 'Admin', href: '/admin' },
+        { label: 'Listas de Precios', href: '/admin/commercial-settings?tab=pricelists' },
+        { label: priceList.name }
+      ]} />
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" className="h-7 w-7" asChild>
-          <Link href="/admin/commercial-settings?tab=pricelists">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="sr-only">Volver</span>
-          </Link>
-        </Button>
         <div className="flex-1">
           <h1 className="text-2xl font-bold tracking-tight">{priceList.name}</h1>
         </div>

@@ -17,6 +17,7 @@ import { EntityDialog } from "../../_components/entity-dialog";
 import { agreementFormConfig } from "../_components/form-config";
 import AgreementSalesConditionsList from "./_components/agreement-sales-conditions-list";
 import { AgreementActionsMenu } from "./_components/agreement-actions-menu";
+import { BreadcrumbList } from "@/components/shared/breadcrumb";
 
 
 export default async function AgreementDetailPage({
@@ -48,13 +49,12 @@ export default async function AgreementDetailPage({
 
     return (
         <div className="grid flex-1 items-start gap-4 md:gap-8">
+            <BreadcrumbList items={[
+                { label: 'Admin', href: '/admin' },
+                { label: 'Convenios', href: '/admin/commercial-settings?tab=agreements' },
+                { label: agreement.agreement_name }
+            ]} />
             <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon" className="h-7 w-7" asChild>
-                    <Link href="/admin/agreements">
-                        <ArrowLeft className="h-4 w-4" />
-                        <span className="sr-only">Volver</span>
-                    </Link>
-                </Button>
                 <div className="flex-1">
                     <h1 className="text-2xl font-bold tracking-tight">{agreement.agreement_name}</h1>
                     <p className="text-muted-foreground capitalize">{agreement.client_type}</p>

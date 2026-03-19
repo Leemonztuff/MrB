@@ -11,6 +11,7 @@ import { OrderStatusBadge } from "../_components/order-status-badge";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { SearchInput } from "@/components/shared/search-input";
 
 const statusFilters = [
     { label: 'Todos', value: 'all' },
@@ -22,7 +23,7 @@ const statusFilters = [
 export default async function OrdersHistoryPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ status?: string; query?: string }>;
+  searchParams: Promise<{ status?: string; query?: string }>;
 }) {
   const filters = await searchParams;
   const currentStatus = filters?.status || 'all';
@@ -37,7 +38,9 @@ export default async function OrdersHistoryPage({
       <PageHeader
         title="Historial"
         description="Filtro de gestión y control total."
-      />
+      >
+        <SearchInput placeholder="Buscar por cliente, producto..." />
+      </PageHeader>
 
       <Card className="glass border-white/5 overflow-hidden">
         <CardHeader className="pb-4">
