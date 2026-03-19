@@ -26,25 +26,39 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { updatePriceListItem } from "@/app/admin/actions/pricelists.actions";
-import type { PriceListItem } from "@/types";
+import { updatePriceListItem, assignPromotionToPriceListProduct, removePromotionFromPriceListProduct } from "@/app/admin/actions/pricelists.actions";
+import type { PriceListItem, Promotion, PriceListProductPromotion } from "@/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const priceSchema = z.object({
   price: z.coerce.number().min(0, "El precio debe ser un número positivo."),
   volume_price: z.coerce.number().optional().nullable(),
+  promotion_id: z.string().optional(),
 });
 
 type PriceFormValues = z.infer<typeof priceSchema>;
+
+type Props = {
+  children: React.ReactNode;
+  priceListId: string;
+  item: PriceListItem;
+  promotions: Promotion[];
+  currentPromotion?: PriceListProductPromotion | null;
+};
 
 export function PriceListItemEditDialog({
   children,
   priceListId,
   item,
-}: {
-  children: React.ReactNode;
-  priceListId: string;
-  item: PriceListItem;
-}) {
+  promotions,
+  currentPromotion,
+}: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -54,21 +68,52 @@ export function PriceListItemEditDialog({
     defaultValues: {
       price: item.price,
       volume_price: item.volume_price,
+      promotion_id: currentPromotion?.promotion_id || "",
     },
   });
 
   const onSubmit = (values: PriceFormValues) => {
     startTransition(async () => {
-      const result = await updatePriceListItem({ 
+      const priceResult = await updatePriceListItem({ 
           price_list_id: priceListId,
           product_id: item.product_id,
           price: values.price,
           volume_price: values.volume_price ?? null
       });
-      if (result.error) {
+      
+      if (values.promotion_id) {
+        const promoResult = await assignPromotionToPriceListProduct({
+          price_list_id: priceListId,
+          product_id: item.product_id,
+          promotion_id: values.promotion_id,
+        });
+        if (promoResult.error) {
+          toast({
+            title: "Error",
+            description: "Error al asignar promoción: " + promoResult.error.message,
+            variant: "destructive",
+          });
+          return;
+        }
+      } else if (currentPromotion) {
+        const removeResult = await removePromotionFromPriceListProduct({
+          price_list_id: priceListId,
+          product_id: item.product_id,
+        });
+        if (removeResult.error) {
+          toast({
+            title: "Error",
+            description: "Error al quitar promoción: " + removeResult.error.message,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      if (priceResult.error) {
         toast({
           title: "Error",
-          description: result.error.message,
+          description: priceResult.error.message,
           variant: "destructive",
         });
       } else {
@@ -123,6 +168,32 @@ export function PriceListItemEditDialog({
                         onChange={e => field.onChange(e.target.value === "" ? null : e.target.value)}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="promotion_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Promoción Específica</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar promoción (opcional)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">Sin promoción específica</SelectItem>
+                      {promotions.map(promo => (
+                        <SelectItem key={promo.id} value={promo.id}>
+                          {promo.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

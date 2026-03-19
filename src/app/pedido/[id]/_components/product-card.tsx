@@ -7,16 +7,16 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { ProductWithPrice, Promotion } from "@/types";
+import type { ProductWithPrice, Promotion, PriceListProductPromotion } from "@/types";
 import Image from "next/image";
 import { QuantitySelector } from "./add-to-cart-button";
 import { getImageUrl } from "@/lib/placeholder-images";
 import { useCartStore } from "@/hooks/use-cart-store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Clock } from "lucide-react";
+import { TrendingUp, Clock, Tag } from "lucide-react";
 
-const PromoButton = ({ promo, onClick }: { promo: Promotion, onClick: (quantity: number) => void }) => {
+const PromoButton = ({ promo, onClick, isProductSpecific }: { promo: Promotion, onClick: (quantity: number) => void, isProductSpecific?: boolean }) => {
   const buyQuantity = promo.rules.buy;
   const getQuantity = promo.rules.get;
   if (!buyQuantity || !getQuantity) return null;
@@ -24,10 +24,11 @@ const PromoButton = ({ promo, onClick }: { promo: Promotion, onClick: (quantity:
   return (
     <Button
       size="sm"
-      variant="outline"
+      variant={isProductSpecific ? "default" : "outline"}
       className="h-auto px-2 py-1 text-xs"
       onClick={() => onClick(buyQuantity)}
     >
+      <Tag className="h-3 w-3 mr-1" />
       Promo {buyQuantity}x{getQuantity}
     </Button>
   )
@@ -41,17 +42,27 @@ interface ProductWithConsumerPrice extends ProductWithPrice {
 const ProductCardComponent = ({
   product,
   promotions,
+  productPromotions = [],
   showProductDuration = false,
   productDurations = {}
 }: {
   product: ProductWithConsumerPrice,
   promotions: Promotion[],
+  productPromotions?: PriceListProductPromotion[],
   showProductDuration?: boolean,
   productDurations?: Record<string, number>
 }) => {
   const { isVolumePricingActive, addItem } = useCartStore();
 
+  const productSpecificPromo = useMemo(() => {
+    const pp = productPromotions.find(p => p.product_id === product.id);
+    return pp?.promotions || null;
+  }, [productPromotions, product.id]);
+
   const applicablePromos = useMemo(() => {
+    if (productSpecificPromo) {
+      return [productSpecificPromo];
+    }
     return promotions.filter(promo => {
       if (promo.rules?.type !== 'buy_x_get_y_free') return false;
 
@@ -63,7 +74,7 @@ const ProductCardComponent = ({
 
       return !!(appliesToProduct || appliesToCategory);
     });
-  }, [promotions, product.id, product.category]);
+  }, [promotions, product.id, product.category, productSpecificPromo]);
 
   const isVolumePriceApplicable = isVolumePricingActive && product.volume_price && product.volume_price < product.price;
   const displayPrice = isVolumePriceApplicable ? product.volume_price : product.price;
@@ -134,7 +145,12 @@ const ProductCardComponent = ({
               {applicablePromos.length > 0 && (
                 <div className="flex items-center gap-1">
                   {applicablePromos.map(promo => (
-                    <PromoButton key={promo.id} promo={promo} onClick={(quantity) => addItem(product, quantity)} />
+                    <PromoButton 
+                      key={promo.id} 
+                      promo={promo} 
+                      onClick={(quantity) => addItem(product, quantity)}
+                      isProductSpecific={!!productSpecificPromo}
+                    />
                   ))}
                 </div>
               )}

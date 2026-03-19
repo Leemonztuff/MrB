@@ -1,5 +1,5 @@
 
-import { ProductWithPrice, Promotion, CartItem as CartItemType, SalesCondition } from "@/types";
+import { ProductWithPrice, Promotion, CartItem as CartItemType, SalesCondition, PriceListProductPromotion } from "@/types";
 
 export type BonusInfo = {
     [productId: string]: {
@@ -18,11 +18,24 @@ export type AppliedSalesCondition = {
 
 export const VOLUME_THRESHOLD = 150;
 
+export const getProductSpecificPromotion = (
+    productId: string,
+    productPromotions: PriceListProductPromotion[]
+): Promotion | null => {
+    const productPromo = productPromotions.find(pp => pp.product_id === productId);
+    return productPromo?.promotions || null;
+};
+
 /**
  * Domain-specific logic for calculating applied promotions and bonus items.
  * This is a pure function that can be used on both client and server.
  */
-export const calculatePromotions = (items: CartItemType[], subtotal: number, promotions: Promotion[]) => {
+export const calculatePromotions = (
+    items: CartItemType[], 
+    subtotal: number, 
+    promotions: Promotion[],
+    productPromotions: PriceListProductPromotion[] = []
+) => {
     const totalItems = items.reduce((total, item) => total + item.quantity, 0);
     const appliedPromotions: Promotion[] = [];
     const bonusInfo: BonusInfo = {};
@@ -34,16 +47,19 @@ export const calculatePromotions = (items: CartItemType[], subtotal: number, pro
         switch (promo.rules.type) {
             case 'buy_x_get_y_free':
                 items.forEach(item => {
-                    if (item.quantity >= promo.rules.buy) {
-                        const times = Math.floor(item.quantity / promo.rules.buy);
-                        const bonusQuantity = times * promo.rules.get;
+                    const productSpecificPromo = getProductSpecificPromotion(item.product.id, productPromotions);
+                    const promoToApply = productSpecificPromo || promo;
+                    
+                    if (promoToApply && item.quantity >= promoToApply.rules.buy) {
+                        const times = Math.floor(item.quantity / promoToApply.rules.buy);
+                        const bonusQuantity = times * promoToApply.rules.get;
                         if (bonusQuantity > 0) {
                             bonusInfo[item.product.id] = {
                                 productName: item.product.name,
                                 bonusQuantity: bonusQuantity
                             };
-                            if (!appliedPromotions.find(p => p.id === promo.id)) {
-                                appliedPromotions.push(promo);
+                            if (!appliedPromotions.find(p => p.id === promoToApply!.id)) {
+                                appliedPromotions.push(promoToApply);
                             }
                         }
                     }
@@ -184,7 +200,8 @@ export const calculatePricing = (
     pricesIncludeVat: boolean,
     promotions: Promotion[],
     vatPercentage: number,
-    salesConditions: SalesCondition[] = []
+    salesConditions: SalesCondition[] = [],
+    productPromotions: PriceListProductPromotion[] = []
 ) => {
     const totalItems = items.reduce((total, item) => total + item.quantity, 0);
     const isVolumePricingActive = totalItems >= VOLUME_THRESHOLD;
@@ -209,7 +226,7 @@ export const calculatePricing = (
         }
     });
 
-    const { appliedPromotions, bonusInfo, discountPercentage } = calculatePromotions(items, subtotal, promotions);
+    const { appliedPromotions, bonusInfo, discountPercentage } = calculatePromotions(items, subtotal, promotions, productPromotions);
 
     const discountApplied = subtotal * ((discountPercentage ?? 0) / 100);
     const subtotalWithPromos = subtotal - discountApplied;

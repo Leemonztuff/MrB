@@ -1,7 +1,8 @@
 
 import Link from "next/link";
 import { ArrowLeft, Edit, FileWarning, Package, PlusCircle } from "lucide-react";
-import { getPriceListById } from "@/app/admin/actions/pricelists.actions";
+import { getPriceListById, getProductPromotionsForPriceList } from "@/app/admin/actions/pricelists.actions";
+import { getPromotions } from "@/app/admin/actions/promotions.actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,6 +15,7 @@ import { PriceListProductsTable } from "./_components/pricelist-products-table";
 import { AssignProductToPriceListDialog } from "./_components/assign-product-dialog";
 import { EntityDialog } from "../../_components/entity-dialog";
 import { priceListFormConfig } from "../_components/form-config";
+import type { Promotion } from "@/types";
 
 export default async function PriceListDetailPage({
   params,
@@ -22,6 +24,10 @@ export default async function PriceListDetailPage({
 }) {
   const { id } = await params;
   const { data: priceList, error } = await getPriceListById(id);
+  const [productPromotionsResult, promotionsResult] = await Promise.all([
+    getProductPromotionsForPriceList(id),
+    getPromotions()
+  ]);
 
   if (error || !priceList) {
     return (
@@ -41,6 +47,9 @@ export default async function PriceListDetailPage({
       </div>
     );
   }
+
+  const promotions: Promotion[] = promotionsResult.data || [];
+  const productPromotions = productPromotionsResult.data || [];
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
@@ -79,7 +88,12 @@ export default async function PriceListDetailPage({
           </AssignProductToPriceListDialog>
         </CardHeader>
         <CardContent>
-          <PriceListProductsTable items={priceList.price_list_items} priceListId={priceList.id} />
+          <PriceListProductsTable 
+            items={priceList.price_list_items} 
+            priceListId={priceList.id}
+            promotions={promotions}
+            productPromotions={productPromotions}
+          />
         </CardContent>
       </Card>
     </div>

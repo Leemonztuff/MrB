@@ -117,6 +117,15 @@ export async function getOrderPageData(id: string, options?: { newsId?: string, 
             .select('price, volume_price, products(*)')
             .eq('price_list_id', agreement.price_lists.id);
 
+        const { data: productPromotionsData } = await supabase
+            .from('price_list_product_promotions')
+            .select(`
+                product_id,
+                promotion_id,
+                promotions (*)
+            `)
+            .eq('price_list_id', agreement.price_lists.id);
+
         if (itemsError) throw new Error("Error al cargar productos.");
 
         let consumerPrices: Record<string, { price: number; volume_price: number | null }> = {};
@@ -231,7 +240,8 @@ export async function getOrderPageData(id: string, options?: { newsId?: string, 
             logoUrl: settings.logo_url,
             salesConditions,
             showProductDuration: agreement.client_type === 'barberia',
-            productDurations
+            productDurations,
+            productPromotions: productPromotionsData || []
         };
     });
 }

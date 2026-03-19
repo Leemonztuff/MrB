@@ -3,7 +3,7 @@
 "use client"
 
 import { useTransition } from "react";
-import { MoreHorizontal, Trash2 } from "lucide-react";
+import { MoreHorizontal, Trash2, Tag } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-import type { PriceListItem } from "@/types";
+import type { PriceListItem, Promotion, PriceListProductPromotion } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -41,7 +41,14 @@ import { useToast } from "@/hooks/use-toast";
 import { PriceListItemEditDialog } from "./edit-price-dialog";
 import { getImageUrl } from "@/lib/placeholder-images";
 
-export function PriceListProductsTable({ items, priceListId }: { items: PriceListItem[], priceListId: string }) {
+type Props = {
+  items: PriceListItem[];
+  priceListId: string;
+  promotions: Promotion[];
+  productPromotions: PriceListProductPromotion[];
+};
+
+export function PriceListProductsTable({ items, priceListId, promotions, productPromotions }: Props) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -70,6 +77,10 @@ export function PriceListProductsTable({ items, priceListId }: { items: PriceLis
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
   }
 
+  const getProductPromotion = (productId: string) => {
+    return productPromotions.find(pp => pp.product_id === productId);
+  };
+
   return (
     <>
       <Table>
@@ -81,90 +92,116 @@ export function PriceListProductsTable({ items, priceListId }: { items: PriceLis
             <TableHead>Nombre</TableHead>
             <TableHead>Precio Lista</TableHead>
             <TableHead>Precio Volumen (&gt;150)</TableHead>
+            <TableHead>Promo</TableHead>
             <TableHead>
               <span className="sr-only">Acciones</span>
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.products.id}>
-              <TableCell className="hidden sm:table-cell">
-                 <Image
-                    src={getImageUrl("product", { seed: item.products.id }, item.products.image_url)}
-                    alt={item.products.name}
-                    width={48}
-                    height={48}
-                    className="rounded-md aspect-square object-cover"
-                    data-ai-hint="product image"
-                  />
-              </TableCell>
-              <TableCell className="font-medium">{item.products.name}</TableCell>
-              <TableCell>
-                <PriceListItemEditDialog 
-                  priceListId={priceListId}
-                  item={item}
-                >
-                  <Badge variant="secondary" className="text-base cursor-pointer hover:bg-secondary/80">{formatCurrency(item.price)}</Badge>
-                </PriceListItemEditDialog>
-              </TableCell>
-               <TableCell>
-                <PriceListItemEditDialog 
-                  priceListId={priceListId}
-                  item={item}
-                >
-                  <Badge variant="outline" className="text-base cursor-pointer hover:bg-muted">{formatCurrency(item.volume_price)}</Badge>
-                </PriceListItemEditDialog>
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button aria-haspopup="true" size="icon" variant="ghost">
-                      <MoreHorizontal className="h-4 w-4" />
-                      <span className="sr-only">Toggle menu</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                     <PriceListItemEditDialog 
-                        priceListId={priceListId}
-                        item={item}
-                      >
-                         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Editar Precios</DropdownMenuItem>
-                      </PriceListItemEditDialog>
+          {items.map((item) => {
+            const productPromo = getProductPromotion(item.product_id);
+            return (
+              <TableRow key={item.products.id}>
+                <TableCell className="hidden sm:table-cell">
+                  <Image
+                      src={getImageUrl("product", { seed: item.products.id }, item.products.image_url)}
+                      alt={item.products.name}
+                      width={48}
+                      height={48}
+                      className="rounded-md aspect-square object-cover"
+                      data-ai-hint="product image"
+                    />
+                </TableCell>
+                <TableCell className="font-medium">{item.products.name}</TableCell>
+                <TableCell>
+                  <PriceListItemEditDialog 
+                    priceListId={priceListId}
+                    item={item}
+                    promotions={promotions}
+                    currentPromotion={productPromo}
+                  >
+                    <Badge variant="secondary" className="text-base cursor-pointer hover:bg-secondary/80">{formatCurrency(item.price)}</Badge>
+                  </PriceListItemEditDialog>
+                </TableCell>
+                <TableCell>
+                  <PriceListItemEditDialog 
+                    priceListId={priceListId}
+                    item={item}
+                    promotions={promotions}
+                    currentPromotion={productPromo}
+                  >
+                    <Badge variant="outline" className="text-base cursor-pointer hover:bg-muted">{formatCurrency(item.volume_price)}</Badge>
+                  </PriceListItemEditDialog>
+                </TableCell>
+                <TableCell>
+                  <PriceListItemEditDialog 
+                    priceListId={priceListId}
+                    item={item}
+                    promotions={promotions}
+                    currentPromotion={productPromo}
+                  >
+                    <Badge 
+                      variant={productPromo ? "default" : "outline"} 
+                      className="text-base cursor-pointer hover:bg-muted gap-1"
+                    >
+                      <Tag className="h-3 w-3" />
+                      {productPromo?.promotions?.name || "Sin promo"}
+                    </Badge>
+                  </PriceListItemEditDialog>
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button aria-haspopup="true" size="icon" variant="ghost">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Toggle menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                       <PriceListItemEditDialog 
+                          priceListId={priceListId}
+                          item={item}
+                          promotions={promotions}
+                          currentPromotion={productPromo}
+                        >
+                           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Editar Precios</DropdownMenuItem>
+                        </PriceListItemEditDialog>
 
-                    <DropdownMenuSeparator />
-                     <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                           <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Quitar de la lista
-                            </DropdownMenuItem>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Esta acción quitará el producto de esta lista de precios.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleUnassign(item.products.id)}
-                              disabled={isPending}
-                              className="bg-destructive hover:bg-destructive/90"
-                            >
-                              {isPending ? "Quitanto..." : "Confirmar"}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
+                      <DropdownMenuSeparator />
+                       <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                             <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Quitar de la lista
+                              </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta acción quitara el producto de esta lista de precios.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleUnassign(item.products.id)}
+                                disabled={isPending}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                {isPending ? "Quitanto..." : "Confirmar"}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
        <div className="text-xs text-muted-foreground pt-4 px-4">

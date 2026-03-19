@@ -3,7 +3,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getSupabaseClientWithAuth, upsertEntity, deleteEntity } from "./_helpers";
-import type { PriceList, DetailedPriceList } from "@/types";
+import type { PriceList, DetailedPriceList, PriceListProductPromotion } from "@/types";
 
 // --- Price List Actions ---
 
@@ -129,5 +129,59 @@ export async function updatePriceListItem(payload: { price_list_id: string; prod
       return { error };
     }
     revalidatePath(`/admin/pricelists/${price_list_id}`);
+    return { error: null };
+}
+
+export async function getProductPromotionsForPriceList(priceListId: string): Promise<{ data: PriceListProductPromotion[] | null, error: any }> {
+    const supabase = await getSupabaseClientWithAuth();
+    const { data, error } = await supabase
+        .from('price_list_product_promotions')
+        .select(`
+            *,
+            promotions (*)
+        `)
+        .eq('price_list_id', priceListId);
+
+    if (error) {
+        console.error("getProductPromotionsForPriceList error:", error.message);
+        return { data: null, error };
+    }
+    return { data, error: null };
+}
+
+export async function assignPromotionToPriceListProduct(payload: {
+    price_list_id: string;
+    product_id: string;
+    promotion_id: string;
+}) {
+    const supabase = await getSupabaseClientWithAuth();
+    const { error } = await supabase
+        .from('price_list_product_promotions')
+        .upsert(payload);
+
+    if (error) {
+        console.error("assignPromotionToPriceListProduct error:", error.message);
+        return { error };
+    }
+    revalidatePath(`/admin/pricelists/${payload.price_list_id}`);
+    return { error: null };
+}
+
+export async function removePromotionFromPriceListProduct(payload: {
+    price_list_id: string;
+    product_id: string;
+}) {
+    const supabase = await getSupabaseClientWithAuth();
+    const { error } = await supabase
+        .from('price_list_product_promotions')
+        .delete()
+        .eq('price_list_id', payload.price_list_id)
+        .eq('product_id', payload.product_id);
+
+    if (error) {
+        console.error("removePromotionFromPriceListProduct error:", error.message);
+        return { error };
+    }
+    revalidatePath(`/admin/pricelists/${payload.price_list_id}`);
     return { error: null };
 }

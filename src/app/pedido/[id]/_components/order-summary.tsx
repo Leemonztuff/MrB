@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Gift, Truck, Percent, CheckCircle, Home, Package } from "lucide-react";
 import { submitOrder } from "@/app/actions/user.actions";
 import { getPublicWhatsappNumber } from "@/app/admin/actions/settings.actions";
-import type { Promotion, SalesCondition } from "@/types";
+import type { Promotion, SalesCondition, PriceListProductPromotion } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
@@ -166,6 +166,7 @@ export function OrderSummary({
   promotions,
   vatPercentage,
   salesConditions,
+  productPromotions = [],
 }: {
   agreementId: string;
   clientId: string;
@@ -174,6 +175,7 @@ export function OrderSummary({
   promotions: Promotion[];
   vatPercentage: number;
   salesConditions: SalesCondition[];
+  productPromotions?: PriceListProductPromotion[];
 }) {
   const { items, totalItems, subtotal, subtotalWithDiscount, discountApplied, discountFromConditions, vatAmount, totalPrice, clearCart, setAgreement, appliedPromotions, appliedConditions, bonusInfo } = useCartStore();
   const { toast } = useToast();
@@ -190,8 +192,8 @@ export function OrderSummary({
   }, []);
 
   useEffect(() => {
-    setAgreement(agreementId, pricesIncludeVat, promotions, vatPercentage, salesConditions ?? []);
-  }, [agreementId, pricesIncludeVat, promotions, vatPercentage, salesConditions, setAgreement]);
+    setAgreement(agreementId, pricesIncludeVat, promotions, vatPercentage, salesConditions ?? [], productPromotions);
+  }, [agreementId, pricesIncludeVat, promotions, vatPercentage, salesConditions, productPromotions, setAgreement]);
 
   const loadRepeatOrder = async () => {
     const params = new URLSearchParams(window.location.search);

@@ -85,6 +85,13 @@ CREATE TABLE public.agreement_promotions (
     PRIMARY KEY (agreement_id, promotion_id)
 );
 
+CREATE TABLE public.price_list_product_promotions (
+    price_list_id uuid REFERENCES public.price_lists(id) ON DELETE CASCADE,
+    product_id uuid REFERENCES public.products(id) ON DELETE CASCADE,
+    promotion_id uuid REFERENCES public.promotions(id) ON DELETE CASCADE,
+    PRIMARY KEY (price_list_id, product_id)
+);
+
 CREATE TABLE public.agreement_sales_conditions (
     agreement_id uuid REFERENCES public.agreements(id) ON DELETE CASCADE,
     sales_condition_id uuid REFERENCES public.sales_conditions(id) ON DELETE CASCADE,
@@ -218,6 +225,8 @@ CREATE POLICY "Allow read for anonymous" ON public.price_lists FOR SELECT USING 
 
 CREATE POLICY "Allow all for authenticated" ON public.price_list_items FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow read for anonymous" ON public.price_list_items FOR SELECT USING (true);
+
+ALTER TABLE public.price_list_product_promotions ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow all for authenticated" ON public.promotions FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow read for anonymous" ON public.promotions FOR SELECT USING (true);

@@ -3,7 +3,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { ProductWithPrice, Promotion, CartItem as CartItemType, SalesCondition } from "@/types";
+import type { ProductWithPrice, Promotion, CartItem as CartItemType, SalesCondition, PriceListProductPromotion } from "@/types";
 import {
   calculatePricing as calculateCartTotals,
   BonusInfo,
@@ -28,7 +28,8 @@ type CartState = {
   agreementId: string | null;
   pricesIncludeVat: boolean;
   vatPercentage: number;
-  setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[], vatPercentage: number, salesConditions?: SalesCondition[]) => void;
+  productPromotions: PriceListProductPromotion[];
+  setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[], vatPercentage: number, salesConditions?: SalesCondition[], productPromotions?: PriceListProductPromotion[]) => void;
   addItem: (product: ProductWithPrice, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -56,8 +57,9 @@ export const useCartStore = create<CartState>()(
       agreementId: null,
       pricesIncludeVat: true,
       vatPercentage: 21,
+      productPromotions: [],
 
-      setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[], vatPercentage: number, salesConditions: SalesCondition[] = []) => {
+      setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[], vatPercentage: number, salesConditions: SalesCondition[] = [], productPromotions: PriceListProductPromotion[] = []) => {
         const currentAgreementId = get().agreementId;
         if (id !== currentAgreementId) {
           set({
@@ -66,6 +68,7 @@ export const useCartStore = create<CartState>()(
             promotions: promotions,
             vatPercentage: vatPercentage,
             salesConditions: salesConditions,
+            productPromotions: productPromotions,
             items: [],
             totalItems: 0,
             subtotal: 0,
@@ -86,13 +89,14 @@ export const useCartStore = create<CartState>()(
             promotions: promotions,
             vatPercentage: vatPercentage,
             salesConditions: salesConditions,
-            ...calculateCartTotals(items, pricesIncludeVat, promotions, vatPercentage, salesConditions)
+            productPromotions: productPromotions,
+            ...calculateCartTotals(items, pricesIncludeVat, promotions, vatPercentage, salesConditions, productPromotions)
           });
         }
       },
 
       addItem: (product: ProductWithPrice, quantity: number = 1) => {
-        const { items, pricesIncludeVat, promotions, vatPercentage, salesConditions } = get();
+        const { items, pricesIncludeVat, promotions, vatPercentage, salesConditions, productPromotions } = get();
         const existingItem = items.find(
           (item) => item.product.id === product.id
         );
@@ -109,11 +113,11 @@ export const useCartStore = create<CartState>()(
         }
 
         updatedItems = updatedItems.filter(item => item.quantity > 0);
-        set({ items: updatedItems, ...calculateCartTotals(updatedItems, pricesIncludeVat, promotions, vatPercentage, salesConditions) });
+        set({ items: updatedItems, ...calculateCartTotals(updatedItems, pricesIncludeVat, promotions, vatPercentage, salesConditions, productPromotions) });
       },
 
       removeItem: (productId: string) => {
-        const { items, pricesIncludeVat, promotions, vatPercentage, salesConditions } = get();
+        const { items, pricesIncludeVat, promotions, vatPercentage, salesConditions, productPromotions } = get();
         const existingItem = items.find(item => item.product.id === productId);
 
         if (!existingItem) return;
@@ -129,11 +133,11 @@ export const useCartStore = create<CartState>()(
           updatedItems = items.filter(item => item.product.id !== productId);
         }
 
-        set({ items: updatedItems, ...calculateCartTotals(updatedItems, pricesIncludeVat, promotions, vatPercentage, salesConditions) });
+        set({ items: updatedItems, ...calculateCartTotals(updatedItems, pricesIncludeVat, promotions, vatPercentage, salesConditions, productPromotions) });
       },
 
       updateQuantity: (productId: string, quantity: number) => {
-        const { pricesIncludeVat, promotions, vatPercentage, salesConditions } = get();
+        const { pricesIncludeVat, promotions, vatPercentage, salesConditions, productPromotions } = get();
         let updatedItems;
         if (quantity <= 0) {
           updatedItems = get().items.filter(
@@ -144,7 +148,7 @@ export const useCartStore = create<CartState>()(
             item.product.id === productId ? { ...item, quantity } : item
           );
         }
-        set({ items: updatedItems, ...calculateCartTotals(updatedItems, pricesIncludeVat, promotions, vatPercentage, salesConditions) });
+        set({ items: updatedItems, ...calculateCartTotals(updatedItems, pricesIncludeVat, promotions, vatPercentage, salesConditions, productPromotions) });
       },
 
       getItemQuantity: (productId: string) => {

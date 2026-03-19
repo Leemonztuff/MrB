@@ -194,6 +194,13 @@ export type PriceListItem = {
     products: Product;
 };
 
+export type PriceListProductPromotion = {
+    price_list_id: string;
+    product_id: string;
+    promotion_id: string;
+    promotions?: Promotion;
+};
+
 export type NewsPost = {
     id: string;
     title: string;
