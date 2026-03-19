@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { PageHeader } from "@/components/shared/page-header";
 import { getSettings } from "@/app/admin/actions/settings.actions";
 import { SettingsForm } from "./_components/settings-form";
