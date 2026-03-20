@@ -335,7 +335,7 @@ export async function submitOnboardingForm(payload: any): Promise<ActionResponse
         // Check if token is expired before proceeding
         const { data: clientCheck } = await supabase
             .from('clients')
-            .select('onboarding_expires_at, status')
+            .select('*')
             .eq('onboarding_token', onboarding_token)
             .single();
 

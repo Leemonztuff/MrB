@@ -99,6 +99,10 @@ export function CreateClientDialog({ children }: { children: ReactNode }) {
         const origin = window.location.origin;
         setGeneratedLink(`${origin}/onboarding/${result.data.onboarding_token}`);
         setInviteStep(2);
+        toast({
+          title: "Enlace generado",
+          description: "Ya podes copiar y compartir la invitacion.",
+        });
       } catch (error) {
         const message = error instanceof Error ? error.message : "No se pudo generar el enlace.";
         setInviteError(message);

@@ -145,15 +145,15 @@ export default async function OnboardingPage({
   return (
     <div className="flex min-h-screen flex-col items-center bg-muted/40 px-4 py-8">
       <Logo showText={true} logoUrl={logoUrl} className="mb-8" />
-      <main className="w-full max-w-2xl">
-        <Card>
-          <CardHeader>
+      <main className="w-full max-w-4xl">
+        <Card className="flex min-h-[min(84vh,900px)] flex-col overflow-hidden border-border/60 shadow-xl">
+          <CardHeader className="border-b border-border/60 bg-background/95">
             <CardTitle>Alta de cliente</CardTitle>
             <p className="text-sm text-muted-foreground">
               Completa tus datos para empezar a realizar pedidos en Mr. Blonde.
             </p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex min-h-0 flex-1 flex-col p-5 sm:p-6">
             <OnboardingForm client={client} />
           </CardContent>
         </Card>

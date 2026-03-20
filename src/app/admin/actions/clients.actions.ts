@@ -17,6 +17,20 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 
 // --- Client Actions ---
 
+function hasMissingOnboardingExpiryColumn(error: unknown): boolean {
+  return error instanceof Error && error.message.includes('onboarding_expires_at');
+}
+
+async function insertClientWithOptionalOnboardingExpiry(createData: Record<string, unknown>): Promise<ActionResponse<any>> {
+  const result = await upsertEntity("clients", createData, ["/admin/clients"]);
+  if (result.success || !hasMissingOnboardingExpiryColumn(result.error ? new Error(result.error.message) : null)) {
+    return result;
+  }
+
+  const { onboarding_expires_at, ...fallbackData } = createData;
+  return upsertEntity("clients", fallbackData, ["/admin/clients"]);
+}
+
 export async function getClients(
   query?: string
 ): Promise<ActionResponse<Client[]>> {
@@ -71,7 +85,7 @@ export async function createClientForInvitation(payload: { name: string | null; 
     agreement_id: payload.agreementId || null,
   };
 
-  return await upsertEntity("clients", createData, ["/admin/clients"]);
+  return await insertClientWithOptionalOnboardingExpiry(createData);
 }
 
 export async function upsertClient(
@@ -136,10 +150,18 @@ export async function upsertClient(
 
     const validated = clientSchema.parse(finalPayload);
 
-    const result = await upsertEntity('clients', validated, [
+    let result = await upsertEntity('clients', validated, [
       '/admin/clients',
       id ? `/admin/clients/${id}` : '',
     ].filter(Boolean));
+
+    if (!result.success && hasMissingOnboardingExpiryColumn(new Error(result.error?.message))) {
+      const { onboarding_expires_at, ...fallbackPayload } = validated as Record<string, unknown>;
+      result = await upsertEntity('clients', fallbackPayload, [
+        '/admin/clients',
+        id ? `/admin/clients/${id}` : '',
+      ].filter(Boolean));
+    }
 
     if (!result.success) throw new Error(result.error?.message);
     return result.data;
@@ -371,9 +393,17 @@ export async function importClients(
           }
         }
 
-        const { error: insertError } = await supabase
+        let { error: insertError } = await supabase
           .from('clients')
           .insert(clientData);
+
+        if (insertError && hasMissingOnboardingExpiryColumn(insertError)) {
+          const { onboarding_expires_at, ...fallbackData } = clientData;
+          const fallbackResult = await supabase
+            .from('clients')
+            .insert(fallbackData);
+          insertError = fallbackResult.error;
+        }
 
         if (insertError) {
           errors.push(`Error en "${clientData.contact_name}": ${insertError.message}`);

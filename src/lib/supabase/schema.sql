@@ -114,6 +114,7 @@ CREATE TABLE public.clients (
     instagram text,
     status public.client_status NOT NULL DEFAULT 'pending_onboarding',
     onboarding_token uuid,
+    onboarding_expires_at timestamp with time zone,
     portal_token text,
     agreement_id uuid REFERENCES public.agreements(id) ON DELETE SET NULL,
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
