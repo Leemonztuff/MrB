@@ -1,224 +1,290 @@
-
 "use server";
 
+import { unstable_noStore as noStore } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { getSupabaseClientWithAuth } from "@/app/admin/actions/_helpers";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
-import { unstable_noStore as noStore } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { AppSettings } from "@/types";
 
-function extractLogoStoragePath(value: string | null): string | null {
-    if (!value) return null;
+const LOGO_SETTING_KEYS = ["logo_path", "logo_url"] as const;
+const LOGO_BUCKET = "app_assets";
 
-    if (!value.startsWith("http://") && !value.startsWith("https://")) {
-        return value;
-    }
+type AppSettingRow = {
+  key: string;
+  value: unknown;
+  updated_at?: string;
+};
 
-    try {
-        const parsedUrl = new URL(value);
-        const marker = "/storage/v1/object/public/app_assets/";
-        const markerIndex = parsedUrl.pathname.indexOf(marker);
-
-        if (markerIndex === -1) {
-            return null;
-        }
-
-        return decodeURIComponent(parsedUrl.pathname.slice(markerIndex + marker.length));
-    } catch {
-        return null;
-    }
+function normalizeTextSetting(value: unknown): string {
+  return typeof value === "string" ? value : "";
 }
 
-function resolveLogoUrl(value: string | null): string | null {
-    if (!value) return null;
+function normalizeNumberSetting(value: unknown, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
 
-    const storagePath = extractLogoStoragePath(value);
-    if (storagePath) {
-        const version = value.startsWith("http://") || value.startsWith("https://")
-            ? new URL(value).searchParams.get("t")
-            : null;
-        const params = new URLSearchParams({ path: storagePath });
-        if (version) {
-            params.set("t", version);
-        }
-        return `/api/assets/logo?${params.toString()}`;
+function normalizeBooleanSetting(value: unknown): boolean {
+  return value === true;
+}
+
+function extractStoredLogoPath(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
+  }
+
+  if (!value.startsWith("http://") && !value.startsWith("https://")) {
+    return value.trim();
+  }
+
+  try {
+    const parsed = new URL(value);
+    const publicMarker = `/storage/v1/object/public/${LOGO_BUCKET}/`;
+    const signMarker = `/storage/v1/object/sign/${LOGO_BUCKET}/`;
+
+    if (parsed.pathname.includes(publicMarker)) {
+      return decodeURIComponent(parsed.pathname.split(publicMarker)[1] || "").trim() || null;
     }
 
-    return value;
+    if (parsed.pathname.includes(signMarker)) {
+      return decodeURIComponent(parsed.pathname.split(signMarker)[1] || "").trim() || null;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function buildLogoAppUrl(version?: string | null): string {
+  const search = new URLSearchParams();
+  if (version) {
+    search.set("v", version);
+  }
+
+  const query = search.toString();
+  return query ? `/api/branding/logo?${query}` : "/api/branding/logo";
+}
+
+async function getLogoSettingRecord(
+  supabase: Awaited<ReturnType<typeof createServerClient>> | Awaited<ReturnType<typeof getSupabaseClientWithAuth>>
+): Promise<{ path: string | null; updatedAt: string | null }> {
+  const { data, error } = await supabase
+    .from("app_settings")
+    .select("key, value, updated_at")
+    .in("key", [...LOGO_SETTING_KEYS])
+    .order("updated_at", { ascending: false });
+
+  if (error || !data || data.length === 0) {
+    return { path: null, updatedAt: null };
+  }
+
+  const preferredRow =
+    data.find((row: AppSettingRow) => row.key === "logo_path") ||
+    data.find((row: AppSettingRow) => row.key === "logo_url") ||
+    null;
+
+  if (!preferredRow) {
+    return { path: null, updatedAt: null };
+  }
+
+  return {
+    path: extractStoredLogoPath(preferredRow.value),
+    updatedAt: preferredRow.updated_at ?? null,
+  };
+}
+
+async function removeStoredLogoIfPresent(path: string | null): Promise<void> {
+  if (!path || !supabaseAdmin) return;
+
+  const { error } = await supabaseAdmin.storage.from(LOGO_BUCKET).remove([path]);
+  if (error) {
+    console.error("removeStoredLogoIfPresent error:", error.message);
+  }
 }
 
 export async function getSettings(): Promise<AppSettings> {
-    noStore();
-    const supabase = await getSupabaseClientWithAuth();
-    const { data, error } = await supabase.from('app_settings').select('key, value');
+  noStore();
 
-    if (error) {
-        console.error("getSettings error:", error.message);
-        return { whatsapp_number: "", vat_percentage: 21, logo_url: null, enable_stock_management: false };
-    }
+  const supabase = await getSupabaseClientWithAuth();
+  const [{ data, error }, logoSetting] = await Promise.all([
+    supabase.from("app_settings").select("key, value"),
+    getLogoSettingRecord(supabase),
+  ]);
 
-    const settings = (data || []).reduce((acc: any, { key, value }: { key: string, value: any }) => {
-        acc[key] = key === 'vat_percentage' ? Number(value) : value;
-        return acc;
-    }, {} as AppSettings);
-
+  if (error) {
+    console.error("getSettings error:", error.message);
     return {
-        whatsapp_number: settings.whatsapp_number || "",
-        vat_percentage: settings.vat_percentage || 21,
-        logo_url: resolveLogoUrl(settings.logo_url || null),
-        enable_stock_management: settings.enable_stock_management ?? false,
+      whatsapp_number: "",
+      vat_percentage: 21,
+      logo_url: null,
+      enable_stock_management: false,
     };
+  }
+
+  const settingsMap = (data || []).reduce<Record<string, unknown>>((acc, row: AppSettingRow) => {
+    acc[row.key] = row.value;
+    return acc;
+  }, {});
+
+  return {
+    whatsapp_number: normalizeTextSetting(settingsMap.whatsapp_number),
+    vat_percentage: normalizeNumberSetting(settingsMap.vat_percentage, 21),
+    logo_url: logoSetting.path ? buildLogoAppUrl(logoSetting.updatedAt) : null,
+    enable_stock_management: normalizeBooleanSetting(settingsMap.enable_stock_management),
+  };
 }
 
-/**
- * Gets the WhatsApp number. This action is public and can be called from client components
- * without authentication, as it uses an anonymous server client.
- */
 export async function getPublicWhatsappNumber(): Promise<string> {
-    noStore();
-    const supabase = await createServerClient();
-    const { data, error } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'whatsapp_number')
-        .single();
+  noStore();
 
-    if (error || !data) {
-        console.error("getPublicWhatsappNumber error:", error?.message);
-        return "";
-    }
-    return data.value;
+  const supabase = await createServerClient();
+  const { data, error } = await supabase
+    .from("app_settings")
+    .select("value")
+    .eq("key", "whatsapp_number")
+    .single();
+
+  if (error || !data) {
+    console.error("getPublicWhatsappNumber error:", error?.message);
+    return "";
+  }
+
+  return normalizeTextSetting(data.value);
 }
 
-/**
- * Gets the Logo URL. This action is public and can be called from server components
- * without authentication, as it uses an anonymous server client.
- */
 export async function getPublicLogoUrl(): Promise<string | null> {
-    noStore();
-    const supabase = await createServerClient();
-    const { data, error } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'logo_url')
-        .single();
+  noStore();
 
-    if (error || !data) {
-        // This is not a critical error, so we don't log it.
-        // It's normal for the logo not to be configured.
-        return null;
-    }
-    return resolveLogoUrl(data.value as string | null);
+  const supabase = await createServerClient();
+  const logoSetting = await getLogoSettingRecord(supabase);
+
+  return logoSetting.path ? buildLogoAppUrl(logoSetting.updatedAt) : null;
 }
-
 
 export async function updateSettings(formData: FormData): Promise<{ error?: string }> {
-    const supabase = await getSupabaseClientWithAuth();
+  const supabase = await getSupabaseClientWithAuth();
 
-    const whatsapp_number = formData.get('whatsapp_number') as string;
-    const vat_percentage = formData.get('vat_percentage') as string;
-    const enable_stock_management = formData.get('enable_stock_management') === 'true';
+  const whatsapp_number = formData.get("whatsapp_number") as string;
+  const vat_percentage = formData.get("vat_percentage") as string;
+  const enable_stock_management = formData.get("enable_stock_management") === "true";
 
-    const settingsToUpsert = [
-        { key: 'whatsapp_number', value: whatsapp_number },
-        { key: 'vat_percentage', value: vat_percentage },
-        { key: 'enable_stock_management', value: enable_stock_management },
-    ];
+  const settingsToUpsert = [
+    { key: "whatsapp_number", value: whatsapp_number },
+    { key: "vat_percentage", value: vat_percentage },
+    { key: "enable_stock_management", value: enable_stock_management },
+  ];
 
-    const { error } = await supabase.from('app_settings').upsert(settingsToUpsert, { onConflict: 'key' });
+  const { error } = await supabase.from("app_settings").upsert(settingsToUpsert, { onConflict: "key" });
 
-    if (error) {
-        console.error("updateSettings error:", error.message);
-        return { error: "No se pudo guardar la configuración." };
-    }
+  if (error) {
+    console.error("updateSettings error:", error.message);
+    return { error: "No se pudo guardar la configuracion." };
+  }
 
-    revalidatePath('/admin', 'layout');
-    revalidatePath('/login');
-    revalidatePath('/signup');
+  revalidatePath("/admin", "layout");
+  revalidatePath("/admin/settings");
+  revalidatePath("/login");
+  revalidatePath("/signup");
 
-    return {};
+  return {};
 }
 
 export async function updateLogo(formData: FormData): Promise<{ error?: string }> {
-    const supabase = await getSupabaseClientWithAuth();
-    const logoImage = formData.get('logo_image') as File | null;
+  const authSupabase = await getSupabaseClientWithAuth();
+  const logoImage = formData.get("logo_image") as File | null;
 
-    if (!logoImage || logoImage.size === 0) {
-        return { error: "No se proporcionó ninguna imagen." };
-    }
+  if (!logoImage || logoImage.size === 0) {
+    return { error: "No se proporciono ninguna imagen." };
+  }
 
-    const fileExt = logoImage.name.split('.').pop();
-    const fileName = `logo.${fileExt}`;
-    const filePath = `public/${fileName}`;
+  if (!supabaseAdmin) {
+    return { error: "Falta configurar SUPABASE_SERVICE_ROLE_KEY para gestionar el logo." };
+  }
 
-    const { error: uploadError } = await supabase.storage
-        .from('app_assets')
-        .upload(filePath, logoImage, {
-            cacheControl: '3600',
-            upsert: true,
-        });
+  const mimeType = logoImage.type || "";
+  const extensionMap: Record<string, string> = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/webp": "webp",
+    "image/svg+xml": "svg",
+  };
 
-    if (uploadError) {
-        console.error("Logo upload error:", uploadError.message);
-        return { error: "No se pudo subir el nuevo logo." };
-    }
+  const fileExt =
+    extensionMap[mimeType] ||
+    logoImage.name.split(".").pop()?.toLowerCase() ||
+    "png";
 
-    const { error: dbError } = await supabase.from('app_settings').upsert(
-        { key: 'logo_url', value: filePath },
-        { onConflict: 'key' }
-    );
+  const currentLogo = await getLogoSettingRecord(authSupabase);
+  const filePath = `branding/logo-${Date.now()}.${fileExt}`;
 
-    if (dbError) {
-        console.error("updateLogo db error:", dbError.message);
-        return { error: "No se pudo guardar la URL del logo." };
-    }
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from(LOGO_BUCKET)
+    .upload(filePath, logoImage, {
+      cacheControl: "31536000",
+      upsert: false,
+      contentType: mimeType || undefined,
+    });
 
-    revalidatePath('/admin', 'layout');
-    revalidatePath('/admin/settings');
-    revalidatePath('/login');
-    revalidatePath('/signup');
-    revalidatePath('/onboarding/[token]', 'page');
-    revalidatePath('/pedido/[id]', 'page');
-    return {};
+  if (uploadError) {
+    console.error("updateLogo upload error:", uploadError.message);
+    return { error: "No se pudo subir el logo." };
+  }
+
+  const upsertRows = [
+    { key: "logo_path", value: filePath },
+    { key: "logo_url", value: filePath },
+  ];
+
+  const { error: dbError } = await authSupabase
+    .from("app_settings")
+    .upsert(upsertRows, { onConflict: "key" });
+
+  if (dbError) {
+    console.error("updateLogo db error:", dbError.message);
+    await removeStoredLogoIfPresent(filePath);
+    return { error: "No se pudo guardar la referencia del logo." };
+  }
+
+  if (currentLogo.path && currentLogo.path !== filePath) {
+    await removeStoredLogoIfPresent(currentLogo.path);
+  }
+
+  revalidatePath("/admin", "layout");
+  revalidatePath("/admin/settings");
+  revalidatePath("/login");
+  revalidatePath("/signup");
+  revalidatePath("/portal", "layout");
+  revalidatePath("/portal");
+  revalidatePath("/onboarding/[token]", "page");
+  revalidatePath("/pedido/[id]", "page");
+
+  return {};
 }
 
 export async function deleteLogo(): Promise<{ error?: string }> {
-    const supabase = await getSupabaseClientWithAuth();
+  const authSupabase = await getSupabaseClientWithAuth();
+  const currentLogo = await getLogoSettingRecord(authSupabase);
 
-    const { data: currentLogoSetting } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'logo_url')
-        .maybeSingle();
+  await removeStoredLogoIfPresent(currentLogo.path);
 
-    const storedPath = extractLogoStoragePath((currentLogoSetting?.value as string | null) ?? null);
+  const { error } = await authSupabase
+    .from("app_settings")
+    .delete()
+    .in("key", [...LOGO_SETTING_KEYS]);
 
-    if (storedPath) {
-        const { error: removeError } = await supabase.storage
-            .from('app_assets')
-            .remove([storedPath]);
+  if (error) {
+    console.error("deleteLogo error:", error.message);
+    return { error: "No se pudo eliminar el logo." };
+  }
 
-        if (removeError) {
-            console.error("deleteLogo storage error:", removeError.message);
-        }
-    }
+  revalidatePath("/admin", "layout");
+  revalidatePath("/admin/settings");
+  revalidatePath("/login");
+  revalidatePath("/signup");
+  revalidatePath("/portal", "layout");
+  revalidatePath("/portal");
 
-    const { error } = await supabase
-        .from('app_settings')
-        .delete()
-        .eq('key', 'logo_url');
-
-    if (error) {
-        console.error("deleteLogo error:", error.message);
-        return { error: "No se pudo eliminar el logo de la base de datos." };
-    }
-
-    // Optional: Also delete the file from storage if desired
-    // For this app, we'll just remove the DB reference to keep it simple.
-
-    revalidatePath('/admin', 'layout');
-    revalidatePath('/admin/settings');
-    revalidatePath('/login');
-    revalidatePath('/signup');
-    return {};
+  return {};
 }
