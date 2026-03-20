@@ -118,7 +118,12 @@ export function DashboardStats() {
                 {loading ? (
                     <MetricSkeleton />
                 ) : metrics ? (
-                    <Accordion type="multiple" defaultValue={['orders']} className="w-full">
+                    <Accordion
+                        type="multiple"
+                        value={openSections}
+                        onValueChange={setOpenSections}
+                        className="w-full"
+                    >
                         <AccordionItem value="orders" className="border-none">
                             <button
                                 onClick={() => toggleSection('orders')}

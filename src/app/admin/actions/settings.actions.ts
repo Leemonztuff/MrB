@@ -7,6 +7,46 @@ import { revalidatePath } from "next/cache";
 import { unstable_noStore as noStore } from "next/cache";
 import type { AppSettings } from "@/types";
 
+function extractLogoStoragePath(value: string | null): string | null {
+    if (!value) return null;
+
+    if (!value.startsWith("http://") && !value.startsWith("https://")) {
+        return value;
+    }
+
+    try {
+        const parsedUrl = new URL(value);
+        const marker = "/storage/v1/object/public/app_assets/";
+        const markerIndex = parsedUrl.pathname.indexOf(marker);
+
+        if (markerIndex === -1) {
+            return null;
+        }
+
+        return decodeURIComponent(parsedUrl.pathname.slice(markerIndex + marker.length));
+    } catch {
+        return null;
+    }
+}
+
+function resolveLogoUrl(value: string | null): string | null {
+    if (!value) return null;
+
+    const storagePath = extractLogoStoragePath(value);
+    if (storagePath) {
+        const version = value.startsWith("http://") || value.startsWith("https://")
+            ? new URL(value).searchParams.get("t")
+            : null;
+        const params = new URLSearchParams({ path: storagePath });
+        if (version) {
+            params.set("t", version);
+        }
+        return `/api/assets/logo?${params.toString()}`;
+    }
+
+    return value;
+}
+
 export async function getSettings(): Promise<AppSettings> {
     noStore();
     const supabase = await getSupabaseClientWithAuth();
@@ -25,7 +65,7 @@ export async function getSettings(): Promise<AppSettings> {
     return {
         whatsapp_number: settings.whatsapp_number || "",
         vat_percentage: settings.vat_percentage || 21,
-        logo_url: settings.logo_url || null,
+        logo_url: resolveLogoUrl(settings.logo_url || null),
         enable_stock_management: settings.enable_stock_management ?? false,
     };
 }
@@ -68,7 +108,7 @@ export async function getPublicLogoUrl(): Promise<string | null> {
         // It's normal for the logo not to be configured.
         return null;
     }
-    return data.value as string | null;
+    return resolveLogoUrl(data.value as string | null);
 }
 
 
@@ -123,11 +163,8 @@ export async function updateLogo(formData: FormData): Promise<{ error?: string }
         return { error: "No se pudo subir el nuevo logo." };
     }
 
-    const { data: publicUrlData } = supabase.storage.from('app_assets').getPublicUrl(filePath);
-    const logoUrl = `${publicUrlData.publicUrl}?t=${new Date().getTime()}`; // Cache-busting
-
     const { error: dbError } = await supabase.from('app_settings').upsert(
-        { key: 'logo_url', value: logoUrl },
+        { key: 'logo_url', value: filePath },
         { onConflict: 'key' }
     );
 
@@ -137,13 +174,34 @@ export async function updateLogo(formData: FormData): Promise<{ error?: string }
     }
 
     revalidatePath('/admin', 'layout');
+    revalidatePath('/admin/settings');
     revalidatePath('/login');
     revalidatePath('/signup');
+    revalidatePath('/onboarding/[token]', 'page');
+    revalidatePath('/pedido/[id]', 'page');
     return {};
 }
 
 export async function deleteLogo(): Promise<{ error?: string }> {
     const supabase = await getSupabaseClientWithAuth();
+
+    const { data: currentLogoSetting } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'logo_url')
+        .maybeSingle();
+
+    const storedPath = extractLogoStoragePath((currentLogoSetting?.value as string | null) ?? null);
+
+    if (storedPath) {
+        const { error: removeError } = await supabase.storage
+            .from('app_assets')
+            .remove([storedPath]);
+
+        if (removeError) {
+            console.error("deleteLogo storage error:", removeError.message);
+        }
+    }
 
     const { error } = await supabase
         .from('app_settings')
@@ -159,6 +217,7 @@ export async function deleteLogo(): Promise<{ error?: string }> {
     // For this app, we'll just remove the DB reference to keep it simple.
 
     revalidatePath('/admin', 'layout');
+    revalidatePath('/admin/settings');
     revalidatePath('/login');
     revalidatePath('/signup');
     return {};

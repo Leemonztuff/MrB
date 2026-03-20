@@ -40,12 +40,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const settings = await getSettings();
-    const logoUrl = settings.logo_url ?? null;
-
-    // Get base URL from request origin to ensure it matches the current environment
     const url = new URL(request.url);
     const baseUrl = url.origin;
+    const settings = await getSettings();
+    const logoUrl = settings.logo_url
+      ? new URL(settings.logo_url, baseUrl).toString()
+      : null;
 
     const allLabels: LabelData[] = [];
     selections.forEach((sel: { id: string; bundles: number }) => {
