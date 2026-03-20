@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
+import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useState } from "react";
 import * as QRCode from "qrcode";
 
 interface LabelData {
@@ -26,11 +26,11 @@ interface LabelPreviewProps {
 }
 
 export function LabelPreview({ labels, baseUrl }: LabelPreviewProps) {
-  const [currentBaseUrl, setCurrentBaseUrl] = useState(baseUrl || '');
+  const [currentBaseUrl, setCurrentBaseUrl] = useState(baseUrl || "");
   const [qrCodes, setQrCodes] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (!baseUrl && typeof window !== 'undefined') {
+    if (!baseUrl && typeof window !== "undefined") {
       setCurrentBaseUrl(window.location.origin);
     }
   }, [baseUrl]);
@@ -38,45 +38,53 @@ export function LabelPreview({ labels, baseUrl }: LabelPreviewProps) {
   useEffect(() => {
     const generateAll = async () => {
       const codes: Record<string, string> = {};
+
       for (const label of labels) {
         if (codes[label.id]) continue;
+
         const url = `${currentBaseUrl}/pedido/confirmar/${label.id}`;
         try {
           codes[label.id] = await QRCode.toDataURL(url, {
-            margin: 1,
-            width: 600,
-            color: { dark: '#000000', light: '#ffffff' }
+            margin: 2,
+            width: 800,
+            color: { dark: "#000000", light: "#ffffff" },
           });
-        } catch (err) {
-          console.error("Error generating QR:", err);
+        } catch (error) {
+          console.error("Error generating QR:", error);
         }
       }
+
       setQrCodes(codes);
     };
-    if (currentBaseUrl && labels.length > 0) generateAll();
+
+    if (currentBaseUrl && labels.length > 0) {
+      void generateAll();
+    }
   }, [currentBaseUrl, labels]);
 
   const labelsPerPage = 3;
   const pages: LabelData[][] = [];
 
-  for (let i = 0; i < labels.length; i += labelsPerPage) {
-    pages.push(labels.slice(i, i + labelsPerPage));
+  for (let index = 0; index < labels.length; index += labelsPerPage) {
+    pages.push(labels.slice(index, index + labelsPerPage));
   }
 
   return (
-    <div className="flex flex-col gap-8 items-center bg-muted/20 p-4 md:p-8 min-h-screen pb-20">
+    <div className="flex min-h-screen flex-col items-center gap-8 bg-slate-100 px-4 pb-20 pt-6 md:px-8">
       <style jsx global>{`
         @media print {
-          body { 
-            margin: 0 !important; 
-            padding: 0 !important; 
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
             background: white !important;
           }
-          .no-print { display: none !important; }
-          .print-container { 
-            padding: 0 !important; 
-            margin: 0 !important;
+          .no-print {
+            display: none !important;
+          }
+          .print-container {
             gap: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
             background: white !important;
           }
           .print-page {
@@ -87,37 +95,39 @@ export function LabelPreview({ labels, baseUrl }: LabelPreviewProps) {
             border: none !important;
             width: 210mm !important;
             height: 297mm !important;
+            transform: none !important;
           }
         }
       `}</style>
 
-      <div className="no-print bg-black/80 text-white px-4 py-2 rounded-full text-xs font-bold mb-4 flex items-center gap-2 shadow-xl">
-        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-        VISTA DE PRESIÓN ADAPTADA (A4)
+      <div className="no-print rounded-full bg-slate-950 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white shadow-xl">
+        Vista de impresion A4
       </div>
 
-      <div className="flex flex-col gap-10 print-container">
+      <div className="print-container flex flex-col gap-10">
         {pages.map((pageLabels, pageIndex) => (
           <div
             key={pageIndex}
-            className="bg-white shadow-2xl print-page"
+            className="print-page bg-white shadow-2xl"
             style={{
-              width: '210mm',
-              height: '297mm',
-              padding: '10mm',
-              display: 'grid',
-              gridTemplateColumns: '1fr',
-              gridTemplateRows: 'repeat(3, 1fr)',
-              gap: '8mm',
-              boxSizing: 'border-box',
-              position: 'relative',
-              // Add a scale for non-print view to fit screen
-              transform: typeof window !== 'undefined' && window.innerWidth < 1000 ? `scale(${window.innerWidth / 900})` : 'none',
-              transformOrigin: 'top center',
+              width: "210mm",
+              height: "297mm",
+              padding: "10mm",
+              display: "grid",
+              gridTemplateColumns: "1fr",
+              gridTemplateRows: "repeat(3, 1fr)",
+              gap: "8mm",
+              boxSizing: "border-box",
+              position: "relative",
+              transform:
+                typeof window !== "undefined" && window.innerWidth < 1000
+                  ? `scale(${window.innerWidth / 900})`
+                  : "none",
+              transformOrigin: "top center",
             }}
           >
             {pageLabels.map((label, labelIndex) => (
-              <CompactLabelCard
+              <RefinedLabelCard
                 key={`${label.id}-${labelIndex}`}
                 label={label}
                 qrDataUrl={qrCodes[label.id]}
@@ -130,166 +140,284 @@ export function LabelPreview({ labels, baseUrl }: LabelPreviewProps) {
   );
 }
 
-function CompactLabelCard({ label, qrDataUrl }: { label: LabelData; qrDataUrl?: string }) {
-  const shortId = label.id?.slice(-6).toUpperCase() || 'N/A';
-  const date = new Date(label.created_at).toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
+function RefinedLabelCard({ label, qrDataUrl }: { label: LabelData; qrDataUrl?: string }) {
+  const shortId = label.id?.slice(-6).toUpperCase() || "N/A";
+  const clientName = normalizeText(label.client_name_cache || "Cliente").toUpperCase();
+  const recipient = label.clients?.contact_name ? normalizeText(label.clients.contact_name) : null;
+  const address = normalizeText(label.clients?.address || "Sin direccion registrada");
+  const deliveryWindow = label.clients?.delivery_window ? normalizeText(label.clients.delivery_window) : null;
+  const notes = label.notes ? normalizeText(label.notes) : null;
+  const contactLine = buildContactLine(label.clients);
+  const date = new Date(label.created_at).toLocaleDateString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
   });
 
   return (
     <div
       style={{
-        border: '3px solid #000',
-        borderRadius: '8px',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        backgroundColor: '#fff',
+        border: "2px solid #0f172a",
+        borderRadius: "8px",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        background: "#ffffff",
+        boxShadow: "0 10px 30px rgba(15, 23, 42, 0.07)",
       }}
     >
-      {/* Header */}
       <div
         style={{
-          backgroundColor: '#000',
-          color: '#fff',
-          padding: '6mm 8mm',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          fontSize: '16pt',
-          fontWeight: 900,
-          borderBottom: '3px solid #000',
+          background: "#0f172a",
+          color: "#ffffff",
+          padding: "5mm 6mm",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          fontWeight: 800,
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
         }}
       >
-        <span style={{ letterSpacing: '0.1em' }}>MR. BLONDE</span>
-        <span style={{ opacity: 0.8 }}>#{shortId}</span>
+        <span style={{ fontSize: "11pt" }}>Mr. Blonde | Rotulo de entrega</span>
+        <span style={{ fontSize: "10pt", opacity: 0.9 }}>Pedido #{shortId}</span>
       </div>
 
-      {/* Content */}
       <div
         style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 58mm",
+          gap: "6mm",
+          padding: "6mm",
           flex: 1,
-          display: 'flex',
-          padding: '10mm',
-          gap: '10mm',
         }}
       >
-        {/* Info Area */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3mm', minWidth: 0 }}>
-          <div style={{
-            fontSize: '18pt',
-            fontWeight: 900,
-            textTransform: 'uppercase',
-            color: '#000',
-            lineHeight: 1.1,
-            marginBottom: '1mm',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}>
-            {(label.client_name_cache || 'CLIENTE').toUpperCase()}
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1mm' }}>
-            <span style={{ fontSize: '9pt', fontWeight: 900, color: '#000', opacity: 0.4, letterSpacing: '0.05em' }}>DIRECCION:</span>
-            <span style={{
-              fontSize: '12pt',
+        <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignSelf: "flex-start",
+              padding: "2mm 4mm",
+              borderRadius: "999px",
+              background: "#e2e8f0",
+              color: "#0f172a",
+              fontSize: "8pt",
               fontWeight: 800,
-              color: '#000',
-              lineHeight: 1.2,
-              display: '-webkit-box',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden'
-            }}>
-              {label.clients?.address || 'SIN DATOS'}
-            </span>
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+            }}
+          >
+            Destinatario
           </div>
 
-          {label.clients?.delivery_window && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1mm', marginTop: '1mm' }}>
-              <span style={{ fontSize: '9pt', fontWeight: 900, color: '#000', opacity: 0.4, letterSpacing: '0.05em' }}>DÍAS Y HORARIOS:</span>
-              <div
-                style={{
-                  backgroundColor: '#000',
-                  color: '#fff',
-                  padding: '3mm 4mm',
-                  borderRadius: '4px',
-                  width: '100%',
-                }}
-              >
-                <span style={{ fontSize: '11pt', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1.2 }}>
-                  {label.clients.delivery_window}
-                </span>
-              </div>
+          <div
+            style={{
+              marginTop: "3mm",
+              fontSize: "18pt",
+              fontWeight: 900,
+              lineHeight: 1.05,
+              color: "#0f172a",
+              textTransform: "uppercase",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {clientName}
+          </div>
+
+          {recipient && (
+            <div style={{ marginTop: "2mm", fontSize: "9pt", color: "#475569", fontWeight: 600 }}>
+              Recibe: {recipient}
             </div>
           )}
 
-          {label.notes && (
+          <InfoCard title="Direccion de entrega" style={{ marginTop: "4mm" }}>
             <div
               style={{
-                border: '2px solid #000',
-                padding: '2mm 4mm',
-                borderRadius: '4px',
-                marginTop: 'auto',
-                width: '100%',
+                fontSize: "12pt",
+                fontWeight: 800,
+                color: "#0f172a",
+                lineHeight: 1.2,
+                display: "-webkit-box",
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
               }}
             >
-              <span style={{ fontSize: '10pt', color: '#000', fontWeight: 700, lineHeight: 1.2 }}>
-                NOTAS: {label.notes}
-              </span>
+              {address}
             </div>
+          </InfoCard>
+
+          {deliveryWindow && (
+            <InfoCard title="Ventana de entrega" tone="slate" style={{ marginTop: "3mm" }}>
+              <div
+                style={{
+                  fontSize: "10.5pt",
+                  fontWeight: 800,
+                  color: "#0f172a",
+                  lineHeight: 1.2,
+                  textTransform: "uppercase",
+                }}
+              >
+                {deliveryWindow}
+              </div>
+            </InfoCard>
+          )}
+
+          {notes && (
+            <InfoCard title="Indicaciones" tone="amber" style={{ marginTop: "3mm" }}>
+              <div
+                style={{
+                  fontSize: "10pt",
+                  fontStyle: "italic",
+                  fontWeight: 600,
+                  color: "#0f172a",
+                  lineHeight: 1.25,
+                  display: "-webkit-box",
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }}
+              >
+                {notes}
+              </div>
+            </InfoCard>
           )}
         </div>
 
-        {/* QR & Bundle Info */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6mm', width: '50mm' }}>
+        <div
+          style={{
+            borderRadius: "8px",
+            border: "1px solid #cbd5e1",
+            background: "#f1f5f9",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            padding: "5mm 4mm",
+            gap: "4mm",
+          }}
+        >
           {qrDataUrl ? (
             <img
               src={qrDataUrl}
               alt="QR"
-              style={{ width: '45mm', height: '45mm', display: 'block' }}
+              style={{ width: "42mm", height: "42mm", display: "block", background: "#ffffff", padding: "2mm", borderRadius: "6px" }}
             />
           ) : (
-            <div style={{ width: '45mm', height: '45mm', backgroundColor: '#f5f5f5', borderRadius: '4px' }} />
+            <div style={{ width: "42mm", height: "42mm", background: "#e2e8f0", borderRadius: "6px" }} />
           )}
 
           <div
             style={{
-              backgroundColor: '#000',
-              color: '#fff',
-              padding: '4mm 8mm',
-              fontSize: '16pt',
-              fontWeight: 900,
-              borderRadius: '4px',
-              minWidth: '20mm',
-              textAlign: 'center',
+              fontSize: "8pt",
+              fontWeight: 800,
+              color: "#475569",
+              textTransform: "uppercase",
+              textAlign: "center",
+              letterSpacing: "0.08em",
+              lineHeight: 1.2,
             }}
           >
-            {label.bundleIdx}/{label.totalBundles}
+            Escanear para confirmar entrega
+          </div>
+
+          <div
+            style={{
+              width: "100%",
+              borderRadius: "8px",
+              background: "#0f172a",
+              color: "#ffffff",
+              padding: "3mm",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: "7pt", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.85 }}>
+              Bulto
+            </div>
+            <div style={{ fontSize: "17pt", fontWeight: 900, lineHeight: 1.1 }}>
+              {label.bundleIdx}/{label.totalBundles}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Footer */}
       <div
         style={{
-          backgroundColor: '#f8f8f8',
-          padding: '4mm 10mm',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          fontSize: '9pt',
-          fontWeight: 700,
-          color: '#666',
-          borderTop: '1px solid #eee',
+          borderTop: "1px solid #cbd5e1",
+          padding: "3.5mm 6mm",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "6mm",
+          fontSize: "8.5pt",
+          color: "#64748b",
+          background: "#ffffff",
         }}
       >
-        <span>CONTACTO: {label.clients?.phone || 'SIN DATOS'}</span>
-        <span>FECHA: {date}</span>
+        <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{contactLine}</span>
+        <span style={{ flexShrink: 0 }}>Emitido {date}</span>
       </div>
     </div>
   );
+}
+
+function InfoCard({
+  title,
+  children,
+  tone = "default",
+  style,
+}: {
+  title: string;
+  children: ReactNode;
+  tone?: "default" | "slate" | "amber";
+  style?: CSSProperties;
+}) {
+  const palette =
+    tone === "amber"
+      ? { background: "#fff7ed", border: "#fbbf24" }
+      : tone === "slate"
+        ? { background: "#e2e8f0", border: "#cbd5e1" }
+        : { background: "#f8fafc", border: "#cbd5e1" };
+
+  return (
+    <div
+      style={{
+        border: `1px solid ${palette.border}`,
+        background: palette.background,
+        borderRadius: "8px",
+        padding: "3mm",
+        ...style,
+      }}
+    >
+      <div
+        style={{
+          fontSize: "7.5pt",
+          fontWeight: 800,
+          color: "#475569",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          marginBottom: "1.5mm",
+        }}
+      >
+        {title}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function normalizeText(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function buildContactLine(clients: LabelData["clients"]): string {
+  const parts = [
+    clients?.phone ? `Tel: ${normalizeText(clients.phone)}` : null,
+    clients?.email ? normalizeText(clients.email) : null,
+  ].filter(Boolean);
+
+  return parts.length > 0 ? parts.join(" | ") : "Sin datos de contacto";
 }

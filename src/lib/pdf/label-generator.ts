@@ -1,8 +1,6 @@
 import { jsPDF } from 'jspdf';
 import * as QRCode from 'qrcode';
 
-// --- Types & Interfaces ---
-
 export interface LabelData {
   id: string;
   client_name_cache: string;
@@ -23,12 +21,14 @@ interface FormattedLabel {
   id: string;
   shortId: string;
   clientName: string;
+  recipientName: string | null;
   address: string;
   deliveryWindow: string | null;
   notes: string | null;
-  contact: string;
+  contactLine: string;
   bundleText: string;
   dateText: string;
+  scanText: string;
   qrDataUrl: string;
 }
 
@@ -39,36 +39,38 @@ interface LabelLayout {
   height: number;
   contentX: number;
   contentY: number;
-  contentWidth: number;
   qrSize: number;
 }
 
-// --- Theme & Configuration ---
-
 const THEME = {
   colors: {
-    headerBg: [0, 0, 0] as [number, number, number],
+    border: [15, 23, 42] as [number, number, number],
+    headerBg: [15, 23, 42] as [number, number, number],
     headerText: [255, 255, 255] as [number, number, number],
-    primaryText: [0, 0, 0] as [number, number, number],
-    secondaryText: [0, 0, 0] as [number, number, number],
-    mutedText: [60, 60, 60] as [number, number, number],
-    accentBg: [255, 255, 255] as [number, number, number],
-    accentBorder: [0, 0, 0] as [number, number, number],
-    footerBg: [255, 255, 255] as [number, number, number],
+    panelBg: [248, 250, 252] as [number, number, number],
+    panelBorder: [203, 213, 225] as [number, number, number],
+    chipBg: [226, 232, 240] as [number, number, number],
+    chipText: [15, 23, 42] as [number, number, number],
+    primaryText: [15, 23, 42] as [number, number, number],
+    secondaryText: [71, 85, 105] as [number, number, number],
+    mutedText: [100, 116, 139] as [number, number, number],
+    noteBg: [255, 247, 237] as [number, number, number],
+    noteBorder: [251, 191, 36] as [number, number, number],
+    qrPanelBg: [241, 245, 249] as [number, number, number],
   },
   spacing: {
     margin: 5,
     padding: 5,
     gap: 4,
-    headerHeight: 12,
-    footerHeight: 8,
+    headerHeight: 14,
+    footerHeight: 10,
   },
   fonts: {
-    title: 16,
+    title: 17,
     header: 13,
-    body: 11,
+    body: 10,
     small: 8,
-  }
+  },
 };
 
 const DATE_FORMATTER = new Intl.DateTimeFormat('es-AR', {
@@ -77,12 +79,6 @@ const DATE_FORMATTER = new Intl.DateTimeFormat('es-AR', {
   year: 'numeric',
 });
 
-// --- Orchestration ---
-
-/**
- * Generates a PDF with labels for order bundles.
- * Optimized for A4 paper with 3 labels per page.
- */
 export async function generateLabelsPDF(
   labels: LabelData[],
   logoUrl: string | null,
@@ -97,201 +93,259 @@ export async function generateLabelsPDF(
   const pageWidth = 210;
   const pageHeight = 297;
   const labelsPerPage = 3;
-
   const labelHeight = (pageHeight - THEME.spacing.margin * 2 - THEME.spacing.gap * (labelsPerPage - 1)) / labelsPerPage;
   const labelWidth = pageWidth - THEME.spacing.margin * 2;
 
-  // Pre-format all labels (improves performance by doing heavy lifting outside the loop)
-  const formattedLabels = await Promise.all(
-    labels.map(label => formatLabelData(label, baseUrl))
-  );
+  const formattedLabels = await Promise.all(labels.map(label => formatLabelData(label, baseUrl)));
 
-  for (let i = 0; i < formattedLabels.length; i++) {
-    if (i > 0 && i % labelsPerPage === 0) {
+  for (let index = 0; index < formattedLabels.length; index += 1) {
+    if (index > 0 && index % labelsPerPage === 0) {
       doc.addPage('portrait');
     }
 
-    const labelIndex = i % labelsPerPage;
-    const layout: LabelLayout = getLabelLayout(
+    const labelIndex = index % labelsPerPage;
+    const layout = getLabelLayout(
       THEME.spacing.margin,
       THEME.spacing.margin + labelIndex * (labelHeight + THEME.spacing.gap),
       labelWidth,
       labelHeight
     );
 
-    renderLabel(doc, formattedLabels[i], layout, logoUrl);
+    renderLabel(doc, formattedLabels[index], layout, logoUrl);
   }
 
   return new Uint8Array(doc.output('arraybuffer'));
 }
 
-// --- Logic Phases ---
-
-/**
- * 1. Data Formatting Phase
- * Preparing Strings and generating QR codes locally.
- */
 async function formatLabelData(label: LabelData, baseUrl: string): Promise<FormattedLabel> {
   const confirmUrl = `${baseUrl}/pedido/confirmar/${label.id}`;
-
-  // Generate QR code locally as a DataURL (base64)
-  // This is much more reliable than fetching from an external API in a server environment
   const qrDataUrl = await QRCode.toDataURL(confirmUrl, {
     margin: 2,
-    width: 1200, // Even higher resolution for ultra-sharp printing
+    width: 1200,
     color: {
       dark: '#000000',
       light: '#ffffff',
-    }
+    },
   });
 
   return {
     id: label.id,
     shortId: label.id.slice(-6).toUpperCase(),
-    clientName: (label.client_name_cache || 'CLIENTE').toUpperCase(),
-    address: label.clients?.address || 'SIN DIRECCION REGISTRADA',
-    deliveryWindow: label.clients?.delivery_window || null,
-    notes: label.notes,
-    contact: `CONTACTO: ${label.clients?.phone || label.clients?.email || 'SIN DATOS'}`,
+    clientName: normalizeText(label.client_name_cache || 'Cliente').toUpperCase(),
+    recipientName: label.clients?.contact_name ? normalizeText(label.clients.contact_name) : null,
+    address: normalizeText(label.clients?.address || 'Sin direccion registrada'),
+    deliveryWindow: label.clients?.delivery_window ? normalizeText(label.clients.delivery_window) : null,
+    notes: label.notes ? normalizeText(label.notes) : null,
+    contactLine: buildContactLine(label.clients),
     bundleText: `${label.bundleIdx}/${label.totalBundles}`,
     dateText: DATE_FORMATTER.format(new Date(label.created_at)),
+    scanText: 'Escanear para confirmar entrega',
     qrDataUrl,
   };
 }
 
-/**
- * 2. Layout Calculation Phase
- * Defining where components sit within the label.
- */
 function getLabelLayout(x: number, y: number, width: number, height: number): LabelLayout {
-  const qrSize = 45; // Increased for better scanability
   return {
-    x, y, width, height,
+    x,
+    y,
+    width,
+    height,
     contentX: x + THEME.spacing.padding,
     contentY: y + THEME.spacing.headerHeight + THEME.spacing.padding,
-    contentWidth: width - qrSize - (THEME.spacing.padding * 3),
-    qrSize,
+    qrSize: 42,
   };
 }
 
-/**
- * 3. Rendering Phase
- * Drawing to the jsPDF instance using theme tokens.
- */
 function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logoUrl: string | null) {
-  const { x, y, width, height, contentX, contentY, contentWidth, qrSize } = layout;
+  void logoUrl;
 
-  // --- Outer Border ---
-  doc.setDrawColor(0);
-  doc.setLineWidth(0.6); // Slightly thicker for B&W clarity
+  const { x, y, width, height, contentX, contentY, qrSize } = layout;
+  const rightPanelWidth = qrSize + 12;
+  const leftWidth = width - rightPanelWidth - THEME.spacing.padding * 3;
+  const rightPanelX = x + width - rightPanelWidth - THEME.spacing.padding;
+  const qrX = rightPanelX + (rightPanelWidth - qrSize) / 2;
+  const qrY = y + THEME.spacing.headerHeight + 12;
+
+  doc.setDrawColor(...THEME.colors.border);
+  doc.setLineWidth(0.8);
   doc.roundedRect(x, y, width, height, 1, 1);
 
-  // --- Header ---
   doc.setFillColor(...THEME.colors.headerBg);
   doc.rect(x, y, width, THEME.spacing.headerHeight, 'F');
-
   doc.setTextColor(...THEME.colors.headerText);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(THEME.fonts.header);
-  doc.text('MR. BLONDE', contentX, y + 10); // Adjusted for taller header
-  doc.text(`#${data.shortId}`, x + width - THEME.spacing.padding, y + 10, { align: 'right' });
+  doc.text('MR. BLONDE | ROTULO DE ENTREGA', contentX, y + 9.5);
+  doc.setFontSize(11);
+  doc.text(`Pedido #${data.shortId}`, x + width - THEME.spacing.padding, y + 9.5, { align: 'right' });
 
-  // --- QR Code ---
-  const qrX = x + width - qrSize - THEME.spacing.padding;
-  const qrY = y + THEME.spacing.headerHeight + THEME.spacing.padding;
+  doc.setFillColor(...THEME.colors.qrPanelBg);
+  doc.setDrawColor(...THEME.colors.panelBorder);
+  doc.roundedRect(rightPanelX, y + THEME.spacing.headerHeight + 4, rightPanelWidth, height - THEME.spacing.headerHeight - 8, 1, 1, 'FD');
+
   doc.addImage(data.qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize, data.id, 'NONE');
 
-  // --- Client Info ---
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...THEME.colors.secondaryText);
+  const scanLines = fitLines(doc, data.scanText.toUpperCase(), rightPanelWidth - 8, 2);
+  doc.text(scanLines, rightPanelX + rightPanelWidth / 2, qrY + qrSize + 8, { align: 'center' });
+
+  const bundleY = qrY + qrSize + 20;
+  doc.setFillColor(...THEME.colors.headerBg);
+  doc.roundedRect(rightPanelX + 4, bundleY, rightPanelWidth - 8, 14, 1.2, 1.2, 'F');
+  doc.setTextColor(...THEME.colors.headerText);
+  doc.setFontSize(7);
+  doc.text('BULTO', rightPanelX + rightPanelWidth / 2, bundleY + 4.5, { align: 'center' });
+  doc.setFontSize(15);
+  doc.text(data.bundleText, rightPanelX + rightPanelWidth / 2, bundleY + 10.5, { align: 'center' });
+
+  const chipWidth = Math.min(42, leftWidth);
+  doc.setFillColor(...THEME.colors.chipBg);
+  doc.roundedRect(contentX, contentY, chipWidth, 7, 1, 1, 'F');
+  doc.setTextColor(...THEME.colors.chipText);
+  doc.setFontSize(7.5);
+  doc.text('DESTINATARIO', contentX + chipWidth / 2, contentY + 4.5, { align: 'center' });
+
+  const nameY = contentY + 13;
   doc.setTextColor(...THEME.colors.primaryText);
   doc.setFontSize(THEME.fonts.title);
-  doc.setFont('helvetica', 'bold');
+  const clientLines = fitLines(doc, data.clientName, leftWidth, 2);
+  doc.text(clientLines, contentX, nameY);
 
-  // Title (Client Name) - Stark and Large, Max 2 lines
-  const rawClientLines = doc.splitTextToSize(data.clientName, contentWidth + 10);
-  const clientLines = rawClientLines.length > 2 ? rawClientLines.slice(0, 2) : rawClientLines;
-  if (rawClientLines.length > 2) clientLines[1] = clientLines[1].replace(/...$/, '...');
+  let currentY = nameY + clientLines.length * 7 + 2;
 
-  doc.text(clientLines, contentX, contentY + 2);
+  if (data.recipientName) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...THEME.colors.secondaryText);
+    doc.text(`Recibe: ${data.recipientName}`, contentX, currentY);
+    currentY += 6;
+  }
 
-  let currentY = contentY + (clientLines.length * 7);
+  currentY += drawAddressCard(doc, contentX, currentY, leftWidth, data.address) + 4;
 
-  // Address Section
-  doc.setFontSize(THEME.fonts.small);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...THEME.colors.secondaryText);
-  doc.text('DIRECCION:', contentX, currentY);
-
-  currentY += 4.5;
-  doc.setFontSize(THEME.fonts.body);
-  doc.setFont('helvetica', 'bold'); // Bold address for legibility
-  doc.setTextColor(...THEME.colors.primaryText);
-
-  // Address - Max 3 lines
-  const rawAddrLines = doc.splitTextToSize(data.address, contentWidth + 10);
-  const addrLines = rawAddrLines.length > 3 ? rawAddrLines.slice(0, 3) : rawAddrLines;
-  if (rawAddrLines.length > 3) addrLines[2] = addrLines[2].replace(/...$/, '...');
-
-  doc.text(addrLines, contentX, currentY);
-
-  currentY += (addrLines.length * 5) + 6;
-
-  // Delivery Window & Notes - High Contrast B&W
   if (data.deliveryWindow) {
-    const badgeH = drawHighContrastBadge(doc, contentX, currentY, contentWidth, `DÍAS Y HORARIOS: ${data.deliveryWindow}`);
-    currentY += badgeH + 2;
+    currentY += drawInfoBlock(doc, {
+      x: contentX,
+      y: currentY,
+      width: leftWidth,
+      title: 'VENTANA DE ENTREGA',
+      text: data.deliveryWindow,
+      fillColor: THEME.colors.chipBg,
+      borderColor: THEME.colors.panelBorder,
+      fontStyle: 'bold',
+    }) + 3;
   }
 
   if (data.notes) {
-    drawHighContrastBadge(doc, contentX, currentY, contentWidth, `NOTAS: ${data.notes}`, true);
+    currentY += drawInfoBlock(doc, {
+      x: contentX,
+      y: currentY,
+      width: leftWidth,
+      title: 'INDICACIONES',
+      text: data.notes,
+      fillColor: THEME.colors.noteBg,
+      borderColor: THEME.colors.noteBorder,
+      fontStyle: 'italic',
+    }) + 3;
   }
 
-  // --- Footer Decoration ---
+  doc.setDrawColor(...THEME.colors.panelBorder);
   doc.setLineWidth(0.3);
-  doc.setDrawColor(200);
-  doc.line(x + THEME.spacing.padding, y + height - 10, x + width - THEME.spacing.padding, y + height - 10);
+  doc.line(contentX, y + height - THEME.spacing.footerHeight - 2, x + width - THEME.spacing.padding, y + height - THEME.spacing.footerHeight - 2);
 
-  // Contact Info
-  doc.setTextColor(...THEME.colors.mutedText);
-  doc.setFontSize(THEME.fonts.small);
   doc.setFont('helvetica', 'normal');
-  doc.text(data.contact, contentX, y + height - 6);
-
-  // Date
-  doc.text(data.dateText, x + width - THEME.spacing.padding, y + height - 6, { align: 'right' });
-
-  // --- Bundle ID Badge ---
-  const badgeW = 22; // Larger
-  const badgeH = 10; // Larger
-  const badgeX = qrX + (qrSize - badgeW) / 2;
-  const badgeY = qrY + qrSize + 5;
-
-  doc.setFillColor(0, 0, 0);
-  doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 0.5, 0.5, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(12); // Larger
-  doc.setFont('helvetica', 'bold');
-  doc.text(data.bundleText, badgeX + badgeW / 2, badgeY + 6.5, { align: 'center' });
+  doc.setFontSize(THEME.fonts.small);
+  doc.setTextColor(...THEME.colors.mutedText);
+  doc.text(data.contactLine, contentX, y + height - 5.2);
+  doc.text(`Emitido ${data.dateText}`, x + width - THEME.spacing.padding, y + height - 5.2, { align: 'right' });
 }
 
-function drawHighContrastBadge(doc: jsPDF, x: number, y: number, w: number, text: string, isItalic = false): number {
-  const padding = 3;
-  doc.setFontSize(THEME.fonts.body - 1);
-  doc.setFont('helvetica', isItalic ? 'italic' : 'bold');
+function drawAddressCard(doc: jsPDF, x: number, y: number, width: number, address: string): number {
+  const height = 31;
+  doc.setFillColor(...THEME.colors.panelBg);
+  doc.setDrawColor(...THEME.colors.panelBorder);
+  doc.roundedRect(x, y, width, height, 1, 1, 'FD');
 
-  const lines = doc.splitTextToSize(text, w - (padding * 2) - 4);
-  const h = (lines.length * 4.5) + 4;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...THEME.colors.secondaryText);
+  doc.text('DIRECCION DE ENTREGA', x + 3, y + 5);
 
-  // Stark Border instead of color fill
-  doc.setDrawColor(0);
-  doc.setLineWidth(0.2);
-  doc.rect(x, y - 4, w, h);
-
-  // Thick left indicator bar
-  doc.setFillColor(0, 0, 0);
-  doc.rect(x, y - 4, 1.5, h, 'F');
-
+  doc.setFontSize(11);
   doc.setTextColor(...THEME.colors.primaryText);
-  doc.text(lines, x + padding + 1, y - 4 + padding + 2);
+  const lines = fitLines(doc, address, width - 6, 3);
+  doc.text(lines, x + 3, y + 11);
 
-  return h;
+  return height;
+}
+
+function drawInfoBlock(
+  doc: jsPDF,
+  options: {
+    x: number;
+    y: number;
+    width: number;
+    title: string;
+    text: string;
+    fillColor: [number, number, number];
+    borderColor: [number, number, number];
+    fontStyle: 'bold' | 'italic' | 'normal';
+  }
+): number {
+  const { x, y, width, title, text, fillColor, borderColor, fontStyle } = options;
+  const padding = 3;
+
+  doc.setFont('helvetica', fontStyle);
+  doc.setFontSize(THEME.fonts.body);
+  const lines = fitLines(doc, text, width - padding * 2, 3);
+  const height = 11 + lines.length * 4.5;
+
+  doc.setFillColor(...fillColor);
+  doc.setDrawColor(...borderColor);
+  doc.roundedRect(x, y, width, height, 1, 1, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...THEME.colors.secondaryText);
+  doc.text(title, x + padding, y + 4.5);
+
+  doc.setFont('helvetica', fontStyle);
+  doc.setFontSize(THEME.fonts.body);
+  doc.setTextColor(...THEME.colors.primaryText);
+  doc.text(lines, x + padding, y + 10);
+
+  return height;
+}
+
+function fitLines(doc: jsPDF, text: string, width: number, maxLines: number): string[] {
+  const lines = doc.splitTextToSize(normalizeText(text), width) as string[];
+  if (lines.length <= maxLines) return lines;
+
+  const trimmed = lines.slice(0, maxLines);
+  trimmed[maxLines - 1] = truncateWithEllipsis(doc, trimmed[maxLines - 1], width);
+  return trimmed;
+}
+
+function truncateWithEllipsis(doc: jsPDF, text: string, width: number): string {
+  let candidate = text.trim();
+  while (candidate.length > 0 && doc.getTextWidth(`${candidate}...`) > width) {
+    candidate = candidate.slice(0, -1).trimEnd();
+  }
+
+  return `${candidate}...`;
+}
+
+function normalizeText(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function buildContactLine(clients: LabelData['clients']): string {
+  const parts = [
+    clients?.phone ? `Tel: ${normalizeText(clients.phone)}` : null,
+    clients?.email ? normalizeText(clients.email) : null,
+  ].filter(Boolean);
+
+  return parts.length > 0 ? parts.join(' | ') : 'Sin datos de contacto';
 }
