@@ -1,6 +1,7 @@
 
 import type { Metadata } from 'next';
 import { Toaster } from "@/components/ui/sonner"
+import { Toaster as LegacyToaster } from "@/components/ui/toaster"
 import { SkipLink } from "@/components/shared/skip-link"
 import './globals.css';
 import { cn } from '@/lib/utils';
@@ -78,6 +79,7 @@ export default function RootLayout({
             {children}
           </ErrorBoundary>
           <Toaster />
+          <LegacyToaster />
         </ThemeProvider>
       </body>
     </html>

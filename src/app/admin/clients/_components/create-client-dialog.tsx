@@ -1,7 +1,12 @@
-
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import type { ReactNode } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { Check, Copy, Link2, Loader2, UserPlus } from "lucide-react";
+import { createClientForInvitation } from "@/app/admin/actions/clients.actions";
+import { getAgreements } from "@/app/admin/actions/agreements.actions";
+import type { Agreement } from "@/types";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,209 +14,344 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { createClientForInvitation } from "@/app/admin/actions/clients.actions";
-import { getAgreements } from "@/app/admin/actions/agreements.actions";
-import { Copy, Check, Loader2, UserPlus, Link2 } from "lucide-react";
-import { UpsertClientDialog } from "./upsert-client-dialog";
-import type { Agreement } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-
-import { UpsertClientForm } from "./upsert-client-form";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { UpsertClientForm } from "./upsert-client-form";
 
-export function CreateClientDialog({ children }: { children: React.ReactNode }) {
+type View = "options" | "manual" | "invite";
+type InviteStep = 0 | 1 | 2;
+
+const inviteSteps = [
+  { id: 0, title: "Identidad", description: "Como queres identificarlo en tu lista." },
+  { id: 1, title: "Convenio", description: "Defini si queres dejarlo listo para comprar." },
+  { id: 2, title: "Compartir", description: "Copia y envia el enlace al cliente." },
+] as const;
+
+export function CreateClientDialog({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [view, setView] = useState<"options" | "invitation_config" | "link" | "manual">("options");
+  const [view, setView] = useState<View>("options");
+  const [inviteStep, setInviteStep] = useState<InviteStep>(0);
   const [agreements, setAgreements] = useState<Agreement[]>([]);
   const [selectedAgreementId, setSelectedAgreementId] = useState<string | null>(null);
   const [clientName, setClientName] = useState("");
   const [generatedLink, setGeneratedLink] = useState("");
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const [hasCopied, setHasCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (view === 'invitation_config') {
+    if (view === "invite" && agreements.length === 0) {
       getAgreements().then(({ data }) => setAgreements(data ?? []));
     }
-  }, [view]);
+  }, [agreements.length, view]);
 
-  const handleGenerateLink = () => {
-    startTransition(async () => {
-      const result = await createClientForInvitation({
-        name: clientName || null,
-        agreementId: selectedAgreementId,
-      });
+  const inviteSummary = useMemo(() => {
+    const agreementName = agreements.find(agreement => agreement.id === selectedAgreementId)?.agreement_name;
+    return {
+      clientName: clientName.trim() || "Cliente pendiente",
+      agreementName: agreementName || "Sin convenio inicial",
+    };
+  }, [agreements, clientName, selectedAgreementId]);
 
-      if (result.error || !result.data) {
-        toast({
-          title: "Error",
-          description: result.error?.message || "No se pudo generar el enlace.",
-          variant: "destructive",
-        });
-      } else {
-        const origin = window.location.origin;
-        setGeneratedLink(`${origin}/onboarding/${result.data.onboarding_token}`);
-        setView("link");
-      }
-    });
-  };
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(generatedLink);
-    setHasCopied(true);
-    setTimeout(() => setHasCopied(false), 2000);
-    toast({ title: "Enlace de invitación copiado!" });
+  const resetState = () => {
+    setView("options");
+    setInviteStep(0);
+    setGeneratedLink("");
+    setInviteError(null);
+    setHasCopied(false);
+    setClientName("");
+    setSelectedAgreementId(null);
   };
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (!open) {
-      setTimeout(() => {
-        setView("options");
-        setGeneratedLink("");
-        setHasCopied(false);
-        setClientName("");
-        setSelectedAgreementId(null);
-      }, 300);
+      setTimeout(resetState, 200);
     }
   };
+
+  const handleGenerateLink = () => {
+    startTransition(async () => {
+      setInviteError(null);
+      try {
+        const result = await createClientForInvitation({
+          name: clientName || null,
+          agreementId: selectedAgreementId,
+        });
+
+        if (result.error || !result.data) {
+          const message = result.error?.message || "No se pudo generar el enlace.";
+          setInviteError(message);
+          toast({
+            title: "Error",
+            description: message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const origin = window.location.origin;
+        setGeneratedLink(`${origin}/onboarding/${result.data.onboarding_token}`);
+        setInviteStep(2);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "No se pudo generar el enlace.";
+        setInviteError(message);
+        toast({
+          title: "Error",
+          description: message,
+          variant: "destructive",
+        });
+      }
+    });
+  };
+
+  const copyToClipboard = async () => {
+    await navigator.clipboard.writeText(generatedLink);
+    setHasCopied(true);
+    setTimeout(() => setHasCopied(false), 2000);
+    toast({ title: "Enlace de invitacion copiado" });
+  };
+
+  const renderOptions = () => (
+    <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
+      <button
+        type="button"
+        onClick={() => setView("manual")}
+        className="group rounded-3xl border border-border/60 bg-card p-5 text-left transition hover:border-primary/40 hover:bg-accent/30"
+      >
+        <div className="mb-4 inline-flex rounded-2xl bg-primary/10 p-3 text-primary">
+          <UserPlus className="h-6 w-6" />
+        </div>
+        <h3 className="text-lg font-black tracking-tight">Carga manual guiada</h3>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Crea el cliente paso a paso y completa toda la informacion desde el admin.
+        </p>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setView("invite")}
+        className="group rounded-3xl border border-border/60 bg-card p-5 text-left transition hover:border-primary/40 hover:bg-accent/30"
+      >
+        <div className="mb-4 inline-flex rounded-2xl bg-primary/10 p-3 text-primary">
+          <Link2 className="h-6 w-6" />
+        </div>
+        <h3 className="text-lg font-black tracking-tight">Invitacion por enlace</h3>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Genera un link corto y deja que el cliente complete su propia alta.
+        </p>
+      </button>
+    </div>
+  );
+
+  const renderInviteStepper = () => (
+    <div className="border-b border-border/60 px-5 pb-4 sm:px-6">
+      <div className="grid grid-cols-3 gap-2">
+        {inviteSteps.map(step => {
+          const isActive = step.id === inviteStep;
+          const isCompleted = step.id < inviteStep;
+
+          return (
+            <div
+              key={step.id}
+              className={cn(
+                "rounded-2xl border px-3 py-3 text-left transition",
+                isActive && "border-primary bg-primary/10",
+                isCompleted && "border-primary/30 bg-primary/5",
+                !isActive && !isCompleted && "border-border/60 bg-muted/30"
+              )}
+            >
+              <div className="mb-1 text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+                Paso {step.id + 1}
+              </div>
+              <div className="text-sm font-bold">{step.title}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const renderInviteContent = () => (
+    <>
+      {renderInviteStepper()}
+      <div className="flex min-h-0 flex-1 flex-col">
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="space-y-6 p-5 sm:p-6">
+            {inviteStep === 0 ? (
+              <section className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-black tracking-tight">Como queres identificar al cliente</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Este nombre es opcional y solo te ayuda a encontrarlo mas rapido antes de que complete el alta.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="client-name" className="text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">
+                    Nombre interno
+                  </Label>
+                  <Input
+                    id="client-name"
+                    placeholder="Ej: Barberia Central"
+                    value={clientName}
+                    onChange={event => setClientName(event.target.value)}
+                    className="h-12 rounded-2xl"
+                  />
+                </div>
+              </section>
+            ) : null}
+
+            {inviteStep === 1 ? (
+              <section className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-black tracking-tight">Defini el punto de partida</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Si le asignas un convenio, el cliente podra entrar y comprar apenas termine su onboarding.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="agreement-select" className="text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">
+                    Convenio inicial
+                  </Label>
+                  <Select
+                    onValueChange={value => setSelectedAgreementId(value === "__none__" ? null : value)}
+                    value={selectedAgreementId ?? "__none__"}
+                  >
+                    <SelectTrigger id="agreement-select" className="h-12 rounded-2xl">
+                      <SelectValue placeholder="Selecciona un convenio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Sin convenio por ahora</SelectItem>
+                      {agreements.map(agreement => (
+                        <SelectItem key={agreement.id} value={agreement.id}>
+                          {agreement.agreement_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="rounded-3xl border border-border/60 bg-muted/30 p-4">
+                  <div className="text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">
+                    Resumen
+                  </div>
+                  <div className="mt-3 space-y-2 text-sm">
+                    <p><span className="font-semibold">Cliente:</span> {inviteSummary.clientName}</p>
+                    <p><span className="font-semibold">Convenio:</span> {inviteSummary.agreementName}</p>
+                  </div>
+                </div>
+
+                {inviteError ? (
+                  <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                    {inviteError}
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
+
+            {inviteStep === 2 ? (
+              <section className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-black tracking-tight">Enlace listo para compartir</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Copialo y enviaselo al cliente. Cuando complete el formulario, el alta seguira el flujo configurado.
+                  </p>
+                </div>
+                <div className="rounded-3xl border border-border/60 bg-muted/30 p-4">
+                  <div className="text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">
+                    Cliente
+                  </div>
+                  <p className="mt-2 text-sm font-semibold">{inviteSummary.clientName}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">
+                    Enlace de invitacion
+                  </Label>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Input value={generatedLink} readOnly className="h-12 rounded-2xl sm:flex-1" />
+                    <Button type="button" onClick={copyToClipboard} className="h-12 rounded-2xl px-5 sm:w-auto">
+                      {hasCopied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                      {hasCopied ? "Copiado" : "Copiar enlace"}
+                    </Button>
+                  </div>
+                </div>
+              </section>
+            ) : null}
+          </div>
+        </ScrollArea>
+
+        <div className="border-t border-border/60 px-5 py-4 sm:px-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-11 rounded-2xl"
+              onClick={() => {
+                if (inviteStep === 0) {
+                  setView("options");
+                  return;
+                }
+                setInviteStep(current => (Math.max(0, current - 1) as InviteStep));
+              }}
+            >
+              Volver
+            </Button>
+
+            {inviteStep < 2 ? (
+              <Button
+                type="button"
+                className="h-11 rounded-2xl"
+                disabled={isPending}
+                onClick={() => {
+                  if (inviteStep === 1) {
+                    handleGenerateLink();
+                    return;
+                  }
+                  setInviteStep(1);
+                }}
+              >
+                {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {inviteStep === 1 ? "Generar enlace" : "Continuar"}
+              </Button>
+            ) : (
+              <Button type="button" className="h-11 rounded-2xl" onClick={() => handleOpenChange(false)}>
+                Finalizar
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className={cn(
-        "grid-rows-[auto_1fr] p-0 overflow-hidden flex flex-col transition-all duration-500 ease-in-out",
-        view === 'manual' ? "sm:max-w-3xl h-[90vh] sm:h-[80vh]" : "sm:max-w-md h-auto"
-      )}>
-        <DialogHeader className="p-6 pb-2">
-          <DialogTitle className="font-black italic tracking-tighter text-2xl">Agregar Nuevo Cliente</DialogTitle>
-          <DialogDescription className="text-xs uppercase font-bold tracking-widest opacity-60">
-            {view === 'options' && "Elige cómo deseas agregar un nuevo cliente al sistema."}
-            {view === 'invitation_config' && "Configura la invitación antes de generar el enlace."}
-            {view === 'link' && "Comparte este enlace con tu cliente para que complete su alta."}
-            {view === 'manual' && "Completa todos los datos del cliente manualmente."}
+      <DialogContent className="flex h-[min(92vh,860px)] max-w-4xl flex-col gap-0 p-0">
+        <DialogHeader className="border-b border-border/60 px-5 pb-4 pt-5 sm:px-6">
+          <DialogTitle className="text-2xl font-black tracking-tight">Alta de clientes</DialogTitle>
+          <DialogDescription className="max-w-2xl text-sm">
+            Usa un flujo guiado para crear clientes manualmente o generar invitaciones sin cargar de mas la pantalla.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col">
-          {view === "options" && (
-            <div className="grid grid-cols-1 gap-4 p-6">
-              <Button
-                variant="outline"
-                className="h-28 flex flex-col gap-1 rounded-2xl glass border-white/5 hover:bg-white/5 transition-all group"
-                onClick={() => setView('manual')}
-              >
-                <UserPlus className="h-8 w-8 text-primary" />
-                <span className="font-black italic tracking-tighter text-lg">Crear Manualmente</span>
-                <span className="text-[10px] uppercase font-bold tracking-widest opacity-60">
-                  (Tú cargas todos los datos)
-                </span>
-              </Button>
+        <div className="flex min-h-0 flex-1 flex-col">
+          {view === "options" ? renderOptions() : null}
 
-              <Button
-                variant="outline"
-                className="h-28 flex flex-col gap-1 rounded-2xl glass border-white/5 hover:bg-white/5 transition-all group"
-                onClick={() => setView('invitation_config')}
-              >
-                <Link2 className="h-8 w-8 text-primary" />
-                <span className="font-black italic tracking-tighter text-lg">Generar Enlace de Invitación</span>
-                <span className="text-[10px] uppercase font-bold tracking-widest opacity-60">
-                  (El cliente carga sus datos)
-                </span>
-              </Button>
-            </div>
-          )}
-
-          {view === "manual" && (
+          {view === "manual" ? (
             <UpsertClientForm
-              onSuccess={() => {
-                handleOpenChange(false);
-              }}
-              onCancel={() => setView('options')}
+              onSuccess={() => handleOpenChange(false)}
+              onCancel={() => setView("options")}
             />
-          )}
+          ) : null}
 
-          {view === "invitation_config" && (
-            <div className="space-y-6 p-6">
-              <div className="space-y-2">
-                <Label htmlFor="client-name" className="text-[10px] font-black uppercase tracking-widest opacity-60">Nombre del Cliente (Opcional)</Label>
-                <Input
-                  id="client-name"
-                  placeholder="Para identificarlo en la lista"
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                  className="h-12 glass border-white/10 rounded-xl italic font-medium focus:border-primary/50 transition-all placeholder:text-muted-foreground/30"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="agreement-select" className="text-[10px] font-black uppercase tracking-widest opacity-60">Asignar Convenio (Opcional)</Label>
-                <Select
-                  onValueChange={(value) => setSelectedAgreementId(value === 'null' ? null : value)}
-                  defaultValue="null"
-                >
-                  <SelectTrigger id="agreement-select" className="h-12 glass border-white/10 rounded-xl focus:ring-0 focus:ring-offset-0">
-                    <SelectValue placeholder="Selecciona un convenio..." />
-                  </SelectTrigger>
-                  <SelectContent className="glass border-white/5">
-                    <SelectItem value="null">Ninguno por ahora</SelectItem>
-                    {agreements.map(agreement => (
-                      <SelectItem key={agreement.id} value={agreement.id}>
-                        {agreement.agreement_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-[10px] text-muted-foreground font-medium italic opacity-60">
-                  Si asignas un convenio, el cliente podrá hacer pedidos inmediatamente después de registrarse.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-3 pt-4">
-                <Button onClick={handleGenerateLink} disabled={isPending} className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20">
-                  {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generar Enlace"}
-                </Button>
-                <Button variant="ghost" onClick={() => setView('options')} className="h-12 rounded-xl font-black uppercase tracking-widest text-[10px] opacity-60 hover:opacity-100 italic transition-all">Volver</Button>
-              </div>
-            </div>
-          )}
-
-          {view === "link" && (
-            <div className="space-y-6 p-6">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Enlace de Invitación</Label>
-                <div className="flex items-center space-x-2">
-                  <Input
-                    value={generatedLink}
-                    readOnly
-                    className="h-12 glass border-white/10 rounded-xl italic font-medium text-primary"
-                  />
-                  <Button
-                    size="icon"
-                    className="h-12 w-12 shrink-0 bg-primary hover:bg-primary/90 rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-95"
-                    onClick={copyToClipboard}
-                  >
-                    {hasCopied ? (
-                      <Check className="h-5 w-5" />
-                    ) : (
-                      <Copy className="h-5 w-5" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-              <div className="flex flex-col gap-3 pt-4">
-                <Button onClick={() => handleOpenChange(false)} className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20">Finalizar</Button>
-                <Button variant="secondary" onClick={() => setView('invitation_config')} className="h-12 glass border-white/5 rounded-xl font-black uppercase tracking-widest text-[10px] italic">Volver</Button>
-              </div>
-            </div>
-          )}
+          {view === "invite" ? renderInviteContent() : null}
         </div>
       </DialogContent>
     </Dialog>
