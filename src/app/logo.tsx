@@ -3,7 +3,6 @@
 
 import { cn } from "@/lib/utils";
 import { Atom } from "lucide-react";
-import Image from 'next/image';
 
 export function Logo({
   className,
@@ -21,13 +20,11 @@ export function Logo({
   const IconOrLogo = () => {
     if (logoUrl) {
       return (
-        <Image
+        <img
           src={logoUrl}
           alt="App Logo"
-          fill
-          className="object-contain p-1"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          priority={showText}
+          className="h-full w-full object-contain p-1"
+          loading={showText ? "eager" : "lazy"}
         />
       );
     }

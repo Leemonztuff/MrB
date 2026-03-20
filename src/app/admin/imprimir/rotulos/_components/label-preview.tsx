@@ -23,9 +23,14 @@ interface LabelData {
 interface LabelPreviewProps {
   labels: LabelData[];
   baseUrl?: string;
+  logoUrl?: string | null;
 }
 
-export function LabelPreview({ labels, baseUrl }: LabelPreviewProps) {
+export function LabelPreview({
+  labels,
+  baseUrl,
+  logoUrl = null,
+}: LabelPreviewProps) {
   const [currentBaseUrl, setCurrentBaseUrl] = useState(baseUrl || "");
   const [qrCodes, setQrCodes] = useState<Record<string, string>>({});
 
@@ -131,6 +136,7 @@ export function LabelPreview({ labels, baseUrl }: LabelPreviewProps) {
                 key={`${label.id}-${labelIndex}`}
                 label={label}
                 qrDataUrl={qrCodes[label.id]}
+                logoUrl={logoUrl}
               />
             ))}
           </div>
@@ -140,12 +146,24 @@ export function LabelPreview({ labels, baseUrl }: LabelPreviewProps) {
   );
 }
 
-function RefinedLabelCard({ label, qrDataUrl }: { label: LabelData; qrDataUrl?: string }) {
+function RefinedLabelCard({
+  label,
+  qrDataUrl,
+  logoUrl,
+}: {
+  label: LabelData;
+  qrDataUrl?: string;
+  logoUrl?: string | null;
+}) {
   const shortId = label.id?.slice(-6).toUpperCase() || "N/A";
   const clientName = normalizeText(label.client_name_cache || "Cliente").toUpperCase();
-  const recipient = label.clients?.contact_name ? normalizeText(label.clients.contact_name) : null;
+  const recipient = label.clients?.contact_name
+    ? normalizeText(label.clients.contact_name)
+    : null;
   const address = normalizeText(label.clients?.address || "Sin direccion registrada");
-  const deliveryWindow = label.clients?.delivery_window ? normalizeText(label.clients.delivery_window) : null;
+  const deliveryWindow = label.clients?.delivery_window
+    ? normalizeText(label.clients.delivery_window)
+    : null;
   const notes = label.notes ? normalizeText(label.notes) : null;
   const contactLine = buildContactLine(label.clients);
   const date = new Date(label.created_at).toLocaleDateString("es-AR", {
@@ -177,10 +195,64 @@ function RefinedLabelCard({ label, qrDataUrl }: { label: LabelData; qrDataUrl?: 
           fontWeight: 800,
           letterSpacing: "0.06em",
           textTransform: "uppercase",
+          gap: "4mm",
         }}
       >
-        <span style={{ fontSize: "11pt" }}>Mr. Blonde | Rotulo de entrega</span>
-        <span style={{ fontSize: "10pt", opacity: 0.9 }}>Pedido #{shortId}</span>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "3mm",
+            minWidth: 0,
+            flex: 1,
+          }}
+        >
+          {logoUrl ? (
+            <div
+              style={{
+                background: "#ffffff",
+                borderRadius: "999px",
+                padding: "1.5mm 3mm",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minWidth: "24mm",
+                maxWidth: "34mm",
+                height: "10mm",
+                flexShrink: 0,
+              }}
+            >
+              <img
+                src={logoUrl}
+                alt="Logo"
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
+            </div>
+          ) : (
+            <span style={{ fontSize: "11pt", flexShrink: 0 }}>Mr. Blonde</span>
+          )}
+
+          <span
+            style={{
+              fontSize: "10pt",
+              opacity: 0.95,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            Rotulo de entrega
+          </span>
+        </div>
+
+        <span style={{ fontSize: "10pt", opacity: 0.9, flexShrink: 0 }}>
+          Pedido #{shortId}
+        </span>
       </div>
 
       <div
@@ -228,7 +300,14 @@ function RefinedLabelCard({ label, qrDataUrl }: { label: LabelData; qrDataUrl?: 
           </div>
 
           {recipient && (
-            <div style={{ marginTop: "2mm", fontSize: "9pt", color: "#475569", fontWeight: 600 }}>
+            <div
+              style={{
+                marginTop: "2mm",
+                fontSize: "9pt",
+                color: "#475569",
+                fontWeight: 600,
+              }}
+            >
               Recibe: {recipient}
             </div>
           )}
@@ -304,10 +383,24 @@ function RefinedLabelCard({ label, qrDataUrl }: { label: LabelData; qrDataUrl?: 
             <img
               src={qrDataUrl}
               alt="QR"
-              style={{ width: "42mm", height: "42mm", display: "block", background: "#ffffff", padding: "2mm", borderRadius: "6px" }}
+              style={{
+                width: "42mm",
+                height: "42mm",
+                display: "block",
+                background: "#ffffff",
+                padding: "2mm",
+                borderRadius: "6px",
+              }}
             />
           ) : (
-            <div style={{ width: "42mm", height: "42mm", background: "#e2e8f0", borderRadius: "6px" }} />
+            <div
+              style={{
+                width: "42mm",
+                height: "42mm",
+                background: "#e2e8f0",
+                borderRadius: "6px",
+              }}
+            />
           )}
 
           <div
@@ -334,7 +427,15 @@ function RefinedLabelCard({ label, qrDataUrl }: { label: LabelData; qrDataUrl?: 
               textAlign: "center",
             }}
           >
-            <div style={{ fontSize: "7pt", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.85 }}>
+            <div
+              style={{
+                fontSize: "7pt",
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                opacity: 0.85,
+              }}
+            >
               Bulto
             </div>
             <div style={{ fontSize: "17pt", fontWeight: 900, lineHeight: 1.1 }}>
@@ -357,7 +458,16 @@ function RefinedLabelCard({ label, qrDataUrl }: { label: LabelData; qrDataUrl?: 
           background: "#ffffff",
         }}
       >
-        <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{contactLine}</span>
+        <span
+          style={{
+            minWidth: 0,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {contactLine}
+        </span>
         <span style={{ flexShrink: 0 }}>Emitido {date}</span>
       </div>
     </div>

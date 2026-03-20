@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrdersBatch } from '@/app/admin/actions/orders.actions';
+import { getSettings } from '@/app/admin/actions/settings.actions';
 
 interface LabelData {
   id: string;
@@ -29,7 +30,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: orders, error } = await getOrdersBatch(selections.map((o: any) => o.id));
+    const [{ data: orders, error }, settings] = await Promise.all([
+      getOrdersBatch(selections.map((o: any) => o.id)),
+      getSettings(),
+    ]);
     
     if (error || !orders) {
       return NextResponse.json(
@@ -63,7 +67,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ labels: allLabels });
+    return NextResponse.json({
+      labels: allLabels,
+      logoUrl: settings.logo_url ?? null,
+    });
   } catch (error) {
     console.error('Preview Error:', error);
     return NextResponse.json(

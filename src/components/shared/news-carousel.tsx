@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, X, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { NewsPost } from "@/types";
 import Link from "next/link";
 
@@ -78,25 +79,29 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
         </Card>
 
         <Dialog open={!!selectedNews} onOpenChange={(open) => !open && setSelectedNews(null)}>
-          <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="flex max-h-[min(85dvh,820px)] flex-col overflow-hidden p-0 sm:max-w-2xl">
             <DialogClose className="absolute right-4 top-4" />
-            {selectedNews?.image_url && (
-              <div className="relative w-full h-48 sm:h-64 mb-4 rounded-lg overflow-hidden">
-                <Image
-                  src={selectedNews.image_url}
-                  alt={selectedNews.title}
-                  fill
-                  className="object-cover"
-                />
+            <ScrollArea className="min-h-0 flex-1">
+              <div className="p-6">
+                {selectedNews?.image_url && (
+                  <div className="relative mb-4 h-48 w-full overflow-hidden rounded-lg sm:h-64">
+                    <Image
+                      src={selectedNews.image_url}
+                      alt={selectedNews.title}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+                <h2 className="text-2xl font-black italic tracking-tight">{selectedNews?.title}</h2>
+                <div className="mt-4">
+                  <RichContent content={selectedNews?.content || ""} />
+                  {selectedNews?.promotion_id && (
+                    <NewsPromoButton newsId={selectedNews.id} promoId={selectedNews.promotion_id} />
+                  )}
+                </div>
               </div>
-            )}
-            <h2 className="text-2xl font-black italic tracking-tight">{selectedNews?.title}</h2>
-            <div className="mt-4">
-              <RichContent content={selectedNews?.content || ""} />
-              {selectedNews?.promotion_id && (
-                <NewsPromoButton newsId={selectedNews.id} promoId={selectedNews.promotion_id} />
-              )}
-            </div>
+            </ScrollArea>
           </DialogContent>
         </Dialog>
       </>
@@ -184,22 +189,26 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
       </div>
 
       <Dialog open={!!selectedNews} onOpenChange={(open) => !open && setSelectedNews(null)}>
-        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="flex max-h-[min(85dvh,820px)] flex-col overflow-hidden p-0 sm:max-w-2xl">
           <DialogClose className="absolute right-4 top-4" />
-          {selectedNews?.image_url && (
-            <div className="relative w-full h-48 sm:h-64 mb-4 rounded-lg overflow-hidden">
-              <Image
-                src={selectedNews.image_url}
-                alt={selectedNews.title}
-                fill
-                className="object-cover"
-              />
+          <ScrollArea className="min-h-0 flex-1">
+            <div className="p-6">
+              {selectedNews?.image_url && (
+                <div className="relative mb-4 h-48 w-full overflow-hidden rounded-lg sm:h-64">
+                  <Image
+                    src={selectedNews.image_url}
+                    alt={selectedNews.title}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
+              <h2 className="text-2xl font-black italic tracking-tight">{selectedNews?.title}</h2>
+              <div className="mt-4">
+                <RichContent content={selectedNews?.content || ""} />
+              </div>
             </div>
-          )}
-          <h2 className="text-2xl font-black italic tracking-tight">{selectedNews?.title}</h2>
-          <div className="mt-4">
-            <RichContent content={selectedNews?.content || ""} />
-          </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </>

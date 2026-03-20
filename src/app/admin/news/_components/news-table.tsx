@@ -39,6 +39,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { NewsForm } from "./news-form";
 
 interface NewsTableProps {
@@ -236,20 +237,24 @@ export default function NewsTable({ news }: NewsTableProps) {
       </Table>
 
       <Dialog open={!!editingNews} onOpenChange={(open) => !open && setEditingNews(null)}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[min(90dvh,860px)] flex-col overflow-hidden p-0 sm:max-w-lg">
+          <DialogHeader className="border-b border-border/60 px-6 py-5">
             <DialogTitle>Editar noticia</DialogTitle>
             <DialogDescription>
               Actualiza los detalles de esta noticia.
             </DialogDescription>
           </DialogHeader>
-          <NewsForm
-            news={editingNews || undefined}
-            onClose={() => {
-              setEditingNews(null);
-              router.refresh();
-            }}
-          />
+          <ScrollArea className="min-h-0 flex-1">
+            <div className="p-6">
+              <NewsForm
+                news={editingNews || undefined}
+                onClose={() => {
+                  setEditingNews(null);
+                  router.refresh();
+                }}
+              />
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </>

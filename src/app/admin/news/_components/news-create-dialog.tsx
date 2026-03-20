@@ -4,14 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { NewsForm } from "./news-form";
 
 export function NewsCreateDialog() {
@@ -23,27 +17,27 @@ export function NewsCreateDialog() {
             <DialogTrigger asChild>
                 <Button
                     size="sm"
-                    className="h-10 gap-2 font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="h-10 gap-2 rounded-xl bg-primary font-black uppercase tracking-widest text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
                 >
                     <PlusCircle className="h-4 w-4" />
-                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap italic">
-                        Nueva Noticia
-                    </span>
+                    <span className="sr-only italic sm:not-sr-only sm:whitespace-nowrap">Nueva Noticia</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
+            <DialogContent className="flex max-h-[min(90dvh,860px)] flex-col overflow-hidden p-0 sm:max-w-lg">
+                <DialogHeader className="border-b border-border/60 px-6 py-5">
                     <DialogTitle>Nueva noticia</DialogTitle>
-                    <DialogDescription>
-                        Crea una nueva noticia para el portal del cliente.
-                    </DialogDescription>
+                    <DialogDescription>Crea una nueva noticia para el portal del cliente.</DialogDescription>
                 </DialogHeader>
-                <NewsForm
-                    onClose={() => {
-                        setOpen(false);
-                        router.refresh();
-                    }}
-                />
+                <ScrollArea className="min-h-0 flex-1">
+                    <div className="p-6">
+                        <NewsForm
+                            onClose={() => {
+                                setOpen(false);
+                                router.refresh();
+                            }}
+                        />
+                    </div>
+                </ScrollArea>
             </DialogContent>
         </Dialog>
     );

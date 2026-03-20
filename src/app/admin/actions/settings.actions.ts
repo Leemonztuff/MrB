@@ -4,9 +4,11 @@
 import { getSupabaseClientWithAuth } from "@/app/admin/actions/_helpers";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { unstable_noStore as noStore } from "next/cache";
 import type { AppSettings } from "@/types";
 
 export async function getSettings(): Promise<AppSettings> {
+    noStore();
     const supabase = await getSupabaseClientWithAuth();
     const { data, error } = await supabase.from('app_settings').select('key, value');
 
@@ -33,6 +35,7 @@ export async function getSettings(): Promise<AppSettings> {
  * without authentication, as it uses an anonymous server client.
  */
 export async function getPublicWhatsappNumber(): Promise<string> {
+    noStore();
     const supabase = await createServerClient();
     const { data, error } = await supabase
         .from('app_settings')
@@ -52,6 +55,7 @@ export async function getPublicWhatsappNumber(): Promise<string> {
  * without authentication, as it uses an anonymous server client.
  */
 export async function getPublicLogoUrl(): Promise<string | null> {
+    noStore();
     const supabase = await createServerClient();
     const { data, error } = await supabase
         .from('app_settings')

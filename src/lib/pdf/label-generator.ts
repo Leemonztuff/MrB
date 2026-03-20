@@ -32,6 +32,11 @@ interface FormattedLabel {
   qrDataUrl: string;
 }
 
+interface PreparedLogoAsset {
+  dataUrl: string;
+  format: 'PNG' | 'JPEG' | 'WEBP';
+}
+
 interface LabelLayout {
   x: number;
   y: number;
@@ -96,7 +101,10 @@ export async function generateLabelsPDF(
   const labelHeight = (pageHeight - THEME.spacing.margin * 2 - THEME.spacing.gap * (labelsPerPage - 1)) / labelsPerPage;
   const labelWidth = pageWidth - THEME.spacing.margin * 2;
 
-  const formattedLabels = await Promise.all(labels.map(label => formatLabelData(label, baseUrl)));
+  const [formattedLabels, logoAsset] = await Promise.all([
+    Promise.all(labels.map(label => formatLabelData(label, baseUrl))),
+    prepareLogoAsset(logoUrl),
+  ]);
 
   for (let index = 0; index < formattedLabels.length; index += 1) {
     if (index > 0 && index % labelsPerPage === 0) {
@@ -111,7 +119,7 @@ export async function generateLabelsPDF(
       labelHeight
     );
 
-    renderLabel(doc, formattedLabels[index], layout, logoUrl);
+    renderLabel(doc, formattedLabels[index], layout, logoAsset);
   }
 
   return new Uint8Array(doc.output('arraybuffer'));
@@ -156,9 +164,7 @@ function getLabelLayout(x: number, y: number, width: number, height: number): La
   };
 }
 
-function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logoUrl: string | null) {
-  void logoUrl;
-
+function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logoAsset: PreparedLogoAsset | null) {
   const { x, y, width, height, contentX, contentY, qrSize } = layout;
   const rightPanelWidth = qrSize + 12;
   const leftWidth = width - rightPanelWidth - THEME.spacing.padding * 3;
@@ -174,9 +180,36 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   doc.rect(x, y, width, THEME.spacing.headerHeight, 'F');
   doc.setTextColor(...THEME.colors.headerText);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(THEME.fonts.header);
-  doc.text('MR. BLONDE | ROTULO DE ENTREGA', contentX, y + 9.5);
+
+  let headerTextX = contentX;
+
+  if (logoAsset) {
+    const logoBoxX = contentX;
+    const logoBoxY = y + 2.2;
+    const logoBoxWidth = 28;
+    const logoBoxHeight = 9.6;
+
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(logoBoxX, logoBoxY, logoBoxWidth, logoBoxHeight, 4.8, 4.8, 'F');
+    doc.addImage(
+      logoAsset.dataUrl,
+      logoAsset.format,
+      logoBoxX + 1.8,
+      logoBoxY + 1.2,
+      logoBoxWidth - 3.6,
+      logoBoxHeight - 2.4,
+      undefined,
+      'FAST'
+    );
+    headerTextX = logoBoxX + logoBoxWidth + 3;
+  } else {
+    doc.setFontSize(THEME.fonts.header);
+    doc.text('MR. BLONDE', contentX, y + 9.5);
+    headerTextX = contentX + 29;
+  }
+
   doc.setFontSize(11);
+  doc.text('ROTULO DE ENTREGA', headerTextX, y + 9.5);
   doc.text(`Pedido #${data.shortId}`, x + width - THEME.spacing.padding, y + 9.5, { align: 'right' });
 
   doc.setFillColor(...THEME.colors.qrPanelBg);
@@ -348,4 +381,44 @@ function buildContactLine(clients: LabelData['clients']): string {
   ].filter(Boolean);
 
   return parts.length > 0 ? parts.join(' | ') : 'Sin datos de contacto';
+}
+
+async function prepareLogoAsset(logoUrl: string | null): Promise<PreparedLogoAsset | null> {
+  if (!logoUrl) return null;
+
+  try {
+    const response = await fetch(logoUrl, { cache: 'no-store' });
+    if (!response.ok) return null;
+
+    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+    const format = getImageFormat(contentType, logoUrl);
+    if (!format) return null;
+
+    const arrayBuffer = await response.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+
+    return {
+      dataUrl: `data:${contentType || `image/${format.toLowerCase()}`};base64,${base64}`,
+      format,
+    };
+  } catch (error) {
+    console.error('Logo asset error:', error);
+    return null;
+  }
+}
+
+function getImageFormat(
+  contentType: string,
+  logoUrl: string
+): PreparedLogoAsset['format'] | null {
+  if (contentType.includes('png')) return 'PNG';
+  if (contentType.includes('jpeg') || contentType.includes('jpg')) return 'JPEG';
+  if (contentType.includes('webp')) return 'WEBP';
+
+  const lowerUrl = logoUrl.toLowerCase();
+  if (lowerUrl.includes('.png')) return 'PNG';
+  if (lowerUrl.includes('.jpg') || lowerUrl.includes('.jpeg')) return 'JPEG';
+  if (lowerUrl.includes('.webp')) return 'WEBP';
+
+  return null;
 }

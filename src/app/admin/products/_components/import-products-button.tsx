@@ -1,24 +1,17 @@
-
 "use client";
 
 import { useState } from "react";
-import { Upload, FileSpreadsheet } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { ImportExcelDialog, type ImportColumn, type ImportResult } from "@/components/shared/import-excel-dialog";
+import { FileSpreadsheet, Upload } from "lucide-react";
 import { importProducts, type ImportProductRow } from "@/app/admin/actions/products.actions";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ImportExcelDialog, type ImportColumn, type ImportResult } from "@/components/shared/import-excel-dialog";
 
 const productColumns: ImportColumn[] = [
   { key: "nombre", label: "Nombre del Producto", required: true, sampleValue: "Cera Modeladora" },
-  { key: "descripcion", label: "Descripción", sampleValue: "Cera para peinado modeling" },
-  { key: "categoria", label: "Categoría", sampleValue: "Wax" },
+  { key: "descripcion", label: "Descripcion", sampleValue: "Cera para peinado modeling" },
+  { key: "categoria", label: "Categoria", sampleValue: "Wax" },
   { key: "imagen", label: "URL de Imagen", sampleValue: "https://ejemplo.com/imagen.jpg" },
 ];
 
@@ -32,7 +25,7 @@ export function ImportProductsButton() {
 
   const handleImport = async (data: ImportProductRow[]): Promise<ImportResult> => {
     const result = await importProducts(data);
-    
+
     if (!result.success) {
       return {
         success: false,
@@ -56,24 +49,26 @@ export function ImportProductsButton() {
           Importar
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[min(90dvh,900px)] max-w-4xl flex-col overflow-hidden p-0">
+        <DialogHeader className="border-b border-border/60 px-6 py-5">
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5" />
             Importar Productos desde Excel
           </DialogTitle>
-          <DialogDescription>
-            Sube un archivo CSV o Excel con los datos de tus productos.
-          </DialogDescription>
+          <DialogDescription>Sube un archivo CSV o Excel con los datos de tus productos.</DialogDescription>
         </DialogHeader>
-        <ImportExcelDialog
-          config={{
-            entityName: "Productos",
-            columns: productColumns,
-            sampleData: sampleProducts,
-            onImport: handleImport,
-          }}
-        />
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="p-6">
+            <ImportExcelDialog
+              config={{
+                entityName: "Productos",
+                columns: productColumns,
+                sampleData: sampleProducts,
+                onImport: handleImport,
+              }}
+            />
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

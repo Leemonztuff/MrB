@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -70,11 +69,10 @@ export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null
           <Label>Logo Actual</Label>
           <div className="relative w-32 h-32 bg-muted rounded-md flex items-center justify-center border">
             {effectiveLogoUrl ? (
-              <Image
+              <img
                 src={effectiveLogoUrl}
                 alt="Logo"
-                fill
-                className="object-contain p-2"
+                className="h-full w-full object-contain p-2"
               />
             ) : (
               <span className="text-sm text-muted-foreground">Sin Logo</span>
