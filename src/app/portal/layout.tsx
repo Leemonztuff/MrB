@@ -101,8 +101,7 @@ export default function PortalLayout({
     }
 
     const navItems = [
-        { href: '/portal', label: 'Inicio', icon: User, exact: true },
-        { href: '/portal/news', label: 'Novedades', icon: Newspaper, exact: false },
+        { href: '/portal', label: 'Novedades', icon: Newspaper, exact: true },
         { href: '/portal/profile', label: 'Mi Perfil', icon: User, exact: false },
         { href: '/portal/orders', label: 'Mis Pedidos', icon: Package, exact: false },
     ];

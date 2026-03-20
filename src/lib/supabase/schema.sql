@@ -21,6 +21,7 @@ DROP TABLE IF EXISTS public.products CASCADE;
 DROP TABLE IF EXISTS public.sales_conditions CASCADE;
 DROP TABLE IF EXISTS public.promotions CASCADE;
 DROP TABLE IF EXISTS public.news CASCADE;
+DROP TABLE IF EXISTS public.news_likes CASCADE;
 DROP TABLE IF EXISTS public.app_settings CASCADE;
 DROP TABLE IF EXISTS public.pending_changes CASCADE;
 DROP TYPE IF EXISTS public.inventory_movement_type CASCADE;
@@ -183,6 +184,13 @@ CREATE TABLE public.news (
     updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+CREATE TABLE public.news_likes (
+    news_id uuid REFERENCES public.news(id) ON DELETE CASCADE,
+    client_id uuid REFERENCES public.clients(id) ON DELETE CASCADE,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    PRIMARY KEY (news_id, client_id)
+);
+
 CREATE TABLE public.app_settings (
     key text PRIMARY KEY,
     value jsonb,
@@ -252,6 +260,7 @@ ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.inventory_movements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.news ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.news_likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow all for authenticated" ON public.products FOR ALL USING (auth.role() = 'authenticated');
@@ -298,6 +307,9 @@ CREATE POLICY "Allow read for anonymous" ON public.inventory_movements FOR SELEC
 
 CREATE POLICY "Allow all for authenticated" ON public.news FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow read for anonymous" ON public.news FOR SELECT USING (true);
+
+CREATE POLICY "Allow all for authenticated" ON public.news_likes FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow portal likes access" ON public.news_likes FOR ALL USING (true);
 
 CREATE POLICY "Allow all for authenticated" ON public.app_settings FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow read for anonymous" ON public.app_settings FOR SELECT USING (true);

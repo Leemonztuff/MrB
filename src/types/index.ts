@@ -214,4 +214,6 @@ export type NewsPost = {
     target_client_type: 'barberia' | 'distribuidor' | 'especial' | null;
     created_at: string;
     updated_at: string;
+    likes_count?: number;
+    liked_by_current_client?: boolean;
 };
