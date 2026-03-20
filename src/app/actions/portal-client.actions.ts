@@ -1,19 +1,19 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { getPortalClient } from '@/app/actions/portal.actions';
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
 import type { ActionResponse } from '@/types';
 
 export async function getPortalClientData(): Promise<ActionResponse<any>> {
     try {
         const client = await getPortalClient();
         if (!client) {
-            return { success: false, error: { message: 'No autenticado' } };
+            return { success: false, error: { message: 'No autenticado', code: 'UNAUTHORIZED' } };
         }
 
         const supabase = await createClient();
-        
+
         const { data: pendingChanges } = await supabase
             .from('pending_changes')
             .select('*')
@@ -29,7 +29,7 @@ export async function getPortalClientData(): Promise<ActionResponse<any>> {
             },
         };
     } catch (error) {
-        return { success: false, error: { message: 'Error al obtener datos' } };
+        return { success: false, error: { message: 'Error al obtener datos', code: 'INTERNAL_ERROR' } };
     }
 }
 
@@ -45,27 +45,27 @@ export async function updateClientProfile(data: {
     try {
         const client = await getPortalClient();
         if (!client) {
-            return { success: false, error: { message: 'No autenticado' } };
+            return { success: false, error: { message: 'No autenticado', code: 'UNAUTHORIZED' } };
         }
 
         const supabase = await createClient();
-        
+
         const fieldsToCheck = [
             { key: 'contact_name', label: 'nombre de contacto' },
             { key: 'email', label: 'email' },
-            { key: 'address', label: 'dirección' },
+            { key: 'address', label: 'direccion' },
             { key: 'delivery_window', label: 'ventana de entrega' },
             { key: 'instagram', label: 'instagram' },
             { key: 'contact_dni', label: 'DNI' },
-            { key: 'fiscal_status', label: 'situación fiscal' },
+            { key: 'fiscal_status', label: 'situacion fiscal' },
         ];
 
         const currentData = client as any;
-        
+
         for (const field of fieldsToCheck) {
             const newValue = data[field.key as keyof typeof data] || null;
             const oldValue = currentData[field.key];
-            
+
             if (newValue !== oldValue) {
                 const { error: insertError } = await supabase
                     .from('pending_changes')
@@ -79,7 +79,13 @@ export async function updateClientProfile(data: {
 
                 if (insertError) {
                     console.error('Error creating pending change:', insertError);
-                    return { success: false, error: { message: `Error al crear solicitud de cambio para ${field.label}` } };
+                    return {
+                        success: false,
+                        error: {
+                            message: `Error al crear solicitud de cambio para ${field.label}`,
+                            code: 'PENDING_CHANGE_CREATE_FAILED',
+                        },
+                    };
                 }
             }
         }
@@ -88,7 +94,7 @@ export async function updateClientProfile(data: {
         return { success: true };
     } catch (error) {
         console.error('Error updating profile:', error);
-        return { success: false, error: { message: 'Error al actualizar el perfil' } };
+        return { success: false, error: { message: 'Error al actualizar el perfil', code: 'INTERNAL_ERROR' } };
     }
 }
 
@@ -96,25 +102,25 @@ export async function updatePortalToken(newToken: string): Promise<ActionRespons
     try {
         const client = await getPortalClient();
         if (!client) {
-            return { success: false, error: { message: 'No autenticado' } };
+            return { success: false, error: { message: 'No autenticado', code: 'UNAUTHORIZED' } };
         }
 
         const supabase = await createClient();
-        
+
         const { error } = await supabase
             .from('clients')
             .update({ portal_token: newToken })
             .eq('id', client.id);
 
         if (error) {
-            return { success: false, error: { message: 'Error al actualizar el token' } };
+            return { success: false, error: { message: 'Error al actualizar el token', code: 'TOKEN_UPDATE_FAILED' } };
         }
 
         revalidatePath('/portal/profile');
         return { success: true };
     } catch (error) {
         console.error('Error updating token:', error);
-        return { success: false, error: { message: 'Error al actualizar el token' } };
+        return { success: false, error: { message: 'Error al actualizar el token', code: 'INTERNAL_ERROR' } };
     }
 }
 
@@ -122,11 +128,11 @@ export async function getClientOrders(): Promise<ActionResponse<any>> {
     try {
         const client = await getPortalClient();
         if (!client) {
-            return { success: false, error: { message: 'No autenticado' } };
+            return { success: false, error: { message: 'No autenticado', code: 'UNAUTHORIZED' } };
         }
 
         const supabase = await createClient();
-        
+
         const { data: orders, error } = await supabase
             .from('orders')
             .select('*, order_items(*, products(*))')
@@ -134,7 +140,7 @@ export async function getClientOrders(): Promise<ActionResponse<any>> {
             .order('created_at', { ascending: false });
 
         if (error) {
-            return { success: false, error: { message: 'Error al obtener pedidos' } };
+            return { success: false, error: { message: 'Error al obtener pedidos', code: 'ORDERS_FETCH_FAILED' } };
         }
 
         return {
@@ -143,6 +149,6 @@ export async function getClientOrders(): Promise<ActionResponse<any>> {
         };
     } catch (error) {
         console.error('Error getting orders:', error);
-        return { success: false, error: { message: 'Error al obtener pedidos' } };
+        return { success: false, error: { message: 'Error al obtener pedidos', code: 'INTERNAL_ERROR' } };
     }
 }

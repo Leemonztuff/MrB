@@ -8,18 +8,7 @@ import { formatCuit } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 import { User, Package, ShoppingCart, LogOut, Newspaper } from 'lucide-react';
 import { PageLoader } from '@/components/loading';
-
-interface Client {
-    id: string;
-    contact_name: string | null;
-    email: string | null;
-    address: string | null;
-    created_at: string;
-    status: string;
-    agreement_id: string | null;
-    agreements?: { agreement_name: string } | null;
-    cuit: string | null;
-}
+import { PortalProvider, type PortalClientData, type PortalPendingChange } from '@/contexts/portal-context';
 
 export default function PortalLayout({
     children,
@@ -28,31 +17,71 @@ export default function PortalLayout({
 }) {
     const router = useRouter();
     const pathname = usePathname();
-    const [client, setClient] = useState<Client | null>(null);
+    const [client, setClient] = useState<PortalClientData | null>(null);
+    const [pendingChanges, setPendingChanges] = useState<PortalPendingChange[]>([]);
     const [loading, setLoading] = useState(true);
+    const isPortalLoginRoute = pathname === '/portal/login';
 
     useEffect(() => {
+        if (isPortalLoginRoute) {
+            setLoading(false);
+            setClient(null);
+            setPendingChanges([]);
+            return;
+        }
+
+        let cancelled = false;
+
         async function checkAuth() {
             try {
                 const response = await fetch('/api/portal/client', {
                     credentials: 'include'
                 });
-                if (!response.ok) {
-                    router.push('/portal-cliente/login');
+
+                if (cancelled) return;
+
+                if (response.status === 401) {
+                    setClient(null);
+                    setPendingChanges([]);
+                    router.replace('/portal/login');
                     return;
                 }
+
+                if (!response.ok) {
+                    throw new Error('No se pudo validar la sesion del portal.');
+                }
+
                 const data = await response.json();
                 setClient(data.client);
+                setPendingChanges(data.pendingChanges || []);
             } catch (error) {
                 console.error('Auth check failed:', error);
-                router.push('/portal-cliente/login');
+                if (!cancelled) {
+                    setClient(null);
+                    setPendingChanges([]);
+                    router.replace('/portal/login');
+                }
             } finally {
-                setLoading(false);
+                if (!cancelled) {
+                    setLoading(false);
+                }
             }
         }
 
         checkAuth();
-    }, [router]);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isPortalLoginRoute, router]);
+
+    if (isPortalLoginRoute) {
+        return (
+            <PortalProvider isPortalContext={false}>
+                {children}
+            </PortalProvider>
+        );
+    }
 
     if (loading) {
         return <PageLoader />;
@@ -64,7 +93,7 @@ export default function PortalLayout({
                 <div className="text-center">
                     <p className="mb-4">No autenticado</p>
                     <Button asChild>
-                        <Link href="/portal-cliente/login">Ir al Login</Link>
+                        <Link href="/portal/login">Ir al Login</Link>
                     </Button>
                 </div>
             </div>
@@ -96,6 +125,7 @@ export default function PortalLayout({
     }
 
     return (
+        <PortalProvider isPortalContext={true} client={client} pendingChanges={pendingChanges}>
         <div className="flex flex-col min-h-screen bg-background relative">
             {/* Top Header */}
             <header className="glass border-b border-primary/10 sticky top-0 z-40 backdrop-blur-md flex-none">
@@ -179,5 +209,6 @@ export default function PortalLayout({
                 })}
             </nav>
         </div>
+        </PortalProvider>
     );
 }

@@ -1,18 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { ShoppingCart, Package, ChevronDown, RefreshCw, Clock, Sparkles } from 'lucide-react';
-import { formatCurrency } from '@/lib/formatters';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { ChevronDown, Clock, Package, RefreshCw, ShoppingCart } from 'lucide-react';
 import { PortalPageHeader } from '@/components/shared/portal-page-header';
 import { PortalListSkeleton } from '@/components/shared/portal-skeleton';
 import { PortalEmptyState } from '@/components/shared/portal-empty-state';
-import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/formatters';
 
 interface OrderItem {
     id: string;
@@ -42,7 +41,7 @@ interface OrdersData {
 
 const statusConfig: Record<string, { label: string; color: string; dotColor: string }> = {
     armado: { label: 'En Armado', color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20', dotColor: 'bg-yellow-500' },
-    transito: { label: 'En Tránsito', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', dotColor: 'bg-blue-500' },
+    transito: { label: 'En Transito', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20', dotColor: 'bg-blue-500' },
     entregado: { label: 'Entregado', color: 'bg-green-500/10 text-green-500 border-green-500/20', dotColor: 'bg-green-500' },
 };
 
@@ -51,6 +50,7 @@ export default function PortalOrdersPage() {
     const [ordersData, setOrdersData] = useState<OrdersData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         loadOrders();
@@ -59,12 +59,17 @@ export default function PortalOrdersPage() {
     async function loadOrders() {
         try {
             const response = await fetch('/api/portal/orders');
-            if (response.ok) {
-                const data = await response.json();
-                setOrdersData(data);
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                throw new Error(data?.error || 'No se pudieron cargar los pedidos.');
             }
-        } catch (error) {
-            console.error('Error loading orders:', error);
+
+            setOrdersData(data);
+            setError(null);
+        } catch (loadError) {
+            console.error('Error loading orders:', loadError);
+            setError(loadError instanceof Error ? loadError.message : 'No se pudieron cargar los pedidos.');
         } finally {
             setIsLoading(false);
         }
@@ -88,11 +93,17 @@ export default function PortalOrdersPage() {
 
             {isLoading ? (
                 <PortalListSkeleton items={3} />
+            ) : error ? (
+                <PortalEmptyState
+                    icon={Package}
+                    title="No pudimos cargar tus pedidos"
+                    description={error}
+                />
             ) : orders.length === 0 ? (
                 <PortalEmptyState
                     icon={Package}
-                    title="Sin pedidos todavía"
-                    description="Cuando realices tu primer pedido, aparecerá acá con todo su detalle."
+                    title="Sin pedidos todavia"
+                    description="Cuando realices tu primer pedido, aparecera aca con todo su detalle."
                 />
             ) : (
                 <div className="space-y-3">
@@ -104,23 +115,21 @@ export default function PortalOrdersPage() {
                             <div
                                 key={order.id}
                                 className={cn(
-                                    "glass-card overflow-hidden transition-all fade-in-up",
+                                    'glass-card overflow-hidden transition-all fade-in-up',
                                     `animation-delay-${Math.min((idx + 1) * 100, 500)}`
                                 )}
                                 style={{ animationFillMode: 'both' }}
                             >
-                                {/* Summary Row */}
                                 <button
                                     type="button"
                                     onClick={() => setExpandedId(expanded ? null : order.id)}
                                     className="w-full p-4 flex items-center gap-4 text-left hover:bg-white/5 transition-colors"
                                 >
-                                    {/* Date & Amount */}
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
                                             <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
                                             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                                                {format(new Date(order.created_at), "dd MMM yyyy, HH:mm", { locale: es })}
+                                                {format(new Date(order.created_at), 'dd MMM yyyy, HH:mm', { locale: es })}
                                             </p>
                                         </div>
                                         <div className="flex items-baseline gap-3">
@@ -133,10 +142,9 @@ export default function PortalOrdersPage() {
                                         </div>
                                     </div>
 
-                                    {/* Status + Repeat + Chevron */}
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <Badge variant="outline" className={cn("text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border", status.color)}>
-                                            <span className={cn("w-1.5 h-1.5 rounded-full mr-1.5 inline-block", status.dotColor)} />
+                                        <Badge variant="outline" className={cn('text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border', status.color)}>
+                                            <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 inline-block', status.dotColor)} />
                                             {status.label}
                                         </Badge>
 
@@ -152,18 +160,18 @@ export default function PortalOrdersPage() {
                                             </Button>
                                         )}
 
-                                        <ChevronDown className={cn(
-                                            "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                                            expanded && "rotate-180"
-                                        )} />
+                                        <ChevronDown
+                                            className={cn(
+                                                'h-4 w-4 text-muted-foreground transition-transform duration-200',
+                                                expanded && 'rotate-180'
+                                            )}
+                                        />
                                     </div>
                                 </button>
 
-                                {/* Expanded Detail */}
                                 {expanded && (
                                     <div className="px-4 pb-4 pt-0 border-t border-border/30 animate-in fade-in slide-in-from-top-2 duration-200">
                                         <div className="pt-4 space-y-3">
-                                            {/* Product List */}
                                             {order.order_items.map((item) => (
                                                 <div key={item.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-all">
                                                     <div className="h-10 w-10 rounded-lg border border-white/10 overflow-hidden bg-black/20 shrink-0">
@@ -180,9 +188,11 @@ export default function PortalOrdersPage() {
                                                         )}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="text-xs font-black italic tracking-tight truncate uppercase">{item.products?.name || 'Producto'}</p>
+                                                        <p className="text-xs font-black italic tracking-tight truncate uppercase">
+                                                            {item.products?.name || 'Producto'}
+                                                        </p>
                                                         <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">
-                                                            {item.quantity} × {formatCurrency(item.price_per_unit)}
+                                                            {item.quantity} x {formatCurrency(item.price_per_unit)}
                                                         </p>
                                                     </div>
                                                     <p className="text-sm font-black italic text-foreground shrink-0">
@@ -191,7 +201,6 @@ export default function PortalOrdersPage() {
                                                 </div>
                                             ))}
 
-                                            {/* Notes */}
                                             {order.notes && (
                                                 <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
                                                     <p className="text-[9px] font-black uppercase tracking-widest text-primary mb-0.5">Notas</p>
@@ -199,7 +208,6 @@ export default function PortalOrdersPage() {
                                                 </div>
                                             )}
 
-                                            {/* Repetir Pedido - also in expanded for emphasis */}
                                             {ordersData?.agreementId && (
                                                 <Button
                                                     onClick={(e) => repeatOrder(e, order)}

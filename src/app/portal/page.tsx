@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { formatCuit, formatDate } from '@/lib/formatters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,53 +13,20 @@ import { getPublicNews } from '@/app/actions/news.actions';
 import { NewsCarousel } from '@/components/shared/news-carousel';
 import { NewsPost } from '@/types';
 import { PageLoader } from '@/components/loading';
-
-interface Client {
-  id: string;
-  contact_name: string | null;
-  email: string | null;
-  address: string | null;
-  created_at: string;
-  status: string;
-  agreement_id: string | null;
-  agreements?: { agreement_name: string } | null;
-  cuit: string | null;
-}
+import { usePortalContext } from '@/contexts/portal-context';
 
 export default function PortalPage() {
-  const router = useRouter();
-  const [client, setClient] = useState<Client | null>(null);
   const [news, setNews] = useState<NewsPost[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { client } = usePortalContext();
 
   useEffect(() => {
-    fetch('/api/portal/client')
-      .then(res => {
-        if (!res.ok) {
-          throw new Error('Not authenticated');
-        }
-        return res.json();
-      })
-      .then(data => {
-        setClient(data.client);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error('Auth error:', err);
-        router.push('/portal-cliente/login');
-      });
-
     getPublicNews().then(res => {
       if (res.data) setNews(res.data);
     });
-  }, [router]);
-
-  if (loading) {
-    return <PageLoader />;
-  }
+  }, []);
 
   if (!client) {
-    return null;
+    return <PageLoader />;
   }
 
   const infoCards = [

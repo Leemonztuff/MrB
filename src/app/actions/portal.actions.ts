@@ -1,11 +1,11 @@
 'use server';
 
-import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { createClient } from '@/lib/supabase/server';
-import { unformatCuit } from '@/lib/formatters';
-import type { AuthState } from '@/types';
 import { createHash } from 'crypto';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { unformatCuit } from '@/lib/formatters';
+import { createClient } from '@/lib/supabase/server';
+import type { AuthState } from '@/types';
 
 const COOKIE_SECRET = process.env.COOKIE_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret-change-me';
 
@@ -18,13 +18,13 @@ function signCookie(value: string): string {
 function verifyAndExtractSignedCookie(signedValue: string): string | null {
     const parts = signedValue.split('.');
     if (parts.length !== 2) return null;
-    
+
     const [value, signature] = parts;
     const expectedSignature = createHash('sha256')
         .update(value + COOKIE_SECRET)
         .digest('hex')
         .slice(0, 16);
-    
+
     return signature === expectedSignature ? value : null;
 }
 
@@ -37,17 +37,17 @@ export async function loginPortal(prevState: AuthState | null, formData: FormDat
     }
 
     const cleanCuit = unformatCuit(cuit);
-    
+
     if (cleanCuit.length !== 11) {
-        return { error: { message: 'CUIT inválido. Debe tener 11 dígitos.' } };
+        return { error: { message: 'CUIT invalido. Debe tener 11 digitos.' } };
     }
 
     if (token.length !== 6) {
-        return { error: { message: 'Token inválido. Debe tener 6 dígitos.' } };
+        return { error: { message: 'Token invalido. Debe tener 6 digitos.' } };
     }
 
     const supabase = await createClient();
-    
+
     const { data: client, error } = await supabase
         .from('clients')
         .select('*')
@@ -56,7 +56,7 @@ export async function loginPortal(prevState: AuthState | null, formData: FormDat
 
     if (error) {
         console.error('Portal login error:', error);
-        return { error: { message: 'Error al iniciar sesión. Intentalo de nuevo.' } };
+        return { error: { message: 'Error al iniciar sesion. Intentalo de nuevo.' } };
     }
 
     if (!client) {
@@ -69,12 +69,12 @@ export async function loginPortal(prevState: AuthState | null, formData: FormDat
             .from('clients')
             .update({ portal_token: newToken })
             .eq('id', client.id);
-        
+
         if (updateError) {
             console.error('Error generating token:', updateError);
             return { error: { message: 'Error al configurar el token. Intentalo de nuevo.' } };
         }
-        
+
         client.portal_token = newToken;
     }
 
@@ -83,7 +83,7 @@ export async function loginPortal(prevState: AuthState | null, formData: FormDat
     }
 
     if (!['active', 'pending_agreement'].includes(client.status)) {
-        return { error: { message: `Tu cuenta está en estado: ${client.status}. Contactá al administrador.` } };
+        return { error: { message: `Tu cuenta esta en estado: ${client.status}. Contacta al administrador.` } };
     }
 
     const cookieStore = await cookies();
@@ -101,13 +101,13 @@ export async function loginPortal(prevState: AuthState | null, formData: FormDat
 export async function logoutPortal() {
     const cookieStore = await cookies();
     cookieStore.delete('portal_client_id');
-    redirect('/portal-cliente/login');
+    redirect('/portal/login');
 }
 
 export async function getPortalClient() {
     const cookieStore = await cookies();
     const signedValue = cookieStore.get('portal_client_id')?.value;
-    
+
     if (!signedValue) {
         console.log('No portal_client_id cookie found');
         return null;
@@ -138,7 +138,7 @@ export async function getPortalClient() {
 export async function requirePortalAuth() {
     const client = await getPortalClient();
     if (!client) {
-        redirect('/portal-cliente/login');
+        redirect('/portal/login');
     }
     return client;
 }

@@ -1,26 +1,27 @@
 'use client';
 
 import { useFormState, useFormStatus } from 'react-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Lock, User } from 'lucide-react';
 import { loginPortal } from '@/app/actions/portal.actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import type { AuthState } from '@/types';
-import { Lock, User } from 'lucide-react';
 
 const portalLoginSchema = z.object({
-    cuit: z.string().min(11, 'CUIT debe tener 11 dígitos'),
-    token: z.string().length(6, 'Token debe tener 6 dígitos'),
+    cuit: z.string().min(11, 'CUIT debe tener 11 digitos'),
+    token: z.string().length(6, 'Token debe tener 6 digitos'),
 });
 
 type PortalLoginForm = z.infer<typeof portalLoginSchema>;
 
 function SubmitButton() {
     const { pending } = useFormStatus();
+
     return (
         <Button type="submit" className="w-full" disabled={pending}>
             {pending ? 'Ingresando...' : 'Ingresar'}
@@ -30,7 +31,7 @@ function SubmitButton() {
 
 export default function PortalLoginPage() {
     const [state, action] = useFormState<AuthState | null, FormData>(loginPortal, null);
-    
+
     const form = useForm<PortalLoginForm>({
         resolver: zodResolver(portalLoginSchema),
         defaultValues: {
@@ -45,9 +46,9 @@ export default function PortalLoginPage() {
     };
 
     const handleCuitBlur = () => {
-        const cuid = form.getValues('cuit');
-        if (cuid.length === 11) {
-            form.setValue('token', cuid.slice(0, 6));
+        const currentCuit = form.getValues('cuit');
+        if (currentCuit.length === 11) {
+            form.setValue('token', currentCuit.slice(0, 6));
         }
     };
 
@@ -64,9 +65,9 @@ export default function PortalLoginPage() {
 
                 <Card className="glass shadow-2xl">
                     <CardHeader className="space-y-1 text-center pb-4">
-                        <CardTitle className="text-xl">Iniciar Sesión</CardTitle>
+                        <CardTitle className="text-xl">Iniciar Sesion</CardTitle>
                         <CardDescription>
-                            Ingresá tu CUIT y token para acceder a tu cuenta
+                            Ingresa tu CUIT y token para acceder a tu cuenta.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -101,7 +102,7 @@ export default function PortalLoginPage() {
                                         <FormItem>
                                             <FormLabel className="flex items-center gap-2">
                                                 <Lock className="h-4 w-4" />
-                                                Token (6 dígitos)
+                                                Token (6 digitos)
                                             </FormLabel>
                                             <FormControl>
                                                 <Input
@@ -114,12 +115,12 @@ export default function PortalLoginPage() {
                                             </FormControl>
                                             <FormMessage />
                                             <p className="text-xs text-muted-foreground">
-                                                Por defecto son los primeros 6 dígitos del CUIT
+                                                Por defecto son los primeros 6 digitos del CUIT.
                                             </p>
                                         </FormItem>
                                     )}
                                 />
-                                {state && state.error && (
+                                {state?.error && (
                                     <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
                                         {state.error.message}
                                     </div>
@@ -131,7 +132,7 @@ export default function PortalLoginPage() {
                 </Card>
 
                 <p className="text-center text-sm text-muted-foreground">
-                    ¿Necesitás ayuda? Contactá al administrador
+                    Necesitas ayuda? Contacta al administrador.
                 </p>
             </div>
         </div>

@@ -1,6 +1,4 @@
-
-
-"use client"
+"use client";
 
 import {
     AlertDialog,
@@ -14,9 +12,9 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import type { Client } from "@/types";
-import { Archive, Edit, FilePen, Link as LinkIcon, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Client } from "@/types";
+import { Archive, Copy, Link as LinkIcon } from "lucide-react";
 
 type ClientActionButtonsProps = {
     onArchive: () => void;
@@ -26,8 +24,8 @@ type ClientActionButtonsProps = {
     onboardingLink: string | null;
     editDialog: React.ReactNode;
     agreementDialog: React.ReactNode;
-    clientStatus: Client['status'];
-}
+    clientStatus: Client["status"];
+};
 
 const ActionButton = ({ children, className, variant = "secondary", ...props }: React.ComponentProps<typeof Button>) => (
     <Button
@@ -51,9 +49,9 @@ export function ClientActionButtons({
     onboardingLink,
     editDialog,
     agreementDialog,
-    clientStatus
+    clientStatus,
 }: ClientActionButtonsProps) {
-    const portalLink = typeof window !== 'undefined' ? `${window.location.origin}/portal-cliente/login` : null;
+    const portalLink = typeof window !== "undefined" ? `${window.location.origin}/portal/login` : null;
 
     return (
         <div className="flex flex-wrap items-center gap-2">
@@ -65,8 +63,8 @@ export function ClientActionButtons({
             <div className="flex items-center gap-2">
                 <ActionButton
                     variant="outline"
-                    disabled={!onboardingLink || clientStatus !== 'pending_onboarding'}
-                    onClick={() => onCopyLink(onboardingLink, 'Enlace de alta copiado!')}
+                    disabled={!onboardingLink || clientStatus !== "pending_onboarding"}
+                    onClick={() => onCopyLink(onboardingLink, "Enlace de alta copiado!")}
                     className="border-primary/20 hover:border-primary/40 bg-primary/5"
                 >
                     <Copy className="h-4 w-4" />
@@ -76,7 +74,7 @@ export function ClientActionButtons({
                 <ActionButton
                     variant="outline"
                     disabled={!portalLink}
-                    onClick={() => onCopyLink(portalLink, 'Enlace del portal copiado!')}
+                    onClick={() => onCopyLink(portalLink, "Enlace del portal copiado!")}
                 >
                     <LinkIcon className="h-4 w-4" />
                     <span>Link Portal</span>
@@ -85,7 +83,7 @@ export function ClientActionButtons({
                 <ActionButton
                     variant="outline"
                     disabled={!orderLink}
-                    onClick={() => onCopyLink(orderLink, 'Enlace de pedido copiado!')}
+                    onClick={() => onCopyLink(orderLink, "Enlace de pedido copiado!")}
                 >
                     <LinkIcon className="h-4 w-4" />
                     <span>Link Pedido</span>
@@ -102,9 +100,9 @@ export function ClientActionButtons({
                     </AlertDialogTrigger>
                     <AlertDialogContent className="glass border-white/5">
                         <AlertDialogHeader>
-                            <AlertDialogTitle className="font-bold">¿Archivar Cliente?</AlertDialogTitle>
+                            <AlertDialogTitle className="font-bold">Archivar Cliente?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Esta acción ocultará al cliente de la lista principal, pero no borrará sus pedidos asociados.
+                                Esta accion ocultara al cliente de la lista principal, pero no borrara sus pedidos asociados.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -117,7 +115,7 @@ export function ClientActionButtons({
                 </AlertDialog>
             </div>
         </div>
-    )
+    );
 }
 
 const ActionButtonWrapper = ({ children, ...props }: { children: React.ReactNode } & React.ComponentProps<typeof ActionButton>) => (
