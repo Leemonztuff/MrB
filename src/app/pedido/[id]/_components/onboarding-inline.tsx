@@ -1,21 +1,20 @@
-
 'use client';
 
 import { useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { onboardingMinimalSchema } from '@/lib/validations/client.schema';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { provinces, getLocalitiesByProvince } from '@/lib/geo-data';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 import { submitMinimalOnboarding } from '@/app/actions/user.actions';
 import { Logo } from '@/app/logo';
-import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { provinces, getLocalitiesByProvince } from '@/lib/geo-data';
+import { onboardingMinimalSchema } from '@/lib/validations/client.schema';
 
 interface OnboardingInlineProps {
     token: string;
@@ -48,26 +47,27 @@ export function OnboardingInline({ token, clientName, logoUrl }: OnboardingInlin
         startTransition(async () => {
             const result = await submitMinimalOnboarding(values);
             if (result.success) {
-                toast({ title: '¡Bienvenido!', description: 'Tus datos han sido registrados. Cargando catálogo...' });
-                router.refresh(); // This will trigger getOrderPageData again and switch mode to 'catalog'
-            } else {
-                toast({
-                    title: 'Error',
-                    description: result.error?.message || 'Hubo un problema al registrar tus datos.',
-                    variant: 'destructive'
-                });
+                toast({ title: 'Bienvenido', description: 'Tus datos fueron registrados. Cargando catalogo...' });
+                router.refresh();
+                return;
             }
+
+            toast({
+                title: 'Error',
+                description: result.error?.message || 'Hubo un problema al registrar tus datos.',
+                variant: 'destructive'
+            });
         });
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background pt-12">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 pt-12">
             <Logo showText logoUrl={logoUrl} className="mb-8 scale-110" />
 
-            <Card className="w-full max-w-lg glass border-white/10 shadow-2xl overflow-hidden">
-                <CardHeader className="text-center pb-2">
+            <Card className="glass w-full max-w-lg overflow-hidden border-white/10 shadow-2xl">
+                <CardHeader className="pb-2 text-center">
                     <CardTitle className="text-3xl font-black italic tracking-tighter">Bienvenido a Mr. Blonde</CardTitle>
-                    <CardDescription className="text-xs uppercase font-bold tracking-widest text-primary/70">
+                    <CardDescription className="text-xs font-bold uppercase tracking-widest text-primary/70">
                         Completa tus datos para realizar tu primer pedido
                     </CardDescription>
                 </CardHeader>
@@ -79,9 +79,9 @@ export function OnboardingInline({ token, clientName, logoUrl }: OnboardingInlin
                                 name="contact_name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-[10px] uppercase font-black tracking-widest opacity-70">Nombre del Negocio / Contacto</FormLabel>
+                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-70">Nombre del negocio / contacto</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Ej: Barbería Central" className="bg-white/5 border-white/10 rounded-xl h-12 font-bold italic" {...field} />
+                                            <Input placeholder="Ej: Barberia Central" className="h-12 rounded-xl border-white/10 bg-white/5 font-bold italic" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -93,9 +93,9 @@ export function OnboardingInline({ token, clientName, logoUrl }: OnboardingInlin
                                 name="phone"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-[10px] uppercase font-black tracking-widest opacity-70">WhatsApp / Teléfono</FormLabel>
+                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-70">WhatsApp / Telefono</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Ej: 1123456789" className="bg-white/5 border-white/10 rounded-xl h-12 font-bold italic" {...field} />
+                                            <Input placeholder="Ej: 1123456789" className="h-12 rounded-xl border-white/10 bg-white/5 font-bold italic" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -108,16 +108,20 @@ export function OnboardingInline({ token, clientName, logoUrl }: OnboardingInlin
                                     name="province"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] uppercase font-black tracking-widest opacity-70">Provincia</FormLabel>
+                                            <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-70">Provincia</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="bg-white/5 border-white/10 rounded-xl h-12 font-bold italic">
+                                                    <SelectTrigger className="h-12 rounded-xl border-white/10 bg-white/5 font-bold italic">
                                                         <SelectValue placeholder="Provincia" />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent className="glass border-white/10">
                                                     <ScrollArea className="h-72">
-                                                        {provinces.filter(Boolean).map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                                                        {provinces.filter(Boolean).map(province => (
+                                                            <SelectItem key={province} value={province}>
+                                                                {province}
+                                                            </SelectItem>
+                                                        ))}
                                                     </ScrollArea>
                                                 </SelectContent>
                                             </Select>
@@ -130,16 +134,20 @@ export function OnboardingInline({ token, clientName, logoUrl }: OnboardingInlin
                                     name="locality"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] uppercase font-black tracking-widest opacity-70">Localidad</FormLabel>
+                                            <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-70">Localidad</FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value || ''} disabled={!watchedProvince}>
                                                 <FormControl>
-                                                    <SelectTrigger className="bg-white/5 border-white/10 rounded-xl h-12 font-bold italic">
+                                                    <SelectTrigger className="h-12 rounded-xl border-white/10 bg-white/5 font-bold italic">
                                                         <SelectValue placeholder="Localidad" />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent className="glass border-white/10">
                                                     <ScrollArea className="h-72">
-                                                        {availableLocalities.filter(Boolean).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                                                        {availableLocalities.filter(Boolean).map(locality => (
+                                                            <SelectItem key={locality} value={locality}>
+                                                                {locality}
+                                                            </SelectItem>
+                                                        ))}
                                                     </ScrollArea>
                                                 </SelectContent>
                                             </Select>
@@ -156,9 +164,9 @@ export function OnboardingInline({ token, clientName, logoUrl }: OnboardingInlin
                                         name="street_address"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="text-[10px] uppercase font-black tracking-widest opacity-70">Calle (Dirección)</FormLabel>
+                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-70">Calle (Direccion)</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="Ej: Av. Corrientes" className="bg-white/5 border-white/10 rounded-xl h-12 font-bold italic" {...field} />
+                                                    <Input placeholder="Ej: Av. Corrientes" className="h-12 rounded-xl border-white/10 bg-white/5 font-bold italic" {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -171,9 +179,9 @@ export function OnboardingInline({ token, clientName, logoUrl }: OnboardingInlin
                                         name="street_number"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="text-[10px] uppercase font-black tracking-widest opacity-70">Altura</FormLabel>
+                                                <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-70">Altura</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="123" className="bg-white/5 border-white/10 rounded-xl h-12 font-bold italic" {...field} />
+                                                    <Input placeholder="123" className="h-12 rounded-xl border-white/10 bg-white/5 font-bold italic" {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -185,12 +193,12 @@ export function OnboardingInline({ token, clientName, logoUrl }: OnboardingInlin
                             <Button
                                 type="submit"
                                 disabled={isPending}
-                                className="w-full h-14 text-sm font-black uppercase tracking-[0.2em] rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/20 transition-all active:scale-95 group"
+                                className="group h-14 w-full rounded-2xl bg-primary text-sm font-black uppercase tracking-[0.2em] text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95"
                             >
-                                {isPending ? "Registrando..." : (
+                                {isPending ? 'Registrando...' : (
                                     <span className="flex items-center gap-2">
-                                        Continuar al Catálogo
-                                        <span className="group-hover:translate-x-1">→</span>
+                                        Continuar al Catalogo
+                                        <span className="group-hover:translate-x-1">{'->'}</span>
                                     </span>
                                 )}
                             </Button>
@@ -199,8 +207,8 @@ export function OnboardingInline({ token, clientName, logoUrl }: OnboardingInlin
                 </CardContent>
             </Card>
 
-            <p className="mt-8 text-[10px] font-black uppercase tracking-widest opacity-30 italic text-center max-w-xs leading-relaxed">
-                Al continuar, aceptas que Mr. Blonde procese tus datos para la gestión comercial de tu cuenta.
+            <p className="mt-8 max-w-xs text-center text-[10px] font-black uppercase tracking-widest opacity-30 italic leading-relaxed">
+                Al continuar, aceptas que Mr. Blonde procese tus datos para la gestion comercial de tu cuenta.
             </p>
         </div>
     );

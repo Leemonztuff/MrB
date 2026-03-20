@@ -1,31 +1,25 @@
-
-
 "use client";
 
-import { useEffect, useTransition, useState } from "react";
-import { useCartStore } from "@/hooks/use-cart-store";
-import type { CartItem as CartItemType } from "@/types";
-import type { BonusInfo } from "@/domain/pricing/calculator";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Gift, Truck, Percent, CheckCircle, Home, Package } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState, useTransition } from "react";
+import { ArrowRight, CheckCircle, Gift, Home, Package, Percent, Truck } from "lucide-react";
 import { submitOrder } from "@/app/actions/user.actions";
 import { getPublicWhatsappNumber } from "@/app/admin/actions/settings.actions";
-import type { Promotion, SalesCondition, PriceListProductPromotion } from "@/types";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import Link from "next/link";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import type { BonusInfo } from "@/domain/pricing/calculator";
+import { useToast } from "@/hooks/use-toast";
+import { useCartStore } from "@/hooks/use-cart-store";
+import type { CartItem as CartItemType, PriceListProductPromotion, Promotion, SalesCondition } from "@/types";
 
 function formatWhatsAppMessage(
   clientName: string,
   cartItems: CartItemType[],
   totalItems: number,
-  subtotal: number,
   discountApplied: number,
-  subtotalWithDiscount: number,
-  vatAmount: number,
   totalPrice: number,
   orderId: string,
   appliedPromotions: Promotion[],
@@ -33,57 +27,55 @@ function formatWhatsAppMessage(
   notes?: string
 ) {
   const itemsText = cartItems
-    .map((item) => `• ${item.quantity}x ${item.product.name}`)
+    .map((item) => `- ${item.quantity}x ${item.product.name}`)
     .join("\n");
 
-  const formatCurrency = (value: number) => `$${new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`;
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const formatCurrency = (value: number) =>
+    `$${new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`;
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const trackingUrl = `${baseUrl}/seguimiento/${orderId}`;
 
   const messageParts = [
-    `*✅ PEDIDO REGISTRADO #${orderId.slice(-6).toUpperCase()}* 🚀\n`,
-    `👤 *Cliente:*`,
-    `${clientName}\n`,
+    `Pedido registrado #${orderId.slice(-6).toUpperCase()}`,
+    "",
+    `Cliente: ${clientName}`,
   ];
 
   if (notes) {
-    messageParts.push(`📝 *Nota:*`);
-    messageParts.push(`${notes}\n`);
+    messageParts.push(`Nota: ${notes}`);
   }
 
-  messageParts.push(`📦 *Detalle del Pedido:* (${totalItems} unidades)`);
-  messageParts.push(`${itemsText}\n`);
+  messageParts.push("");
+  messageParts.push(`Detalle del pedido (${totalItems} unidades):`);
+  messageParts.push(itemsText);
 
   if (appliedPromotions.length > 0 || Object.keys(bonusInfo).length > 0) {
-    let promotionsText = "✨ *Beneficios Aplicados:* \n";
-    const bonusText = Object.values(bonusInfo).map(info =>
-      `🎁 *Bonificación:* +${(info as any).bonusQuantity} un. ${(info as any).productName}`
-    ).join('\n');
+    const promotionLines: string[] = ["", "Beneficios aplicados:"];
+    const bonusText = Object.values(bonusInfo).map(
+      (info) => `Bonificacion: +${(info as any).bonusQuantity} un. ${(info as any).productName}`
+    );
 
-    const discountPromo = appliedPromotions.find(p => p.rules.type === 'min_amount_discount');
-    if (discountPromo) {
-      promotionsText += `💸 *Descuento:* -${formatCurrency(discountApplied)}\n`;
+    if (appliedPromotions.some((promo) => promo.rules.type === "min_amount_discount")) {
+      promotionLines.push(`Descuento: -${formatCurrency(discountApplied)}`);
     }
 
-    if (bonusText) {
-      promotionsText += `${bonusText}\n`;
+    if (bonusText.length > 0) {
+      promotionLines.push(...bonusText);
     }
 
-    if (appliedPromotions.some(p => p.rules.type === 'free_shipping')) {
-      promotionsText += `🚚 *Envío Gratis*\n`;
+    if (appliedPromotions.some((promo) => promo.rules.type === "free_shipping")) {
+      promotionLines.push("Envio gratis");
     }
 
-    messageParts.push(promotionsText);
+    messageParts.push(...promotionLines);
   }
 
-  messageParts.push(`💰 *Total a confirmar: ${formatCurrency(totalPrice)}*\n`);
-  messageParts.push(`🕒 *Seguimiento y Estado:*`);
-  messageParts.push(`${trackingUrl}\n`);
-  messageParts.push(`_Mr. Blonde - Distribuidora Oficial_`);
+  messageParts.push("");
+  messageParts.push(`Total a confirmar: ${formatCurrency(totalPrice)}`);
+  messageParts.push(`Seguimiento: ${trackingUrl}`);
+  messageParts.push("Mr. Blonde - Distribuidora Oficial");
 
-  const message = messageParts.join("\n").trim();
-
-  return encodeURIComponent(message);
+  return encodeURIComponent(messageParts.join("\n").trim());
 }
 
 function AppliedPromotions() {
@@ -92,13 +84,15 @@ function AppliedPromotions() {
   if (appliedPromotions.length === 0) {
     return null;
   }
-  const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(value);
   const bonusEntries = Object.values(bonusInfo);
 
   return (
     <div className="space-y-4 w-full">
-      {appliedPromotions.map(promo => {
-        if (promo.rules.type === 'min_amount_discount') {
+      {appliedPromotions.map((promo) => {
+        if (promo.rules.type === "min_amount_discount") {
           return (
             <div key={promo.id} className="p-4 bg-primary/10 border border-primary/20 rounded-xl glass transition-all duration-300">
               <div className="flex items-start gap-3">
@@ -107,13 +101,16 @@ function AppliedPromotions() {
                 </div>
                 <div>
                   <p className="font-black italic tracking-tighter text-primary uppercase text-sm">{promo.name}</p>
-                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">Ahorraste <span className="text-primary">{formatCurrency(discountApplied)}</span></p>
+                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">
+                    Ahorraste <span className="text-primary">{formatCurrency(discountApplied)}</span>
+                  </p>
                 </div>
               </div>
             </div>
-          )
+          );
         }
-        if (promo.rules.type === 'buy_x_get_y_free' && bonusEntries.length > 0) {
+
+        if (promo.rules.type === "buy_x_get_y_free" && bonusEntries.length > 0) {
           return (
             <div key={promo.id} className="p-4 bg-primary/10 border border-primary/20 rounded-xl glass transition-all duration-300">
               <div className="flex items-start gap-3">
@@ -122,9 +119,11 @@ function AppliedPromotions() {
                 </div>
                 <div>
                   <p className="font-black italic tracking-tighter text-primary uppercase text-sm">{promo.name}</p>
-                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">Bonificación aplicada:</p>
+                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">
+                    Bonificacion aplicada:
+                  </p>
                   <ul className="mt-2 text-[11px] space-y-1 font-medium italic">
-                    {bonusEntries.map(info => (
+                    {bonusEntries.map((info) => (
                       <li key={info.productName} className="flex items-center gap-2">
                         <span className="font-black text-primary not-italic">+{info.bonusQuantity} un.</span>
                         <span className="opacity-80">de {info.productName}</span>
@@ -134,9 +133,10 @@ function AppliedPromotions() {
                 </div>
               </div>
             </div>
-          )
+          );
         }
-        if (promo.rules.type === 'free_shipping') {
+
+        if (promo.rules.type === "free_shipping") {
           return (
             <div key={promo.id} className="p-4 bg-primary/10 border border-primary/20 rounded-xl glass transition-all duration-300">
               <div className="flex items-center gap-3">
@@ -145,18 +145,31 @@ function AppliedPromotions() {
                 </div>
                 <div>
                   <p className="font-black italic tracking-tighter text-primary uppercase text-sm">{promo.name}</p>
-                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">{promo.description}</p>
+                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">
+                    {promo.description}
+                  </p>
                 </div>
               </div>
             </div>
-          )
+          );
         }
+
         return null;
       })}
     </div>
-  )
+  );
 }
 
+type OrderSummaryProps = {
+  agreementId: string;
+  clientId: string;
+  clientName: string;
+  pricesIncludeVat: boolean;
+  promotions: Promotion[];
+  vatPercentage: number;
+  salesConditions: SalesCondition[];
+  productPromotions?: PriceListProductPromotion[];
+};
 
 export function OrderSummary({
   agreementId,
@@ -167,17 +180,22 @@ export function OrderSummary({
   vatPercentage,
   salesConditions,
   productPromotions = [],
-}: {
-  agreementId: string;
-  clientId: string;
-  clientName: string;
-  pricesIncludeVat: boolean;
-  promotions: Promotion[];
-  vatPercentage: number;
-  salesConditions: SalesCondition[];
-  productPromotions?: PriceListProductPromotion[];
-}) {
-  const { items, totalItems, subtotal, subtotalWithDiscount, discountApplied, discountFromConditions, vatAmount, totalPrice, clearCart, setAgreement, appliedPromotions, appliedConditions, bonusInfo } = useCartStore();
+}: OrderSummaryProps) {
+  const {
+    items,
+    totalItems,
+    subtotal,
+    subtotalWithDiscount,
+    discountApplied,
+    discountFromConditions,
+    vatAmount,
+    totalPrice,
+    clearCart,
+    setAgreement,
+    appliedPromotions,
+    appliedConditions,
+    bonusInfo,
+  } = useCartStore();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [notes, setNotes] = useState("");
@@ -188,69 +206,77 @@ export function OrderSummary({
   useEffect(() => {
     setIsMounted(true);
     getPublicWhatsappNumber().then(setWhatsappNumber);
-
   }, []);
 
   useEffect(() => {
     setAgreement(agreementId, pricesIncludeVat, promotions, vatPercentage, salesConditions ?? [], productPromotions);
   }, [agreementId, pricesIncludeVat, promotions, vatPercentage, salesConditions, productPromotions, setAgreement]);
 
-  const loadRepeatOrder = async () => {
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const repeatOrderId = params.get('repeat_order');
+    const repeatOrderId = params.get("repeat_order");
 
     if (!repeatOrderId) return;
 
     const checkAndLoad = () => {
       const state = useCartStore.getState();
       if (!state.pricesIncludeVat || !state.vatPercentage) {
-        setTimeout(checkAndLoad, 300);
+        window.setTimeout(checkAndLoad, 300);
         return;
       }
 
       fetch(`/api/portal/orders/${repeatOrderId}`)
-        .then(res => res.json())
-        .then(order => {
-          if (order && order.order_items) {
-            state.clearCart(); // Clear existing cart first
+        .then(async (res) => {
+          const order = await res.json().catch(() => null);
+          if (!res.ok) {
+            throw new Error(order?.error || "No se pudo repetir el pedido.");
+          }
+          return order;
+        })
+        .then((order) => {
+          if (order?.order_items) {
+            state.clearCart();
             order.order_items.forEach((item: any) => {
               if (item.products && item.quantity) {
                 const productWithPrice = {
                   ...item.products,
                   price: item.price_per_unit ?? 0,
-                  volume_price: null
+                  volume_price: null,
                 };
                 state.addItem(productWithPrice, item.quantity);
               }
             });
           }
         })
-        .catch(err => console.error('Error loading repeat order:', err));
+        .catch((error) => {
+          console.error("Error loading repeat order:", error);
+          toast({
+            title: "No pudimos repetir el pedido",
+            description: error instanceof Error ? error.message : "Intenta nuevamente.",
+            variant: "destructive",
+          });
+        });
 
-      window.history.replaceState({}, '', window.location.pathname);
+      window.history.replaceState({}, "", window.location.pathname);
     };
 
     checkAndLoad();
-  };
-
-  useEffect(() => {
-    loadRepeatOrder();
-  }, []);
-
+  }, [toast]);
 
   const handleSend = () => {
     if (items.length === 0) {
       toast({
-        title: "Carrito vacío",
+        title: "Carrito vacio",
         description: "Agrega productos antes de enviar el pedido.",
         variant: "destructive",
       });
       return;
     }
+
     if (!whatsappNumber) {
       toast({
-        title: "Error de configuración",
-        description: "El número de WhatsApp no está configurado. Contacta al administrador.",
+        title: "Error de configuracion",
+        description: "El numero de WhatsApp no esta configurado. Contacta al administrador.",
         variant: "destructive",
       });
       return;
@@ -263,13 +289,13 @@ export function OrderSummary({
         agreementId,
         clientId,
         clientName,
-        notes: notes,
+        notes,
       });
 
       if (result.error || !result.data) {
         toast({
           title: "Error al guardar el pedido",
-          description: result.error?.message || "Ocurrió un error inesperado.",
+          description: result.error?.message || "Ocurrio un error inesperado.",
           variant: "destructive",
         });
         return;
@@ -279,10 +305,7 @@ export function OrderSummary({
         clientName,
         items,
         totalItems,
-        subtotal,
         discountApplied,
-        subtotalWithDiscount,
-        vatAmount,
         totalPrice,
         result.data.orderId,
         appliedPromotions,
@@ -296,24 +319,25 @@ export function OrderSummary({
       setNotes("");
       setOrderSent(true);
       toast({
-        title: "Pedido enviado!",
-        description: "Tu pedido se ha registrado y enviado por WhatsApp.",
+        title: "Pedido enviado",
+        description: "Tu pedido se registro y se abrio en WhatsApp.",
       });
     });
   };
 
   const hasItems = items.length > 0;
-  const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(value);
 
   if (!isMounted) {
     return (
       <Card className="glass border-border/50 overflow-hidden shadow-xl animate-pulse">
         <CardHeader className="pb-4">
-          <div className="h-6 bg-white/10 rounded w-1/3 mb-2"></div>
-          <div className="h-4 bg-white/5 rounded w-1/2"></div>
+          <div className="h-6 bg-white/10 rounded w-1/3 mb-2" />
+          <div className="h-4 bg-white/5 rounded w-1/2" />
         </CardHeader>
         <CardContent>
-          <div className="h-32 bg-white/5 rounded-xl"></div>
+          <div className="h-32 bg-white/5 rounded-xl" />
         </CardContent>
       </Card>
     );
@@ -328,14 +352,14 @@ export function OrderSummary({
               <CheckCircle className="h-12 w-12 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-xl font-black italic tracking-tighter text-primary">¡Pedido Enviado!</CardTitle>
+          <CardTitle className="text-xl font-black italic tracking-tighter text-primary">Pedido Enviado</CardTitle>
           <CardDescription className="text-xs uppercase font-bold tracking-widest opacity-60">
             Tu pedido fue registrado correctamente
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-center text-muted-foreground">
-            También puedes ver el historial de tus pedidos y gestionar tu perfil desde el portal de cliente.
+            Tambien puedes ver el historial de tus pedidos y gestionar tu perfil desde el portal de cliente.
           </p>
           <div className="space-y-2 pt-4">
             <Button asChild className="w-full">
@@ -358,7 +382,11 @@ export function OrderSummary({
     <Card className="glass border-border/50 overflow-hidden shadow-xl">
       <CardHeader className="pb-4">
         <CardTitle className="text-xl font-black italic tracking-tighter text-foreground">Resumen de Pedido</CardTitle>
-        {hasItems && <CardDescription className="text-xs uppercase font-bold tracking-widest opacity-60">Revisa tu orden antes de confirmar.</CardDescription>}
+        {hasItems && (
+          <CardDescription className="text-xs uppercase font-bold tracking-widest opacity-60">
+            Revisa tu orden antes de confirmar.
+          </CardDescription>
+        )}
       </CardHeader>
       <CardContent>
         {hasItems ? (
@@ -384,7 +412,9 @@ export function OrderSummary({
                 <div className="flex flex-col gap-1 py-2 bg-green-500/10 rounded-lg px-3 border border-green-500/20">
                   <span className="text-[10px] font-black uppercase tracking-widest text-green-500/80">Condiciones aplicadas:</span>
                   {appliedConditions.map((condition: any) => (
-                    <span key={condition.id} className="text-xs text-green-600 dark:text-green-300/80">{condition.description}</span>
+                    <span key={condition.id} className="text-xs text-green-600 dark:text-green-300/80">
+                      {condition.description}
+                    </span>
                   ))}
                 </div>
               )}
@@ -404,10 +434,12 @@ export function OrderSummary({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes" className="text-[10px] font-black uppercase tracking-widest opacity-60 pl-1 text-foreground">Notas del Pedido (Opcional)</Label>
+              <Label htmlFor="notes" className="text-[10px] font-black uppercase tracking-widest opacity-60 pl-1 text-foreground">
+                Notas del Pedido (Opcional)
+              </Label>
               <Textarea
                 id="notes"
-                placeholder="Ej: Instrucciones de entrega o facturación..."
+                placeholder="Ej: Instrucciones de entrega o facturacion..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 className="glass border-border/50 focus:border-primary/50 min-h-[100px] text-sm italic font-medium placeholder:text-muted-foreground/30 rounded-xl text-foreground"
@@ -427,7 +459,7 @@ export function OrderSummary({
           </div>
         ) : (
           <div className="py-12 text-center">
-            <p className="text-muted-foreground font-black italic tracking-tighter text-lg opacity-40 uppercase">Tu carrito está vacío.</p>
+            <p className="text-muted-foreground font-black italic tracking-tighter text-lg opacity-40 uppercase">Tu carrito esta vacio.</p>
           </div>
         )}
       </CardContent>

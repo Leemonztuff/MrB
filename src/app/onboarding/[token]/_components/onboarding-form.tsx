@@ -85,6 +85,7 @@ const formSchema = z.object({
   cuit: cuitSchema,
   contact_name: z.string().min(3, "El nombre es requerido."),
   contact_dni: z.string().min(7, "El DNI debe tener entre 7 y 8 digitos.").max(8, "El DNI debe tener entre 7 y 8 digitos."),
+  phone: z.string().min(8, "El telefono es requerido."),
   province: z.string().min(1, "La provincia es requerida."),
   locality: z.string().min(1, "La localidad es requerida."),
   street_address: z.string().min(3, "La calle es requerida."),
@@ -118,7 +119,7 @@ const steps: Array<{
     id: "contact",
     title: "Contacto",
     description: "Persona responsable y canales de contacto.",
-    fields: ["contact_name", "contact_dni", "email", "instagram"],
+    fields: ["contact_name", "contact_dni", "phone", "email", "instagram"],
   },
   {
     id: "address",
@@ -148,6 +149,7 @@ export function OnboardingForm({ client }: { client: Client }) {
       cuit: client.cuit ?? "",
       contact_name: client.contact_name?.startsWith("Cliente Pendiente") ? "" : client.contact_name ?? "",
       contact_dni: client.contact_dni ?? "",
+      phone: client.phone ?? "",
       province: "",
       locality: "",
       street_address: "",
@@ -339,6 +341,20 @@ export function OnboardingForm({ client }: { client: Client }) {
                         <FormControl>
                           <Input placeholder="Sin puntos" className="h-12 rounded-2xl" {...field} />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefono</FormLabel>
+                        <FormControl>
+                          <Input type="tel" placeholder="Ej: 11 5555 5555" className="h-12 rounded-2xl" {...field} />
+                        </FormControl>
+                        <FormDescription>Lo usamos para coordinar entregas y resolver cualquier duda.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

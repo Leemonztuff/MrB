@@ -1,18 +1,39 @@
 'use server';
 
-import { createHash } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { unformatCuit } from '@/lib/formatters';
 import { createClient } from '@/lib/supabase/server';
 import type { AuthState } from '@/types';
 
-const COOKIE_SECRET = process.env.COOKIE_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret-change-me';
+const COOKIE_SECRET = process.env.COOKIE_SECRET?.trim();
+const LEGACY_COOKIE_SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+function getCookieSecret(): string {
+    if (COOKIE_SECRET) {
+        return COOKIE_SECRET;
+    }
+
+    if (LEGACY_COOKIE_SECRET) {
+        return LEGACY_COOKIE_SECRET;
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+        return 'dev-cookie-secret';
+    }
+
+    throw new Error('COOKIE_SECRET no configurado en produccion.');
+}
+
+function createCookieSignature(value: string, secret: string): string {
+    return createHmac('sha256', secret).update(value).digest('hex');
+}
 
 function signCookie(value: string): string {
-    const hmac = createHash('sha256');
-    hmac.update(value + COOKIE_SECRET);
-    return `${value}.${hmac.digest('hex').slice(0, 16)}`;
+    const secret = getCookieSecret();
+    const signature = createCookieSignature(value, secret);
+    return `${value}.${signature}`;
 }
 
 function verifyAndExtractSignedCookie(signedValue: string): string | null {
@@ -20,12 +41,22 @@ function verifyAndExtractSignedCookie(signedValue: string): string | null {
     if (parts.length !== 2) return null;
 
     const [value, signature] = parts;
-    const expectedSignature = createHash('sha256')
-        .update(value + COOKIE_SECRET)
-        .digest('hex')
-        .slice(0, 16);
 
-    return signature === expectedSignature ? value : null;
+    try {
+        const secret = getCookieSecret();
+        const expectedSignature = createCookieSignature(value, secret);
+        const signatureBuffer = Buffer.from(signature, 'hex');
+        const expectedBuffer = Buffer.from(expectedSignature, 'hex');
+
+        if (signatureBuffer.length !== expectedBuffer.length) {
+            return null;
+        }
+
+        return timingSafeEqual(signatureBuffer, expectedBuffer) ? value : null;
+    } catch (error) {
+        console.error('Portal cookie secret misconfigured:', error);
+        return null;
+    }
 }
 
 export async function loginPortal(prevState: AuthState | null, formData: FormData): Promise<AuthState | null> {
@@ -87,7 +118,15 @@ export async function loginPortal(prevState: AuthState | null, formData: FormDat
     }
 
     const cookieStore = await cookies();
-    const signedValue = signCookie(client.id);
+    let signedValue: string;
+
+    try {
+        signedValue = signCookie(client.id);
+    } catch (error) {
+        console.error('Portal login cookie setup failed:', error);
+        return { error: { message: 'Error de configuracion del portal. Contacta al administrador.' } };
+    }
+
     cookieStore.set('portal_client_id', signedValue, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',

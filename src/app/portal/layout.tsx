@@ -168,11 +168,11 @@ export default function PortalLayout({
                             })}
                         </nav>
                         
-                        <Link href="/api/portal/logout" title="Cerrar Sesion">
+                        <a href="/api/portal/logout" title="Cerrar Sesion">
                             <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl">
                                 <LogOut className="h-5 w-5" />
                             </Button>
-                        </Link>
+                        </a>
                     </div>
                 </div>
             </header>

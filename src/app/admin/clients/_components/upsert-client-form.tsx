@@ -79,6 +79,7 @@ const timeOptions = Array.from({ length: 13 }, (_, index) => `${String(index + 8
 const formSchema = z.object({
   contact_name: z.string().min(3, "El nombre es requerido."),
   email: z.string().email("Debe ser un email valido."),
+  phone: z.string().optional(),
   agreement_id: z.string().nullable().optional(),
   cuit: cuitSchema.optional().or(z.literal("")),
   contact_dni: z.string().optional(),
@@ -107,7 +108,7 @@ const steps: Array<{
     id: "basics",
     title: "Datos base",
     description: "Identidad del cliente y convenio inicial.",
-    fields: ["contact_name", "email", "agreement_id"],
+    fields: ["contact_name", "email", "phone", "agreement_id"],
   },
   {
     id: "fiscal",
@@ -184,6 +185,7 @@ export function UpsertClientForm({
     defaultValues: {
       contact_name: client?.contact_name ?? "",
       email: client?.email ?? "",
+      phone: client?.phone ?? "",
       cuit: client?.cuit ?? "",
       contact_dni: client?.contact_dni ?? "",
       fiscal_status: client?.fiscal_status ?? "",
@@ -322,6 +324,19 @@ export function UpsertClientForm({
                         <FormLabel>Email</FormLabel>
                         <FormControl>
                           <Input type="email" placeholder="cliente@email.com" className="h-12 rounded-2xl" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefono</FormLabel>
+                        <FormControl>
+                          <Input placeholder="11 1234 5678" className="h-12 rounded-2xl" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

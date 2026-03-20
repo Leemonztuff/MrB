@@ -358,6 +358,7 @@ export async function submitOnboardingForm(payload: any): Promise<ActionResponse
             contact_name: data.contact_name?.toUpperCase(),
             contact_dni: data.contact_dni,
             email: data.email,
+            phone: data.phone?.trim() || null,
             cuit: data.cuit,
             fiscal_status: data.fiscal_status,
             address,

@@ -112,6 +112,7 @@ export async function upsertClient(
       id: id || undefined,
       contact_name: clientData.contact_name?.trim().toUpperCase(),
       email: clientData.email?.trim().toLowerCase() || null,
+      phone: clientData.phone?.trim() || null,
       cuit: clientData.cuit?.replace(/[^0-9]/g, '') || null,
       contact_dni: clientData.contact_dni?.trim() || null,
       fiscal_status: clientData.fiscal_status?.trim() || null,
@@ -370,14 +371,17 @@ export async function importClients(
 
     for (const row of data) {
       try {
+        const formattedAddress = formatAddress({
+          street_address: row.direccion?.trim(),
+          locality: row.localidad?.trim(),
+          province: row.provincia?.trim(),
+        }) || null;
+
         const clientData: any = {
-          contact_name: (row.nombre || row.nombre || "").toUpperCase(),
+          contact_name: row.nombre?.trim().toUpperCase() || null,
           email: row.email?.toLowerCase().trim() || null,
-          phone: row.telefono?.trim() || null,
-          celular: row.celular?.trim() || null,
-          address: row.direccion?.trim() || null,
-          localidad: row.localidad?.trim() || null,
-          provincia: row.provincia?.trim() || null,
+          phone: row.celular?.trim() || row.telefono?.trim() || null,
+          address: formattedAddress,
           instagram: row.instagram?.trim() || null,
           contact_dni: row.contacto?.trim() || null,
           onboarding_token: crypto.randomUUID(),
@@ -411,7 +415,7 @@ export async function importClients(
           imported++;
         }
       } catch (err: any) {
-        errors.push(`Error procesando "${row.nombre || row.nombre}": ${err.message}`);
+        errors.push(`Error procesando "${row.nombre || "Sin nombre"}": ${err.message}`);
       }
     }
 

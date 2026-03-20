@@ -205,7 +205,7 @@ export async function getUnassignedProducts(agreementId: string): Promise<Action
         if (!agreement?.price_list_id) return [];
 
         const { data: assigned, error: assignedError } = await supabase
-            .from('price_list_products')
+            .from('price_list_items')
             .select('product_id')
             .eq('price_list_id', agreement.price_list_id);
 
@@ -238,7 +238,7 @@ export async function assignMultipleProductsToAgreement(payload: {
             .single();
 
         if (agreementError) throw agreementError;
-        if (!agreement?.price_list_id) throw new Error('Agreement has no price list');
+        if (!agreement?.price_list_id) throw new Error('El convenio no tiene una lista de precios asignada.');
 
         const productsToInsert = payload.product_ids.map(productId => ({
             price_list_id: agreement.price_list_id,
@@ -247,7 +247,7 @@ export async function assignMultipleProductsToAgreement(payload: {
             volume_price: null,
         }));
 
-        const { error } = await supabase.from('price_list_products').insert(productsToInsert);
+        const { error } = await supabase.from('price_list_items').insert(productsToInsert);
         if (error) throw error;
         return null;
     }, [`/admin/agreements/${payload.agreement_id}`]);

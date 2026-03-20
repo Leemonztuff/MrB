@@ -24,6 +24,7 @@ export const onboardingSchema = z.object({
     contact_name: z.string().min(2, "Nombre requerido"),
     contact_dni: z.string().min(7, "DNI invalido"),
     email: z.string().email("Email invalido"),
+    phone: z.string().min(8, "Telefono invalido"),
     cuit: z.string().min(11, "CUIT debe tener 11 digitos"),
     fiscal_status: z.string().min(1, "Estado fiscal requerido"),
     street_address: z.string().min(1, "Direccion requerida"),

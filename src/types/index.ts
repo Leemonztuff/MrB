@@ -98,7 +98,7 @@ export type ClientStats = {
 export type PendingChange = {
     id: string;
     client_id: string;
-    change_type: 'contact_name' | 'email' | 'cuit' | 'address' | 'delivery_window' | 'instagram' | 'contact_dni' | 'fiscal_status';
+    change_type: 'contact_name' | 'email' | 'phone' | 'cuit' | 'address' | 'delivery_window' | 'instagram' | 'contact_dni' | 'fiscal_status';
     old_value: string | null;
     new_value: string | null;
     status: 'pending' | 'approved' | 'rejected';

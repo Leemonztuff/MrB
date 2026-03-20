@@ -10,6 +10,7 @@ DROP FUNCTION IF EXISTS public.get_client_stats(uuid) CASCADE;
 DROP TABLE IF EXISTS public.order_items CASCADE;
 DROP TABLE IF EXISTS public.orders CASCADE;
 DROP TABLE IF EXISTS public.clients CASCADE;
+DROP TABLE IF EXISTS public.inventory_movements CASCADE;
 DROP TABLE IF EXISTS public.agreement_sales_conditions CASCADE;
 DROP TABLE IF EXISTS public.agreement_promotions CASCADE;
 DROP TABLE IF EXISTS public.agreements CASCADE;
@@ -19,8 +20,10 @@ DROP TABLE IF EXISTS public.price_list_product_promotions CASCADE;
 DROP TABLE IF EXISTS public.products CASCADE;
 DROP TABLE IF EXISTS public.sales_conditions CASCADE;
 DROP TABLE IF EXISTS public.promotions CASCADE;
+DROP TABLE IF EXISTS public.news CASCADE;
 DROP TABLE IF EXISTS public.app_settings CASCADE;
 DROP TABLE IF EXISTS public.pending_changes CASCADE;
+DROP TYPE IF EXISTS public.inventory_movement_type CASCADE;
 DROP TYPE IF EXISTS public.order_status CASCADE;
 DROP TYPE IF EXISTS public.client_status CASCADE;
 DROP TYPE IF EXISTS public.client_type CASCADE;
@@ -30,7 +33,8 @@ DROP TYPE IF EXISTS public.change_type CASCADE;
 CREATE TYPE public.order_status AS ENUM ('armado', 'transito', 'entregado');
 CREATE TYPE public.client_status AS ENUM ('pending_onboarding', 'pending_agreement', 'active', 'archived');
 CREATE TYPE public.client_type AS ENUM ('barberia', 'distribuidor', 'especial');
-CREATE TYPE public.change_type AS ENUM ('contact_name', 'email', 'cuit', 'address', 'delivery_window', 'instagram', 'contact_dni', 'fiscal_status');
+CREATE TYPE public.change_type AS ENUM ('contact_name', 'email', 'phone', 'cuit', 'address', 'delivery_window', 'instagram', 'contact_dni', 'fiscal_status');
+CREATE TYPE public.inventory_movement_type AS ENUM ('in', 'out', 'adjustment', 'reserved');
 
 -- 3. TABLES
 CREATE TABLE public.products (
@@ -105,6 +109,7 @@ CREATE TABLE public.clients (
     contact_name text,
     contact_dni text,
     email text UNIQUE,
+    phone text,
     cuit text UNIQUE,
     fiscal_status text,
     address text,
@@ -136,7 +141,19 @@ CREATE TABLE public.order_items (
     order_id uuid REFERENCES public.orders(id) ON DELETE CASCADE,
     product_id uuid REFERENCES public.products(id) ON DELETE SET NULL,
     quantity integer NOT NULL DEFAULT 1,
-    price_per_unit numeric NOT NULL DEFAULT 0
+    price_per_unit numeric NOT NULL DEFAULT 0,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE public.inventory_movements (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    product_id uuid REFERENCES public.products(id) ON DELETE CASCADE,
+    type public.inventory_movement_type NOT NULL,
+    quantity integer NOT NULL DEFAULT 0,
+    reason text,
+    reference_id uuid REFERENCES public.orders(id) ON DELETE SET NULL,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    created_by uuid
 );
 
 CREATE TABLE public.pending_changes (
@@ -149,6 +166,21 @@ CREATE TABLE public.pending_changes (
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
     resolved_at timestamp with time zone,
     resolved_by uuid
+);
+
+CREATE TABLE public.news (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    title text NOT NULL,
+    content text NOT NULL,
+    image_url text,
+    is_active boolean NOT NULL DEFAULT true,
+    display_order integer NOT NULL DEFAULT 0,
+    starts_at timestamp with time zone,
+    ends_at timestamp with time zone,
+    promotion_id uuid REFERENCES public.promotions(id) ON DELETE SET NULL,
+    target_client_type public.client_type,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 CREATE TABLE public.app_settings (
@@ -218,6 +250,8 @@ ALTER TABLE public.agreement_sales_conditions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inventory_movements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.news ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow all for authenticated" ON public.products FOR ALL USING (auth.role() = 'authenticated');
@@ -258,6 +292,12 @@ CREATE POLICY "Allow read for anonymous" ON public.orders FOR SELECT USING (true
 CREATE POLICY "Allow all for authenticated" ON public.order_items FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow insert for anonymous" ON public.order_items FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow read for anonymous" ON public.order_items FOR SELECT USING (true);
+
+CREATE POLICY "Allow all for authenticated" ON public.inventory_movements FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow read for anonymous" ON public.inventory_movements FOR SELECT USING (true);
+
+CREATE POLICY "Allow all for authenticated" ON public.news FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow read for anonymous" ON public.news FOR SELECT USING (true);
 
 CREATE POLICY "Allow all for authenticated" ON public.app_settings FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow read for anonymous" ON public.app_settings FOR SELECT USING (true);
