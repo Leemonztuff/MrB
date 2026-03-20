@@ -9,7 +9,12 @@ import {
   getAgreements,
   upsertAgreement,
 } from "@/app/admin/actions/agreements.actions";
-import { getPriceLists, upsertPriceList } from "@/app/admin/actions/pricelists.actions";
+import {
+  assignProductsToPriceList,
+  getPriceListById,
+  getPriceLists,
+  upsertPriceList,
+} from "@/app/admin/actions/pricelists.actions";
 import { getPromotions, upsertPromotion } from "@/app/admin/actions/promotions.actions";
 import { getSalesConditions, upsertSalesCondition } from "@/app/admin/actions/sales-conditions.actions";
 import type { AgreementWithCount, Client, PriceList, Promotion, SalesCondition } from "@/types";
@@ -232,8 +237,10 @@ export function AssignAgreementDialog({
   const [selectedAgreementId, setSelectedAgreementId] = useState<string | null>(client.agreement_id ?? null);
   const [agreementName, setAgreementName] = useState("");
   const [clientType, setClientType] = useState<ClientType>("barberia");
-  const [priceListMode, setPriceListMode] = useState<"existing" | "new">("existing");
+  const [priceListMode, setPriceListMode] = useState<"existing" | "new" | "clone">("existing");
   const [selectedPriceListId, setSelectedPriceListId] = useState<string | null>(null);
+  const [cloneBasePriceListId, setCloneBasePriceListId] = useState<string | null>(null);
+  const [cloneDiscountPercentage, setCloneDiscountPercentage] = useState("0");
   const [newPriceListName, setNewPriceListName] = useState("");
   const [newPriceListIncludesVat, setNewPriceListIncludesVat] = useState(true);
   const [selectedPromotionIds, setSelectedPromotionIds] = useState<string[]>([]);
@@ -253,6 +260,8 @@ export function AssignAgreementDialog({
     setClientType("barberia");
     setPriceListMode("existing");
     setSelectedPriceListId(null);
+    setCloneBasePriceListId(null);
+    setCloneDiscountPercentage("0");
     setNewPriceListName("");
     setNewPriceListIncludesVat(true);
     setSelectedPromotionIds([]);
@@ -312,13 +321,18 @@ export function AssignAgreementDialog({
 
     return {
       agreement: selectedAgreement?.agreement_name ?? (agreementName.trim() || "Sin definir"),
-      priceList: priceListMode === "new" ? newPriceListName.trim() || "Nueva lista sin nombre" : selectedPriceList?.name || "Sin lista elegida",
+      priceList:
+        priceListMode === "existing"
+          ? selectedPriceList?.name || "Sin lista elegida"
+          : newPriceListName.trim() || "Nueva lista sin nombre",
       promotions: selectedPromotionIds.length + promotionDrafts.length,
       salesConditions: selectedSalesConditionIds.length + salesConditionDrafts.length,
     };
   }, [
     agreementName,
     agreements,
+    cloneBasePriceListId,
+    cloneDiscountPercentage,
     newPriceListName,
     priceListMode,
     priceLists,
@@ -374,6 +388,26 @@ export function AssignAgreementDialog({
         });
         return false;
       }
+
+      if (priceListMode === "clone") {
+        if (newPriceListName.trim().length < 3) {
+          toast({
+            title: "Falta nombrar la lista derivada",
+            description: "Ponle un nombre a la nueva lista antes de clonar.",
+            variant: "destructive",
+          });
+          return false;
+        }
+
+        if (!cloneBasePriceListId) {
+          toast({
+            title: "Falta la lista base",
+            description: "Selecciona la lista que vas a usar como punto de partida.",
+            variant: "destructive",
+          });
+          return false;
+        }
+      }
     }
 
     return true;
@@ -421,7 +455,49 @@ export function AssignAgreementDialog({
             throw new Error(priceListResult.error?.message || "No se pudo crear la lista de precios.");
           }
 
-          finalPriceListId = priceListResult.data.id;
+          const clonedPriceListId = priceListResult.data.id;
+          finalPriceListId = clonedPriceListId;
+        }
+
+        if (priceListMode === "clone") {
+          if (!cloneBasePriceListId) {
+            throw new Error("Falta seleccionar la lista base para clonar.");
+          }
+
+          const basePriceListResult = await getPriceListById(cloneBasePriceListId);
+          if (basePriceListResult.error || !basePriceListResult.data) {
+            throw new Error(basePriceListResult.error?.message || "No se pudo leer la lista base.");
+          }
+
+          const priceListResult = await upsertPriceList({
+            name: newPriceListName.trim(),
+            prices_include_vat: newPriceListIncludesVat,
+          });
+
+          if (priceListResult.error || !priceListResult.data) {
+            throw new Error(priceListResult.error?.message || "No se pudo crear la lista derivada.");
+          }
+
+          const clonedPriceListId = priceListResult.data.id;
+          finalPriceListId = clonedPriceListId;
+
+          const multiplier = 1 - Number(cloneDiscountPercentage || "0") / 100;
+          const products = basePriceListResult.data.price_list_items.map(item => ({
+            product_id: item.product_id,
+            price: Number((item.price * multiplier).toFixed(2)),
+            volume_price: item.volume_price == null ? null : Number((item.volume_price * multiplier).toFixed(2)),
+          }));
+
+          if (products.length > 0) {
+            const cloneResult = await assignProductsToPriceList({
+              price_list_id: clonedPriceListId,
+              products,
+            });
+
+            if (cloneResult.error) {
+              throw new Error(cloneResult.error.message || "No se pudo copiar el contenido de la lista base.");
+            }
+          }
         }
 
         if (!finalPriceListId) throw new Error("El convenio necesita una lista de precios.");
@@ -582,6 +658,14 @@ export function AssignAgreementDialog({
           <div className="text-sm font-black">Crear lista nueva</div>
           <p className="mt-1 text-sm text-muted-foreground">Util cuando este cliente necesita precios diferentes.</p>
         </button>
+        <button
+          type="button"
+          onClick={() => setPriceListMode("clone")}
+          className={cn("rounded-3xl border p-4 text-left transition sm:col-span-2", priceListMode === "clone" ? "border-primary bg-primary/10" : "border-border/60 bg-card")}
+        >
+          <div className="text-sm font-black">Clonar y ajustar una lista</div>
+          <p className="mt-1 text-sm text-muted-foreground">Partes de una lista existente y aplicas un descuento o ajuste general sin cargar todo de cero.</p>
+        </button>
       </div>
 
       {priceListMode === "existing" ? (
@@ -601,7 +685,9 @@ export function AssignAgreementDialog({
             </SelectContent>
           </Select>
         </div>
-      ) : (
+      ) : null}
+
+      {priceListMode === "new" ? (
         <div className="space-y-4 rounded-3xl border border-border/60 bg-muted/30 p-4">
           <div className="space-y-2">
             <Label className="text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">Nombre de la nueva lista</Label>
@@ -615,7 +701,45 @@ export function AssignAgreementDialog({
             </div>
           </label>
         </div>
-      )}
+      ) : null}
+
+      {priceListMode === "clone" ? (
+        <div className="space-y-4 rounded-3xl border border-border/60 bg-muted/30 p-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2 md:col-span-2">
+              <Label className="text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">Nombre de la lista derivada</Label>
+              <Input value={newPriceListName} onChange={event => setNewPriceListName(event.target.value)} placeholder="Ej: Lista barberia premium marzo" className="h-12 rounded-2xl" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">Lista base</Label>
+              <Select onValueChange={value => setCloneBasePriceListId(value === "__none__" ? null : value)} value={cloneBasePriceListId ?? "__none__"}>
+                <SelectTrigger className="h-12 rounded-2xl">
+                  <SelectValue placeholder="Selecciona una lista base" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Elegir lista</SelectItem>
+                  {priceLists.map(priceList => (
+                    <SelectItem key={priceList.id} value={priceList.id}>
+                      {priceList.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">Ajuste porcentual</Label>
+              <Input value={cloneDiscountPercentage} onChange={event => setCloneDiscountPercentage(event.target.value)} placeholder="0 para copiar igual, 10 para bajar 10%" className="h-12 rounded-2xl" />
+            </div>
+          </div>
+          <label className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background p-4">
+            <Checkbox checked={newPriceListIncludesVat} onCheckedChange={checked => setNewPriceListIncludesVat(Boolean(checked))} />
+            <div>
+              <div className="text-sm font-semibold">La nueva lista incluye IVA</div>
+              <p className="mt-1 text-sm text-muted-foreground">La clonacion copia productos y precios ajustados a la nueva lista.</p>
+            </div>
+          </label>
+        </div>
+      ) : null}
     </section>
   );
 
@@ -680,6 +804,22 @@ export function AssignAgreementDialog({
             Agregar al convenio
           </Button>
         </div>
+
+        {promotionDrafts.length > 0 ? (
+          <div className="mt-4 space-y-2">
+            {promotionDrafts.map((draft, index) => (
+              <div key={`${draft.name}-${index}`} className="flex items-center justify-between rounded-2xl bg-background px-4 py-3">
+                <div>
+                  <div className="text-sm font-semibold">{draft.name}</div>
+                  <div className="text-xs text-muted-foreground">{draft.type === "buy_x_get_y_free" ? `Compra ${draft.buy} y recibe ${draft.get}` : draft.type === "free_shipping" ? `Envio gratis desde ${draft.minUnits} unidades` : `Descuento ${draft.percentage}% desde ${draft.minAmount}`}</div>
+                </div>
+                <Button type="button" variant="ghost" onClick={() => setPromotionDrafts(current => current.filter((_, itemIndex) => itemIndex !== index))}>
+                  Quitar
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
     </section>
   );
@@ -738,6 +878,22 @@ export function AssignAgreementDialog({
             Agregar al convenio
           </Button>
         </div>
+
+        {salesConditionDrafts.length > 0 ? (
+          <div className="mt-4 space-y-2">
+            {salesConditionDrafts.map((draft, index) => (
+              <div key={`${draft.name}-${index}`} className="flex items-center justify-between rounded-2xl bg-background px-4 py-3">
+                <div>
+                  <div className="text-sm font-semibold">{draft.name}</div>
+                  <div className="text-xs text-muted-foreground">{draft.type === "net_days" ? `${draft.days} dias` : draft.type === "discount" ? `${draft.discountPercentage}% de descuento` : draft.type === "installments" ? `${draft.installments} cuotas` : draft.type === "split_payment" ? `${draft.initialPercentage}% + saldo a ${draft.remainingDays} dias` : "Pago contra reembolso"}</div>
+                </div>
+                <Button type="button" variant="ghost" onClick={() => setSalesConditionDrafts(current => current.filter((_, itemIndex) => itemIndex !== index))}>
+                  Quitar
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
     </section>
   );
@@ -778,6 +934,32 @@ export function AssignAgreementDialog({
           <p className="mt-1 text-sm text-muted-foreground">Listas para quedar asociadas al nuevo convenio.</p>
         </div>
       </div>
+
+      {promotionDrafts.length > 0 ? (
+        <div className="rounded-3xl border border-border/60 bg-card p-4">
+          <div className="text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">Promociones nuevas</div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {promotionDrafts.map((draft, index) => (
+              <span key={`${draft.name}-${index}`} className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+                {draft.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {salesConditionDrafts.length > 0 ? (
+        <div className="rounded-3xl border border-border/60 bg-card p-4">
+          <div className="text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">Condiciones nuevas</div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {salesConditionDrafts.map((draft, index) => (
+              <span key={`${draft.name}-${index}`} className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+                {draft.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 
