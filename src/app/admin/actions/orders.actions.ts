@@ -23,7 +23,11 @@ export async function getOrders(filters?: {
             queryBuilder = queryBuilder.eq('status', filters.status);
         }
         if (filters?.query) {
-            queryBuilder = queryBuilder.ilike('client_name_cache', `%${filters.query}%`);
+            const trimmedQuery = filters.query.trim();
+            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(trimmedQuery);
+            queryBuilder = isUuid
+                ? queryBuilder.or(`client_name_cache.ilike.%${trimmedQuery}%,id.eq.${trimmedQuery}`)
+                : queryBuilder.ilike('client_name_cache', `%${trimmedQuery}%`);
         }
 
         const { data, error, count } = await queryBuilder.range(offset, offset + limit - 1);

@@ -26,6 +26,7 @@ export async function getNotificationItems(): Promise<NotificationItem[]> {
             .from("orders")
             .select("id, client_name_cache, total_amount, created_at, order_items(count)")
             .eq("status", "armado")
+            .gte("created_at", twoDaysAgo)
             .order("created_at", { ascending: false })
             .limit(5),
         supabase
@@ -58,7 +59,7 @@ export async function getNotificationItems(): Promise<NotificationItem[]> {
             clientName: order.client_name_cache,
             amount: order.total_amount,
             createdAt: order.created_at,
-            href: "/admin",
+            href: `/admin/orders?query=${encodeURIComponent(order.id)}`,
         });
     });
 
@@ -71,7 +72,7 @@ export async function getNotificationItems(): Promise<NotificationItem[]> {
             clientName: order.client_name_cache,
             amount: order.total_amount,
             createdAt: order.created_at,
-            href: "/admin",
+            href: `/admin/orders?query=${encodeURIComponent(order.id)}&status=armado`,
         });
     });
 

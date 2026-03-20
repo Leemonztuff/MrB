@@ -79,15 +79,15 @@ export function ClientOrders({ orders }: { orders: OrderWithItems[] }) {
                           <Eye className="h-3 w-3 opacity-50" />
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="glass border-white/10 sm:max-w-md">
+                      <DialogContent className="glass flex max-h-[min(85dvh,680px)] flex-col overflow-hidden border-white/10 p-0 sm:max-w-md">
                         <DialogHeader>
-                          <DialogTitle className="flex items-center gap-2 font-headline italic">
+                          <DialogTitle className="flex items-center gap-2 border-b border-white/10 px-6 py-5 font-headline italic">
                             <ShoppingBag className="h-5 w-5 text-primary" />
                             Contenido del Pedido #{order.id.slice(-6).toUpperCase()}
                           </DialogTitle>
                         </DialogHeader>
-                        <div className="mt-4 space-y-4">
-                          <ScrollArea className="max-h-[300px] pr-4">
+                        <div className="flex min-h-0 flex-1 flex-col px-6 pb-6">
+                          <ScrollArea className="mt-4 min-h-0 flex-1 pr-4">
                             <div className="grid gap-2">
                               {order.order_items?.map((item, idx) => (
                                 <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
@@ -104,7 +104,7 @@ export function ClientOrders({ orders }: { orders: OrderWithItems[] }) {
                               ))}
                             </div>
                           </ScrollArea>
-                          <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                          <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
                             <span className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Total</span>
                             <span className="text-lg font-headline font-black text-primary">
                               {formatCurrency(order.total_amount)}

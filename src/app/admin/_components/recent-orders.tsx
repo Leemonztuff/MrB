@@ -171,15 +171,15 @@ export function RecentOrders({ orders: initialOrders }: { orders: OrderWithItems
                                                     <Eye className="h-2.5 w-2.5 ml-0.5 opacity-50" />
                                                 </Button>
                                             </DialogTrigger>
-                                            <DialogContent className="glass border-white/10 sm:max-w-md animate-in fade-in zoom-in-95 duration-200">
+                                            <DialogContent className="glass flex max-h-[min(85dvh,720px)] flex-col overflow-hidden border-white/10 p-0 sm:max-w-md">
                                                 <DialogHeader>
-                                                    <DialogTitle className="flex items-center gap-2 font-headline italic">
+                                                    <DialogTitle className="flex items-center gap-2 border-b border-white/10 px-6 py-5 font-headline italic">
                                                         <ShoppingBag className="h-5 w-5 text-primary" />
                                                         Detalle del Pedido #{order.id.slice(-6).toUpperCase()}
                                                     </DialogTitle>
                                                 </DialogHeader>
-                                                <div className="mt-4 space-y-4">
-                                                    <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                                                <div className="flex min-h-0 flex-1 flex-col px-6 pb-6">
+                                                    <div className="mt-4 flex items-center justify-between rounded-xl border border-white/5 bg-white/5 p-3">
                                                         <div className="space-y-0.5">
                                                             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Cliente</p>
                                                             <p className="text-sm font-medium">{order.client_name_cache}</p>
@@ -190,9 +190,9 @@ export function RecentOrders({ orders: initialOrders }: { orders: OrderWithItems
                                                         </div>
                                                     </div>
 
-                                                    <div className="space-y-2">
+                                                    <div className="mt-4 flex min-h-0 flex-1 flex-col space-y-2">
                                                         <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest ml-1">Contenido</p>
-                                                        <ScrollArea className="max-h-[300px] w-full pr-4">
+                                                        <ScrollArea className="min-h-0 flex-1 w-full pr-4">
                                                             <div className="grid gap-2">
                                                                 {order.order_items?.map((item, idx) => (
                                                                     <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
@@ -211,7 +211,7 @@ export function RecentOrders({ orders: initialOrders }: { orders: OrderWithItems
                                                         </ScrollArea>
                                                     </div>
 
-                                                    <div className="flex items-center justify-between pt-4 border-t border-white/10 mt-6">
+                                                    <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
                                                         <span className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Total del Pedido</span>
                                                         <span className="text-xl font-headline font-black text-primary">
                                                             {formatCurrency(order.total_amount)}
