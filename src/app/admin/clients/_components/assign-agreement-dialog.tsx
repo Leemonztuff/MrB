@@ -6,17 +6,19 @@ import { assignAgreementToClient } from "@/app/admin/actions/clients.actions";
 import {
   assignMultiplePromotionsToAgreement,
   assignMultipleSalesConditionsToAgreement,
+  deleteAgreement,
   getAgreements,
   upsertAgreement,
 } from "@/app/admin/actions/agreements.actions";
 import {
   assignProductsToPriceList,
+  deletePriceList,
   getPriceListById,
   getPriceLists,
   upsertPriceList,
 } from "@/app/admin/actions/pricelists.actions";
-import { getPromotions, upsertPromotion } from "@/app/admin/actions/promotions.actions";
-import { getSalesConditions, upsertSalesCondition } from "@/app/admin/actions/sales-conditions.actions";
+import { deletePromotion, getPromotions, upsertPromotion } from "@/app/admin/actions/promotions.actions";
+import { deleteSalesCondition, getSalesConditions, upsertSalesCondition } from "@/app/admin/actions/sales-conditions.actions";
 import type { AgreementWithCount, Client, PriceList, Promotion, SalesCondition } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -428,6 +430,11 @@ export function AssignAgreementDialog({
 
   const handleSave = () => {
     startTransition(async () => {
+      let createdPriceListId: string | null = null;
+      let createdAgreementId: string | null = null;
+      const createdPromotionIds: string[] = [];
+      const createdSalesConditionIds: string[] = [];
+
       try {
         if (mode === "existing") {
           if (!selectedAgreementId) throw new Error("Selecciona un convenio antes de guardar.");
@@ -456,12 +463,18 @@ export function AssignAgreementDialog({
           }
 
           const clonedPriceListId = priceListResult.data.id;
+          createdPriceListId = clonedPriceListId;
           finalPriceListId = clonedPriceListId;
         }
 
         if (priceListMode === "clone") {
           if (!cloneBasePriceListId) {
             throw new Error("Falta seleccionar la lista base para clonar.");
+          }
+
+          const cloneDiscount = Number(cloneDiscountPercentage || "0");
+          if (!Number.isFinite(cloneDiscount) || cloneDiscount < 0 || cloneDiscount > 100) {
+            throw new Error("El ajuste porcentual debe ser un numero entre 0 y 100.");
           }
 
           const basePriceListResult = await getPriceListById(cloneBasePriceListId);
@@ -479,9 +492,10 @@ export function AssignAgreementDialog({
           }
 
           const clonedPriceListId = priceListResult.data.id;
+          createdPriceListId = clonedPriceListId;
           finalPriceListId = clonedPriceListId;
 
-          const multiplier = 1 - Number(cloneDiscountPercentage || "0") / 100;
+          const multiplier = 1 - cloneDiscount / 100;
           const products = basePriceListResult.data.price_list_items.map(item => ({
             product_id: item.product_id,
             price: Number((item.price * multiplier).toFixed(2)),
@@ -501,15 +515,12 @@ export function AssignAgreementDialog({
         }
 
         if (!finalPriceListId) throw new Error("El convenio necesita una lista de precios.");
-
-        const createdPromotionIds: string[] = [];
         for (const draft of promotionDrafts) {
           const result = await upsertPromotion(buildPromotionPayload(draft));
           if (result.error || !result.data) throw new Error(result.error?.message || `No se pudo crear la promocion ${draft.name}.`);
           createdPromotionIds.push(result.data.id);
         }
 
-        const createdSalesConditionIds: string[] = [];
         for (const draft of salesConditionDrafts) {
           const result = await upsertSalesCondition(buildSalesConditionPayload(draft));
           if (result.error || !result.data) throw new Error(result.error?.message || `No se pudo crear la condicion ${draft.name}.`);
@@ -527,6 +538,7 @@ export function AssignAgreementDialog({
         }
 
         const agreementId = agreementResult.data.id;
+        createdAgreementId = agreementId;
         const promotionIds = [...selectedPromotionIds, ...createdPromotionIds];
         const salesConditionIds = [...selectedSalesConditionIds, ...createdSalesConditionIds];
 
@@ -555,6 +567,22 @@ export function AssignAgreementDialog({
         });
         setIsOpen(false);
       } catch (error) {
+        if (createdAgreementId) {
+          await deleteAgreement(createdAgreementId);
+        }
+
+        for (const promotionId of createdPromotionIds) {
+          await deletePromotion(promotionId);
+        }
+
+        for (const salesConditionId of createdSalesConditionIds) {
+          await deleteSalesCondition(salesConditionId);
+        }
+
+        if (createdPriceListId) {
+          await deletePriceList(createdPriceListId);
+        }
+
         toast({
           title: "Algo salio mal",
           description: error instanceof Error ? error.message : "No se pudo completar la configuracion.",
