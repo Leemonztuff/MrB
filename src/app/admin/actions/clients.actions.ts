@@ -60,14 +60,15 @@ export async function getClientById(
 }
 
 export async function createClientForInvitation(payload: { name: string | null; agreementId: string | null }): Promise<ActionResponse<Pick<Client, "id" | "onboarding_token">>> {
-  const placeholderName = payload.name || `Cliente Pendiente - ${new Date().toISOString()}`;
+  const normalizedName = payload.name?.trim() || null;
+  const placeholderName = normalizedName || `Cliente Pendiente - ${new Date().toISOString()}`;
 
   const createData: any = {
     status: 'pending_onboarding',
     onboarding_token: crypto.randomUUID(),
     onboarding_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     contact_name: placeholderName,
-    agreement_id: payload.agreementId,
+    agreement_id: payload.agreementId || null,
   };
 
   return await upsertEntity("clients", createData, ["/admin/clients"]);
@@ -95,7 +96,12 @@ export async function upsertClient(
     const finalPayload: any = {
       ...clientData,
       id: id || undefined,
-      contact_name: clientData.contact_name?.toUpperCase(),
+      contact_name: clientData.contact_name?.trim().toUpperCase(),
+      email: clientData.email?.trim().toLowerCase() || null,
+      cuit: clientData.cuit?.replace(/[^0-9]/g, '') || null,
+      contact_dni: clientData.contact_dni?.trim() || null,
+      fiscal_status: clientData.fiscal_status?.trim() || null,
+      instagram: clientData.instagram?.trim() || null,
     };
 
     if (address) finalPayload.address = address;
@@ -110,7 +116,7 @@ export async function upsertClient(
       finalPayload.onboarding_expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     }
 
-    if (clientData.cuit) {
+    if (finalPayload.cuit) {
       let existingPortalToken = null;
       if (id) {
         const supabase = await getSupabaseClientWithAuth();
@@ -119,7 +125,7 @@ export async function upsertClient(
       }
       
       if (!existingPortalToken) {
-        const cleanCuit = clientData.cuit.replace(/[^0-9]/g, '');
+        const cleanCuit = finalPayload.cuit;
         if (cleanCuit.length >= 6) {
           finalPayload.portal_token = cleanCuit.slice(0, 6);
         }

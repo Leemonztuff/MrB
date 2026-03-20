@@ -1,161 +1,157 @@
-import { getOnboardingClient } from "@/app/actions/user.actions";
-import { OnboardingForm } from "./_components/onboarding-form";
-import { Logo } from "@/app/logo";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertTriangle, CheckCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { AlertTriangle, CheckCircle } from "lucide-react";
+import { getOnboardingClient } from "@/app/actions/user.actions";
 import { getPublicLogoUrl } from "@/app/admin/actions/settings.actions";
+import { Logo } from "@/app/logo";
+import { OnboardingForm } from "./_components/onboarding-form";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default async function OnboardingPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ success?: string; agreement?: string }> }) {
-  const { token } = await params;
-  const { success, agreement } = await searchParams;
-  const { data: client, error } = await getOnboardingClient(token);
-  const logo_url = await getPublicLogoUrl();
-  const agreementId = agreement || client?.agreement_id;
+type SearchParams = {
+  success?: string;
+  agreement?: string;
+  status?: "active" | "pending_agreement";
+};
 
-  if (success === 'true' && client && client.status === 'pending_agreement') {
-    return (
-       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
-        <Logo showText={true} logoUrl={logo_url}/>
-        <Card className="max-w-md mt-8">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-center gap-2 text-primary">
-              <CheckCircle />
-              ¡Registro Completado!
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              Tus datos fueron guardados correctamente. Un administrador revisará tu solicitud y te asignará un convenio pronto.
-            </p>
-            <p className="text-sm text-muted-foreground mb-6">
-              Recibirás una notificación cuando tu cuenta esté activa.
-            </p>
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Mientras tanto, podés acceder al Portal de Cliente:</p>
-              <Button asChild variant="outline" className="w-full">
-                <Link href="/portal/login">Ir al Portal</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  if (success === 'true' && client && client.status === 'active') {
-    return (
-       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
-        <Logo showText={true} logoUrl={logo_url}/>
-        <Card className="max-w-md mt-8">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-center gap-2 text-primary">
-              <CheckCircle />
-              ¡Registro Completado!
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              ¡Bienvenido! Tu cuenta está activa y lista para realizar pedidos.
-            </p>
-            <div className="space-y-2">
-              {agreementId && (
-                <Button asChild className="w-full">
-                  <Link href={`/pedido/${agreementId}`}>Ir al Catálogo</Link>
+function SuccessCard({
+  logoUrl,
+  status,
+  agreementId,
+}: {
+  logoUrl: string | null;
+  status: "active" | "pending_agreement";
+  agreementId: string | null;
+}) {
+  return (
+    <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
+      <Logo showText={true} logoUrl={logoUrl} />
+      <Card className="mt-8 max-w-md">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-center gap-2 text-primary">
+            <CheckCircle />
+            Registro completado
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {status === "active" ? (
+            <>
+              <p className="mb-4 text-muted-foreground">
+                Tu cuenta quedo activa y ya podes empezar a comprar.
+              </p>
+              <div className="space-y-2">
+                {agreementId ? (
+                  <Button asChild className="w-full">
+                    <Link href={`/pedido/${agreementId}`}>Ir al catalogo</Link>
+                  </Button>
+                ) : null}
+                <Button asChild variant="outline" className="w-full">
+                  <Link href="/portal/login">Ir al portal</Link>
                 </Button>
-              )}
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mb-4 text-muted-foreground">
+                Tus datos fueron guardados correctamente. Un administrador revisara tu alta y te asignara un convenio.
+              </p>
+              <p className="mb-6 text-sm text-muted-foreground">
+                Cuando tu cuenta quede lista, podras ingresar desde el portal.
+              </p>
               <Button asChild variant="outline" className="w-full">
-                <Link href="/portal/login">Ir al Portal</Link>
+                <Link href="/portal/login">Ir al portal</Link>
               </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default async function OnboardingPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ token: string }>;
+  searchParams: Promise<SearchParams>;
+}) {
+  const { token } = await params;
+  const { success, agreement, status } = await searchParams;
+  const logoUrl = await getPublicLogoUrl();
+
+  if (success === "true" && (status === "active" || status === "pending_agreement")) {
+    return <SuccessCard logoUrl={logoUrl} status={status} agreementId={agreement ?? null} />;
   }
+
+  const { data: client, error } = await getOnboardingClient(token);
 
   if (error || !client) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
         <div className="mb-8">
-            <Logo showText={true} logoUrl={null} />
+          <Logo showText={true} logoUrl={null} />
         </div>
-        <Card className="max-w-md mt-8">
+        <Card className="mt-8 max-w-md">
           <CardHeader>
             <CardTitle className="flex items-center justify-center gap-2 text-destructive">
               <AlertTriangle />
-              Enlace Inválido
+              Enlace invalido
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">El enlace de invitación no es válido o ha expirado.</p>
+            <p className="text-muted-foreground">El enlace de invitacion no es valido o expiro.</p>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  if (client.status === 'pending_agreement') {
-    return (
-       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
-        <Logo showText={true} logoUrl={logo_url}/>
-        <Card className="max-w-md mt-8">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-center gap-2 text-primary">
-              <CheckCircle />
-              ¡Registro Completado!
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              Tus datos fueron guardados correctamente. Un administrador revisará tu solicitud y te asignará un convenio pronto.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Recibirás una notificación cuando tu cuenta esté activa.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    )
+  if (client.status === "pending_agreement") {
+    return <SuccessCard logoUrl={logoUrl} status="pending_agreement" agreementId={client.agreement_id} />;
   }
 
-  if (client.status !== 'pending_onboarding') {
+  if (client.status === "active") {
+    return <SuccessCard logoUrl={logoUrl} status="active" agreementId={client.agreement_id} />;
+  }
+
+  if (client.status !== "pending_onboarding") {
     return (
-       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
-        <Logo showText={true} logoUrl={logo_url}/>
-        <Card className="max-w-md mt-8">
+      <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
+        <Logo showText={true} logoUrl={logoUrl} />
+        <Card className="mt-8 max-w-md">
           <CardHeader>
             <CardTitle className="flex items-center justify-center gap-2 text-primary">
               <CheckCircle />
-              ¡Ya registrado!
+              Ya registrado
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4">Tus datos ya fueron completados con éxito.</p>
+            <p className="mb-4 text-muted-foreground">Tus datos ya fueron completados.</p>
             {client.agreement_id ? (
               <Button asChild className="w-full">
-                <Link href={`/pedido/${client.agreement_id}`}>Ir al Catálogo</Link>
+                <Link href={`/pedido/${client.agreement_id}`}>Ir al catalogo</Link>
               </Button>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Contactá al administrador para más información.
+                Contacta al administrador para mas informacion.
               </p>
             )}
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-muted/40 py-8 px-4 flex flex-col items-center">
-      <Logo showText={true} logoUrl={logo_url} className="mb-8" />
+    <div className="flex min-h-screen flex-col items-center bg-muted/40 px-4 py-8">
+      <Logo showText={true} logoUrl={logoUrl} className="mb-8" />
       <main className="w-full max-w-2xl">
         <Card>
           <CardHeader>
-            <CardTitle>Alta de Cliente</CardTitle>
-            <CardDescription>Completa tus datos para empezar a realizar pedidos en Mr. Blonde.</CardDescription>
+            <CardTitle>Alta de cliente</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Completa tus datos para empezar a realizar pedidos en Mr. Blonde.
+            </p>
           </CardHeader>
           <CardContent>
             <OnboardingForm client={client} />

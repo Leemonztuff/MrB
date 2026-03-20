@@ -163,8 +163,10 @@ export function OnboardingForm({ client }: { client: Client }) {
           title: "¡Formulario enviado con éxito!",
           description: "Tus datos fueron guardados.",
         });
-        const agreementParam = client.agreement_id ? `&agreement=${client.agreement_id}` : '';
-        router.push(`/onboarding/${client.onboarding_token}?success=true${agreementParam}`);
+        const statusParam = result.data?.status ? `&status=${result.data.status}` : "";
+        const agreementId = result.data?.agreement_id ?? client.agreement_id;
+        const agreementParam = agreementId ? `&agreement=${agreementId}` : "";
+        router.push(`/onboarding/${client.onboarding_token}?success=true${statusParam}${agreementParam}`);
       }
     });
   };

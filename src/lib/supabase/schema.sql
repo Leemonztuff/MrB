@@ -229,6 +229,8 @@ CREATE POLICY "Allow all for authenticated" ON public.price_list_items FOR ALL U
 CREATE POLICY "Allow read for anonymous" ON public.price_list_items FOR SELECT USING (true);
 
 ALTER TABLE public.price_list_product_promotions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all for authenticated" ON public.price_list_product_promotions FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow read for anonymous" ON public.price_list_product_promotions FOR SELECT USING (true);
 
 CREATE POLICY "Allow all for authenticated" ON public.promotions FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow read for anonymous" ON public.promotions FOR SELECT USING (true);

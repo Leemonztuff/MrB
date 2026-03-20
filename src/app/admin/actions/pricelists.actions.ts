@@ -4,6 +4,7 @@
 import { revalidatePath } from "next/cache";
 import { getSupabaseClientWithAuth, upsertEntity, deleteEntity } from "./_helpers";
 import type { PriceList, DetailedPriceList, PriceListProductPromotion } from "@/types";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 // --- Price List Actions ---
 
@@ -133,7 +134,7 @@ export async function updatePriceListItem(payload: { price_list_id: string; prod
 }
 
 export async function getProductPromotionsForPriceList(priceListId: string): Promise<{ data: PriceListProductPromotion[] | null, error: any }> {
-    const supabase = await getSupabaseClientWithAuth();
+    const supabase = supabaseAdmin ?? await getSupabaseClientWithAuth();
     const { data, error } = await supabase
         .from('price_list_product_promotions')
         .select(`
@@ -154,14 +155,16 @@ export async function assignPromotionToPriceListProduct(payload: {
     product_id: string;
     promotion_id: string;
 }) {
-    const supabase = await getSupabaseClientWithAuth();
+    const supabase = supabaseAdmin ?? await getSupabaseClientWithAuth();
     const { error } = await supabase
         .from('price_list_product_promotions')
-        .upsert(payload);
+        .upsert(payload, {
+          onConflict: 'price_list_id,product_id',
+        });
 
     if (error) {
         console.error("assignPromotionToPriceListProduct error:", error.message);
-        return { error };
+        return { error: { ...error, message: "No se pudo asignar la promocion al producto." } };
     }
     revalidatePath(`/admin/pricelists/${payload.price_list_id}`);
     return { error: null };
@@ -171,7 +174,7 @@ export async function removePromotionFromPriceListProduct(payload: {
     price_list_id: string;
     product_id: string;
 }) {
-    const supabase = await getSupabaseClientWithAuth();
+    const supabase = supabaseAdmin ?? await getSupabaseClientWithAuth();
     const { error } = await supabase
         .from('price_list_product_promotions')
         .delete()
@@ -180,7 +183,7 @@ export async function removePromotionFromPriceListProduct(payload: {
 
     if (error) {
         console.error("removePromotionFromPriceListProduct error:", error.message);
-        return { error };
+        return { error: { ...error, message: "No se pudo quitar la promocion del producto." } };
     }
     revalidatePath(`/admin/pricelists/${payload.price_list_id}`);
     return { error: null };

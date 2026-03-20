@@ -326,7 +326,7 @@ export async function submitOrder(payload: {
     }, ['/admin']);
 }
 
-export async function submitOnboardingForm(payload: any): Promise<ActionResponse<null>> {
+export async function submitOnboardingForm(payload: any): Promise<ActionResponse<{ status: 'active' | 'pending_agreement'; agreement_id: string | null }>> {
     return handleAction(async () => {
         const supabase = await createServerClient();
         const validated = onboardingSchema.parse(payload);
@@ -364,7 +364,6 @@ export async function submitOnboardingForm(payload: any): Promise<ActionResponse
             delivery_window,
             instagram: data.instagram,
             status: newStatus,
-            onboarding_token: null // Invalidate token after use
         };
 
         if (data.cuit) {
@@ -380,7 +379,10 @@ export async function submitOnboardingForm(payload: any): Promise<ActionResponse
             .eq('onboarding_token', onboarding_token);
 
         if (error) throw error;
-        return null;
+        return {
+            status: newStatus,
+            agreement_id: clientBeforeUpdate.data?.agreement_id ?? null,
+        };
     }, ['/admin']);
 }
 
