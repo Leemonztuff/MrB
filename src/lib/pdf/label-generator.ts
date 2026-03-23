@@ -215,7 +215,7 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   } else {
     doc.setFontSize(THEME.fonts.header);
     doc.text('MR. BLONDE', contentX, y + 9.5);
-    headerTextX = contentX + 29;
+    headerTextX = contentX + 34;
   }
 
   doc.setFontSize(11);
@@ -223,26 +223,27 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   doc.text(`Pedido #${data.shortId}`, x + width - THEME.spacing.padding, y + 9.5, { align: 'right' });
 
   // Right Panel specific rendering
+  const rightPanelHeight = height - THEME.spacing.headerHeight - THEME.spacing.footerHeight - 7;
   doc.setFillColor(...THEME.colors.qrPanelBg);
   doc.setDrawColor(...THEME.colors.panelBorder);
-  doc.roundedRect(rightPanelX, y + THEME.spacing.headerHeight + 4, rightPanelWidth, height - THEME.spacing.headerHeight - 8, 1, 1, 'FD');
+  doc.roundedRect(rightPanelX, y + THEME.spacing.headerHeight + 4, rightPanelWidth, rightPanelHeight, 1, 1, 'FD');
 
   doc.addImage(data.qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize, data.id, 'NONE');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
+  doc.setFontSize(6.5);
   doc.setTextColor(...THEME.colors.secondaryText);
   const scanLines = fitLines(doc, data.scanText.toUpperCase(), rightPanelWidth - 6, 2);
-  doc.text(scanLines, rightPanelX + rightPanelWidth / 2, qrY + qrSize + 5, { align: 'center' });
+  doc.text(scanLines, rightPanelX + rightPanelWidth / 2, qrY + qrSize + 4.5, { align: 'center' });
 
-  const bundleY = qrY + qrSize + 5 + (scanLines.length * 3.5);
+  const bundleY = qrY + qrSize + 4 + (scanLines.length * 3);
   doc.setFillColor(...THEME.colors.headerBg);
-  doc.roundedRect(rightPanelX + 4, bundleY, rightPanelWidth - 8, 14, 1.2, 1.2, 'F');
+  doc.roundedRect(rightPanelX + 4, bundleY, rightPanelWidth - 8, 13, 1.2, 1.2, 'F');
   doc.setTextColor(...THEME.colors.headerText);
   doc.setFontSize(6.5);
-  doc.text('BULTO', rightPanelX + rightPanelWidth / 2, bundleY + 4.5, { align: 'center' });
-  doc.setFontSize(14);
-  doc.text(data.bundleText, rightPanelX + rightPanelWidth / 2, bundleY + 10.5, { align: 'center' });
+  doc.text('BULTO', rightPanelX + rightPanelWidth / 2, bundleY + 4, { align: 'center' });
+  doc.setFontSize(13);
+  doc.text(data.bundleText, rightPanelX + rightPanelWidth / 2, bundleY + 10, { align: 'center' });
 
   // Left panel rendering
   const chipWidth = Math.min(38, leftWidth);
