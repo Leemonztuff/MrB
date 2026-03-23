@@ -422,3 +422,100 @@ export async function importClients(
     return { imported, errors };
   }, ['/admin/clients']);
 }
+
+export type ImportClientRowData = Record<string, any>;
+export type ClientColumnMapping = {
+  sourceColumn: string;
+  targetField: string;
+};
+
+export async function importClientsWithMapping(
+  data: ImportClientRowData[],
+  mappings: ClientColumnMapping[]
+): Promise<ActionResponse<{ imported: number; errors: { row: number; message: string }[] }>> {
+  return handleAction(async () => {
+    const supabase = await getSupabaseClientWithAuth();
+
+    const errors: { row: number; message: string }[] = [];
+    let imported = 0;
+
+    const mappingMap = new Map(mappings.map(m => [m.sourceColumn, m.targetField]));
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+
+      try {
+        const transformed: Record<string, any> = {};
+
+        for (const [sourceCol, targetField] of mappingMap) {
+          if (sourceCol && targetField && row[sourceCol] !== undefined) {
+            let value = row[sourceCol];
+            if (typeof value === 'string') {
+              value = value.trim();
+            }
+            transformed[targetField] = value;
+          }
+        }
+
+        if (!transformed.contact_name || transformed.contact_name === '') {
+          errors.push({ row: i + 1, message: "Falta nombre del cliente" });
+          continue;
+        }
+
+        let formattedAddress = transformed.address;
+        if (!formattedAddress && (transformed.locality || transformed.province)) {
+          formattedAddress = formatAddress({
+            street_address: transformed.street_address,
+            locality: transformed.locality,
+            province: transformed.province,
+          }) || null;
+        }
+
+        const clientData: any = {
+          contact_name: transformed.contact_name?.toUpperCase() || null,
+          email: transformed.email?.toLowerCase().trim() || null,
+          phone: transformed.phone?.trim() || transformed.telefono?.trim() || null,
+          address: formattedAddress,
+          instagram: transformed.instagram?.trim() || null,
+          contact_dni: transformed.contact_dni?.trim() || null,
+          onboarding_token: crypto.randomUUID(),
+          status: 'pending_agreement',
+        };
+
+        if (transformed.cuit) {
+          const cleanCuit = String(transformed.cuit).replace(/[^0-9]/g, '');
+          if (cleanCuit.length >= 6) {
+            clientData.cuit = cleanCuit;
+            clientData.portal_token = cleanCuit.slice(0, 6);
+          }
+        }
+
+        if (transformed.delivery_window) {
+          clientData.delivery_window = transformed.delivery_window;
+        }
+
+        let { error: insertError } = await supabase
+          .from('clients')
+          .insert(clientData);
+
+        if (insertError && hasMissingOnboardingExpiryColumn(insertError)) {
+          const { onboarding_expires_at, ...fallbackData } = clientData;
+          const fallbackResult = await supabase
+            .from('clients')
+            .insert(fallbackData);
+          insertError = fallbackResult.error;
+        }
+
+        if (insertError) {
+          errors.push({ row: i + 1, message: insertError.message });
+        } else {
+          imported++;
+        }
+      } catch (err: any) {
+        errors.push({ row: i + 1, message: err.message });
+      }
+    }
+
+    return { imported, errors };
+  }, ['/admin/clients']);
+}

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { SmartImportWizard } from "@/components/shared/smart-import-wizard";
 import type { ImportEntity, ColumnMapping, ImportResult } from "@/types/import-wizard";
 import { importProducts } from "@/app/admin/actions/products.actions";
+import { importClientsWithMapping } from "@/app/admin/actions/clients.actions";
 import { toast } from "sonner";
 
 type ImportCategory = {
@@ -36,6 +37,12 @@ const IMPORT_CATEGORIES: ImportCategory[] = [
   },
 ];
 
+const ENTITY_LABELS: Record<ImportEntity, string> = {
+  productos: "productos",
+  clientes: "clientes",
+  listas_precios: "listas de precios",
+};
+
 export function ImportWizardPage() {
   const [selectedEntity, setSelectedEntity] = useState<ImportEntity | null>(null);
 
@@ -44,7 +51,7 @@ export function ImportWizardPage() {
     mappings: ColumnMapping[]
   ): Promise<ImportResult> => {
     const validMappings = mappings.filter(m => m.targetField);
-    
+
     if (validMappings.length === 0) {
       return {
         success: false,
@@ -57,7 +64,7 @@ export function ImportWizardPage() {
     try {
       if (selectedEntity === "productos") {
         const result = await importProducts(data, validMappings);
-        
+
         if (result.error) {
           return {
             success: false,
@@ -71,10 +78,34 @@ export function ImportWizardPage() {
           success: true,
           imported: result.data?.imported || 0,
           skipped: result.data?.updated || 0,
-          errors: (result.data?.errors || []).map(e => ({ 
-            row: e.row, 
-            field: "", 
-            message: e.message 
+          errors: (result.data?.errors || []).map(e => ({
+            row: e.row,
+            field: "",
+            message: e.message
+          })),
+        };
+      }
+
+      if (selectedEntity === "clientes") {
+        const result = await importClientsWithMapping(data, validMappings);
+
+        if (result.error) {
+          return {
+            success: false,
+            imported: 0,
+            skipped: data.length,
+            errors: [{ row: 0, field: "general", message: result.error.message }],
+          };
+        }
+
+        return {
+          success: true,
+          imported: result.data?.imported || 0,
+          skipped: 0,
+          errors: (result.data?.errors || []).map(e => ({
+            row: e.row,
+            field: "",
+            message: e.message
           })),
         };
       }
@@ -102,10 +133,11 @@ export function ImportWizardPage() {
           entity={selectedEntity}
           onImport={handleImport}
           onImportComplete={(result) => {
+            const entityLabel = ENTITY_LABELS[selectedEntity];
             if (result.success) {
-              toast.success(`Importación exitosa: ${result.imported} productos importados`);
+              toast.success(`Importación exitosa: ${result.imported} ${entityLabel} importados`);
             } else if (result.imported > 0) {
-              toast.warning(`Importación parcial: ${result.imported} productos, ${result.errors.length} errores`);
+              toast.warning(`Importación parcial: ${result.imported} ${entityLabel}, ${result.errors.length} errores`);
             } else {
               toast.error("Error en la importación");
             }
