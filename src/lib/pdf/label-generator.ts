@@ -163,31 +163,24 @@ function getLabelLayout(x: number, y: number, width: number, height: number): La
     width,
     height,
     contentX: x + THEME.spacing.padding,
-    contentY: y + THEME.spacing.headerHeight + THEME.spacing.padding,
-    qrSize: 42,
+    contentY: y + THEME.spacing.headerHeight + 3,
+    qrSize: 34,
   };
 }
 
 function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logoAsset: PreparedLogoAsset | null) {
   const { x, y, width, height, contentX, contentY, qrSize } = layout;
-  const rightPanelWidth = qrSize + 12;
+  const rightPanelWidth = qrSize + 10;
   const leftWidth = width - rightPanelWidth - THEME.spacing.padding * 3;
   const rightPanelX = x + width - rightPanelWidth - THEME.spacing.padding;
   const qrX = rightPanelX + (rightPanelWidth - qrSize) / 2;
-  const qrY = y + THEME.spacing.headerHeight + 12;
+  const qrY = y + THEME.spacing.headerHeight + 5;
 
-  const hasRecipient = !!data.recipientName;
   const hasDeliveryWindow = !!data.deliveryWindow;
   const hasNotes = !!data.notes;
-  const fieldCount = [hasRecipient, hasDeliveryWindow, hasNotes].filter(Boolean).length;
-  const isCompact = fieldCount >= 2;
+  const isCompact = hasDeliveryWindow && hasNotes;
   
-  const nameFontSize = data.clientName.length > 20 
-    ? (isCompact ? 13 : 15) 
-    : (isCompact ? 14 : 17);
-  const addressFontSize = isCompact ? 9 : 10;
-  const infoBlockFontSize = isCompact ? 8 : 9;
-  const titleFontSize = isCompact ? 6.5 : 7.5;
+  const nameFontSize = data.clientName.length > 20 ? 13 : 15;
 
   doc.setDrawColor(...THEME.colors.border);
   doc.setLineWidth(0.8);
@@ -229,6 +222,7 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   doc.text('ROTULO DE ENTREGA', headerTextX, y + 9.5);
   doc.text(`Pedido #${data.shortId}`, x + width - THEME.spacing.padding, y + 9.5, { align: 'right' });
 
+  // Right Panel specific rendering
   doc.setFillColor(...THEME.colors.qrPanelBg);
   doc.setDrawColor(...THEME.colors.panelBorder);
   doc.roundedRect(rightPanelX, y + THEME.spacing.headerHeight + 4, rightPanelWidth, height - THEME.spacing.headerHeight - 8, 1, 1, 'FD');
@@ -236,77 +230,104 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   doc.addImage(data.qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize, data.id, 'NONE');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setTextColor(...THEME.colors.secondaryText);
-  const scanLines = fitLines(doc, data.scanText.toUpperCase(), rightPanelWidth - 8, 2);
-  doc.text(scanLines, rightPanelX + rightPanelWidth / 2, qrY + qrSize + 8, { align: 'center' });
+  const scanLines = fitLines(doc, data.scanText.toUpperCase(), rightPanelWidth - 6, 2);
+  doc.text(scanLines, rightPanelX + rightPanelWidth / 2, qrY + qrSize + 5, { align: 'center' });
 
-  const bundleY = qrY + qrSize + 20;
+  const bundleY = qrY + qrSize + 5 + (scanLines.length * 3.5);
   doc.setFillColor(...THEME.colors.headerBg);
   doc.roundedRect(rightPanelX + 4, bundleY, rightPanelWidth - 8, 14, 1.2, 1.2, 'F');
   doc.setTextColor(...THEME.colors.headerText);
-  doc.setFontSize(7);
+  doc.setFontSize(6.5);
   doc.text('BULTO', rightPanelX + rightPanelWidth / 2, bundleY + 4.5, { align: 'center' });
-  doc.setFontSize(15);
+  doc.setFontSize(14);
   doc.text(data.bundleText, rightPanelX + rightPanelWidth / 2, bundleY + 10.5, { align: 'center' });
 
-  const chipWidth = Math.min(42, leftWidth);
+  // Left panel rendering
+  const chipWidth = Math.min(38, leftWidth);
   doc.setFillColor(...THEME.colors.chipBg);
-  doc.roundedRect(contentX, contentY, chipWidth, 7, 1, 1, 'F');
+  doc.roundedRect(contentX, contentY, chipWidth, 6, 1, 1, 'F');
   doc.setTextColor(...THEME.colors.chipText);
-  doc.setFontSize(7.5);
-  doc.text('DESTINATARIO', contentX + chipWidth / 2, contentY + 4.5, { align: 'center' });
+  doc.setFontSize(7);
+  doc.text('DESTINATARIO', contentX + chipWidth / 2, contentY + 4, { align: 'center' });
 
-  const nameY = contentY + 13;
+  const nameY = contentY + 11;
   doc.setTextColor(...THEME.colors.primaryText);
   doc.setFontSize(nameFontSize);
   const clientLines = fitLines(doc, data.clientName, leftWidth, 2);
   doc.text(clientLines, contentX, nameY);
 
-  let currentY = nameY + clientLines.length * (nameFontSize * 0.7) + 2;
+  let currentY = nameY + clientLines.length * (nameFontSize * 0.35);
 
   if (data.recipientName) {
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(isCompact ? 7 : 9);
+    doc.setFontSize(8);
     doc.setTextColor(...THEME.colors.secondaryText);
     doc.text(`Recibe: ${data.recipientName}`, contentX, currentY);
-    currentY += isCompact ? 5 : 6;
+    currentY += 4;
   }
 
-  currentY += drawAddressCard(doc, contentX, currentY, leftWidth, data.address, isCompact, addressFontSize, titleFontSize) + (isCompact ? 2 : 4);
+  currentY += 1.5;
 
-  if (data.deliveryWindow) {
-    currentY += drawInfoBlock(doc, {
-      x: contentX,
-      y: currentY,
-      width: leftWidth,
-      title: 'VENTANA DE ENTREGA',
-      text: data.deliveryWindow,
-      fillColor: THEME.colors.chipBg,
-      borderColor: THEME.colors.panelBorder,
-      fontStyle: 'bold',
-      compact: isCompact,
-      fontSize: infoBlockFontSize,
-      titleSize: titleFontSize,
-    }) + (isCompact ? 2 : 3);
+  const standardBlockHeight = 15;
+  
+  // Draw Address Block
+  drawInfoBlockStandard(doc, {
+    x: contentX,
+    y: currentY,
+    width: leftWidth,
+    height: standardBlockHeight + 1,
+    title: 'DIRECCION DE ENTREGA',
+    text: data.address,
+    fillColor: THEME.colors.panelBg,
+    borderColor: THEME.colors.panelBorder,
+    fontStyle: 'bold',
+    maxLines: 2
+  });
+  
+  currentY += standardBlockHeight + 3;
+
+  // Draw Extras Block (Window and Notes side-by-side if both present)
+  if (hasWindow || hasNotes) {
+    const both = hasWindow && hasNotes;
+    const blockWidth = both ? (leftWidth - 2) / 2 : leftWidth;
+    
+    let currentX = contentX;
+    
+    if (hasWindow) {
+      drawInfoBlockStandard(doc, {
+        x: currentX,
+        y: currentY,
+        width: blockWidth,
+        height: standardBlockHeight,
+        title: 'VENTANA DE ENTREGA',
+        text: data.deliveryWindow!,
+        fillColor: THEME.colors.chipBg,
+        borderColor: THEME.colors.panelBorder,
+        fontStyle: 'bold',
+        maxLines: 2
+      });
+      currentX += blockWidth + 2;
+    }
+    
+    if (hasNotes) {
+      drawInfoBlockStandard(doc, {
+        x: currentX,
+        y: currentY,
+        width: blockWidth,
+        height: standardBlockHeight,
+        title: 'INDICACIONES',
+        text: data.notes!,
+        fillColor: THEME.colors.noteBg,
+        borderColor: THEME.colors.noteBorder,
+        fontStyle: 'italic',
+        maxLines: 2
+      });
+    }
   }
 
-  if (data.notes) {
-    currentY += drawInfoBlock(doc, {
-      x: contentX,
-      y: currentY,
-      width: leftWidth,
-      title: 'INDICACIONES',
-      text: data.notes,
-      fillColor: THEME.colors.noteBg,
-      borderColor: THEME.colors.noteBorder,
-      fontStyle: 'italic',
-      compact: isCompact,
-      fontSize: infoBlockFontSize,
-      titleSize: titleFontSize,
-    }) + (isCompact ? 2 : 3);
-  }
-
+  // Footer separator line
   doc.setDrawColor(...THEME.colors.panelBorder);
   doc.setLineWidth(0.3);
   doc.line(contentX, y + height - THEME.spacing.footerHeight - 2, x + width - THEME.spacing.padding, y + height - THEME.spacing.footerHeight - 2);
@@ -318,65 +339,37 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   doc.text(`Emitido ${data.dateText}`, x + width - THEME.spacing.padding, y + height - 5.2, { align: 'right' });
 }
 
-function drawAddressCard(doc: jsPDF, x: number, y: number, width: number, address: string, isCompact = false, fontSize = 10, titleSize = 7.5): number {
-  const height = isCompact ? 24 : 31;
-  doc.setFillColor(...THEME.colors.panelBg);
-  doc.setDrawColor(...THEME.colors.panelBorder);
-  doc.roundedRect(x, y, width, height, 1, 1, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(titleSize);
-  doc.setTextColor(...THEME.colors.secondaryText);
-  doc.text('DIRECCION DE ENTREGA', x + 3, y + (isCompact ? 4.5 : 5));
-
-  doc.setFontSize(fontSize);
-  doc.setTextColor(...THEME.colors.primaryText);
-  const lines = fitLines(doc, address, width - 6, isCompact ? 2 : 3);
-  doc.text(lines, x + 3, y + (isCompact ? 10 : 11));
-
-  return height;
-}
-
-function drawInfoBlock(
+function drawInfoBlockStandard(
   doc: jsPDF,
   options: {
     x: number;
     y: number;
     width: number;
+    height: number;
     title: string;
     text: string;
     fillColor: [number, number, number];
     borderColor: [number, number, number];
     fontStyle: 'bold' | 'italic' | 'normal';
-    compact?: boolean;
-    fontSize?: number;
-    titleSize?: number;
+    maxLines: number;
   }
-): number {
-  const { x, y, width, title, text, fillColor, borderColor, fontStyle, compact = false, fontSize = THEME.fonts.body, titleSize = 7.5 } = options;
-  const padding = compact ? 2 : 3;
-
-  doc.setFont('helvetica', fontStyle);
-  doc.setFontSize(fontSize);
-  const lines = fitLines(doc, text, width - padding * 2, compact ? 2 : 3);
-  const lineHeight = compact ? 4 : 4.5;
-  const height = (compact ? 9 : 11) + lines.length * lineHeight;
+) {
+  const { x, y, width, height, title, text, fillColor, borderColor, fontStyle, maxLines } = options;
 
   doc.setFillColor(...fillColor);
   doc.setDrawColor(...borderColor);
   doc.roundedRect(x, y, width, height, 1, 1, 'FD');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(titleSize);
+  doc.setFontSize(6.5);
   doc.setTextColor(...THEME.colors.secondaryText);
-  doc.text(title, x + padding, y + (compact ? 4 : 4.5));
+  doc.text(title, x + 3, y + 4.5);
 
   doc.setFont('helvetica', fontStyle);
-  doc.setFontSize(fontSize);
+  doc.setFontSize(8.5);
   doc.setTextColor(...THEME.colors.primaryText);
-  doc.text(lines, x + padding, y + (compact ? 8.5 : 10));
-
-  return height;
+  const lines = fitLines(doc, text, width - 6, maxLines);
+  doc.text(lines, x + 3, y + 9);
 }
 
 function fitLines(doc: jsPDF, text: string, width: number, maxLines: number): string[] {
