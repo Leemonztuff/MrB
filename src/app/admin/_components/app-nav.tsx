@@ -12,6 +12,7 @@ import {
   History,
   Megaphone,
   Box,
+  Upload,
 } from "lucide-react";
 import {
   Tooltip,
@@ -39,6 +40,7 @@ const baseNavItems: NavItem[] = [
   { href: "/admin/agreements", icon: FileText, label: "Convenios" },
   { href: "/admin/commercial-settings", icon: Briefcase, label: "Comercial" },
   { href: "/admin/news", icon: Megaphone, label: "Noticias" },
+  { href: "/admin/import", icon: Upload, label: "Importar" },
 ];
 
 export function AppNav({ isMobile, stats, enableStock = false }: { isMobile: boolean, stats: DashboardStats, enableStock?: boolean }) {
