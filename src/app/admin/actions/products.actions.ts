@@ -74,7 +74,96 @@ export type ImportProductRow = {
   imagen?: string;
 };
 
+export type ImportRowData = Record<string, any>;
+export type ColumnMapping = {
+  sourceColumn: string;
+  targetField: string;
+};
+
 export async function importProducts(
+  data: ImportRowData[],
+  mappings: ColumnMapping[]
+): Promise<ActionResponse<{ imported: number; updated: number; errors: { row: number; message: string }[] }>> {
+  return handleAction(async () => {
+    const supabase = await getSupabaseClientWithAuth();
+    
+    const errors: { row: number; message: string }[] = [];
+    let imported = 0;
+    let updated = 0;
+
+    const mappingMap = new Map(mappings.map(m => [m.sourceColumn, m.targetField]));
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      
+      try {
+        const transformed: Record<string, any> = {};
+        
+        for (const [sourceCol, targetField] of mappingMap) {
+          if (sourceCol && targetField && row[sourceCol] !== undefined) {
+            let value = row[sourceCol];
+            if (typeof value === 'string') {
+              value = value.trim();
+            }
+            transformed[targetField] = value;
+          }
+        }
+
+        if (!transformed.name || transformed.name === '') {
+          errors.push({ row: i + 1, message: "Falta nombre del producto" });
+          continue;
+        }
+
+        if (transformed.sku) {
+          const { data: existing } = await supabase
+            .from('products')
+            .select('id')
+            .eq('name', transformed.name)
+            .maybeSingle();
+
+          if (existing) {
+            const { error: updateError } = await supabase
+              .from('products')
+              .update({
+                description: transformed.description || null,
+                category: transformed.category || null,
+                image_url: transformed.image_url || null,
+              })
+              .eq('id', existing.id);
+
+            if (updateError) {
+              errors.push({ row: i + 1, message: updateError.message });
+            } else {
+              updated++;
+            }
+            continue;
+          }
+        }
+
+        const { error: insertError } = await supabase
+          .from('products')
+          .insert({
+            name: transformed.name,
+            description: transformed.description || null,
+            category: transformed.category || null,
+            image_url: transformed.image_url || null,
+          });
+
+        if (insertError) {
+          errors.push({ row: i + 1, message: insertError.message });
+        } else {
+          imported++;
+        }
+      } catch (err: any) {
+        errors.push({ row: i + 1, message: err.message });
+      }
+    }
+
+    return { imported, updated, errors };
+  }, ['/admin/products']);
+}
+
+export async function importProductsLegacy(
   data: ImportProductRow[]
 ): Promise<ActionResponse<{ imported: number; errors: string[] }>> {
   return handleAction(async () => {

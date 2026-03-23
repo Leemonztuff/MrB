@@ -57,6 +57,78 @@ const FIELD_MAP: Record<ImportEntity, FieldDefinition[]> = {
   ] as FieldDefinition[],
 };
 
+const FIELD_ALIASES: Record<ImportEntity, Record<string, string[]>> = {
+  productos: {
+    sku: ['sku', 'codigo', 'codigo sku', 'product id', 'id producto', 'article', 'articulo', 'ref', 'referencia', 'código'],
+    name: ['nombre', 'name', 'producto', 'product name', 'descripcion', 'description', 'titulo', 'title', 'product'],
+    description: ['descripcion', 'description', 'detalle', 'details', 'desc'],
+    category: ['categoria', 'category', 'tipo', 'type', 'linea', 'line', 'cat'],
+    price: ['precio', 'price', 'valor', 'value', 'precio unitario', 'unit price'],
+    volume_price: ['precio mayor', 'volumen', 'volume price', 'bulk price', 'precio volumen', 'precio_mayor'],
+    stock: ['stock', 'inventario', 'inventory', 'cantidad', 'quantity', 'disponibles'],
+    image_url: ['imagen', 'image', 'foto', 'photo', 'url imagen', 'image_url', 'img'],
+  },
+  clientes: {
+    contact_name: ['nombre', 'name', 'contacto', 'contact', 'cliente', 'client', 'razon social', 'razón social'],
+    email: ['email', 'correo', 'mail', 'e-mail', 'correo electronico'],
+    phone: ['telefono', 'phone', 'tel', 'celular', 'mobile', 'cel', 'whatsapp'],
+    address: ['direccion', 'address', 'domicilio', 'calle', 'street', 'dir'],
+    instagram: ['instagram', 'ig', 'red social'],
+    delivery_window: ['horario', 'window', 'turno', 'delivery window'],
+    cuit: ['cuit', 'tax id', 'taxid', 'rif', 'dni', 'documento', 'document'],
+  },
+  listas_precios: {
+    sku: ['sku', 'codigo', 'codigo sku', 'product id', 'id producto', 'article'],
+    name: ['nombre producto', 'producto', 'product name', 'articulo', 'name'],
+    price: ['precio', 'price', 'valor'],
+    volume_price: ['precio mayor', 'volumen', 'bulk'],
+  },
+};
+
+function findBestMappingRuleBased(sourceColumn: string, targetEntity: ImportEntity): { field: string; confidence: number } | null {
+  const normalizedSource = sourceColumn.toLowerCase().trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[_\s-]/g, '');
+  
+  const aliases = FIELD_ALIASES[targetEntity] || FIELD_ALIASES.productos;
+
+  for (const [field, aliasList] of Object.entries(aliases)) {
+    for (const alias of aliasList) {
+      const normalizedAlias = alias.toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[_\s-]/g, '');
+      
+      if (normalizedSource === normalizedAlias || 
+          normalizedSource.includes(normalizedAlias) || 
+          normalizedAlias.includes(normalizedSource)) {
+        return { field, confidence: 0.85 };
+      }
+    }
+  }
+
+  return null;
+}
+
+function autoMapColumns(headers: string[], targetEntity: ImportEntity): ColumnMapping[] {
+  const mappings: ColumnMapping[] = [];
+  
+  for (const header of headers) {
+    const mapping = findBestMappingRuleBased(header, targetEntity);
+    if (mapping) {
+      mappings.push({
+        sourceColumn: header,
+        targetField: mapping.field,
+        confidence: mapping.confidence,
+        description: FIELD_MAP[targetEntity].find(f => f.key === mapping.field)?.description || '',
+      });
+    }
+  }
+  
+  return mappings;
+}
+
 interface SmartImportWizardProps {
   entity: ImportEntity;
   onImportComplete?: (result: ImportResult) => void;
@@ -82,19 +154,51 @@ export function SmartImportWizard({ entity, onImportComplete, onImport }: SmartI
 
     try {
       const sampleRows = data.rows.slice(0, 10);
-      const result = await analyzeImportColumns({
-        headers: data.headers,
-        sampleRows,
-        targetEntity: entity,
-      });
+      
+      let result;
+      try {
+        result = await analyzeImportColumns({
+          headers: data.headers,
+          sampleRows,
+          targetEntity: entity,
+        });
+      } catch (aiError) {
+        console.warn("AI analysis failed, using rule-based mapping:", aiError);
+        result = null;
+      }
 
-      setAnalysisResult(result);
-      setMappings(result.columnMappings);
-      setUnmappedColumns(result.unmappedColumns);
+      if (result && result.columnMappings.length > 0) {
+        setAnalysisResult(result);
+        setMappings(result.columnMappings);
+        setUnmappedColumns(result.unmappedColumns);
+      } else {
+        const ruleBasedMappings = autoMapColumns(data.headers, entity);
+        const mappedColumns = new Set(ruleBasedMappings.map(m => m.sourceColumn));
+        const unmapped = data.headers.filter(h => !mappedColumns.has(h));
+        
+        setAnalysisResult({
+          detectedEntityType: entity,
+          columnMappings: ruleBasedMappings,
+          suggestions: ruleBasedMappings.length > 0 
+            ? [`Se mapearon ${ruleBasedMappings.length} columnas automáticamente usando coincidencias de nombre.`]
+            : ['No se encontraron coincidencias. Mapea las columnas manualmente.'],
+          dataQuality: {
+            totalRows: data.rows.length,
+            emptyRows: 0,
+            duplicateRows: 0,
+            sampleEmptyFields: 0,
+          },
+          unmappedColumns: unmapped,
+        });
+        setMappings(ruleBasedMappings);
+        setUnmappedColumns(unmapped);
+      }
+      
       setCurrentStep(3);
     } catch (error: any) {
       console.error("Analysis error:", error);
       setAnalysisError(error.message || "Error al analizar el archivo");
+      setCurrentStep(3);
     } finally {
       setIsAnalyzing(false);
     }
@@ -163,7 +267,8 @@ export function SmartImportWizard({ entity, onImportComplete, onImport }: SmartI
     }
   }, [currentStep]);
 
-  const canProceedToImport = mappings.some(m => m.targetField);
+  const mappedFields = mappings.filter(m => m.targetField);
+  const canProceedToImport = mappedFields.length > 0;
 
   const availableFields = FIELD_MAP[entity];
 
@@ -334,13 +439,21 @@ export function SmartImportWizard({ entity, onImportComplete, onImport }: SmartI
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Volver
                 </Button>
-                <Button
-                  onClick={handleImport}
-                  disabled={!canProceedToImport}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Importar {fileData?.rows.length || 0} registros
-                </Button>
+                <div className="flex items-center gap-3">
+                  {!canProceedToImport && (
+                    <span className="text-sm text-muted-foreground">
+                      Mapea al menos una columna para importar
+                    </span>
+                  )}
+                  <Button
+                    onClick={handleImport}
+                    disabled={!canProceedToImport}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Importar {fileData?.rows.length || 0} registros
+                    {mappedFields.length > 0 && ` (${mappedFields.length} columnas)`}
+                  </Button>
+                </div>
               </div>
             </div>
           )}

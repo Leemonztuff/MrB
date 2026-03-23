@@ -5,6 +5,8 @@ import { Package, Users, DollarSign } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SmartImportWizard } from "@/components/shared/smart-import-wizard";
 import type { ImportEntity, ColumnMapping, ImportResult } from "@/types/import-wizard";
+import { importProducts } from "@/app/admin/actions/products.actions";
+import { toast } from "sonner";
 
 type ImportCategory = {
   id: ImportEntity;
@@ -41,44 +43,56 @@ export function ImportWizardPage() {
     data: Record<string, any>[],
     mappings: ColumnMapping[]
   ): Promise<ImportResult> => {
-    const mappingMap = new Map(mappings.map(m => [m.sourceColumn, m.targetField]));
+    const validMappings = mappings.filter(m => m.targetField);
     
-    const transformedData = data.map((row, idx) => {
-      const transformed: Record<string, any> = {};
-      
-      for (const [sourceCol, targetField] of mappingMap) {
-        if (sourceCol && targetField) {
-          transformed[targetField] = row[sourceCol];
-        }
-      }
-      
-      return transformed;
-    }).filter(row => Object.keys(row).length > 0);
-
-    const errors: { row: number; field: string; message: string }[] = [];
-    let imported = 0;
-    let skipped = 0;
-
-    for (let i = 0; i < transformedData.length; i++) {
-      const item = transformedData[i];
-      
-      if (!item.name && !item.sku) {
-        errors.push({ row: i + 1, field: "name/sku", message: "Falta identificador del producto" });
-        skipped++;
-        continue;
-      }
-
-      imported++;
+    if (validMappings.length === 0) {
+      return {
+        success: false,
+        imported: 0,
+        skipped: data.length,
+        errors: [{ row: 0, field: "general", message: "Debes mapear al menos una columna antes de importar" }],
+      };
     }
 
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      if (selectedEntity === "productos") {
+        const result = await importProducts(data, validMappings);
+        
+        if (result.error) {
+          return {
+            success: false,
+            imported: 0,
+            skipped: data.length,
+            errors: [{ row: 0, field: "general", message: result.error.message }],
+          };
+        }
 
-    return {
-      success: errors.length === 0,
-      imported,
-      skipped,
-      errors,
-    };
+        return {
+          success: true,
+          imported: result.data?.imported || 0,
+          skipped: result.data?.updated || 0,
+          errors: (result.data?.errors || []).map(e => ({ 
+            row: e.row, 
+            field: "", 
+            message: e.message 
+          })),
+        };
+      }
+
+      return {
+        success: false,
+        imported: 0,
+        skipped: 0,
+        errors: [{ row: 0, field: "general", message: `Importación de ${selectedEntity} aún no implementada` }],
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        imported: 0,
+        skipped: data.length,
+        errors: [{ row: 0, field: "general", message: error.message || "Error desconocido" }],
+      };
+    }
   };
 
   if (selectedEntity) {
@@ -88,7 +102,13 @@ export function ImportWizardPage() {
           entity={selectedEntity}
           onImport={handleImport}
           onImportComplete={(result) => {
-            console.log("Import completed:", result);
+            if (result.success) {
+              toast.success(`Importación exitosa: ${result.imported} productos importados`);
+            } else if (result.imported > 0) {
+              toast.warning(`Importación parcial: ${result.imported} productos, ${result.errors.length} errores`);
+            } else {
+              toast.error("Error en la importación");
+            }
           }}
         />
       </div>
@@ -96,33 +116,41 @@ export function ImportWizardPage() {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-5xl">
-      {IMPORT_CATEGORIES.map((category) => {
-        const Icon = category.icon;
-        
-        return (
-          <Card
-            key={category.id}
-            className="cursor-pointer hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all"
-            onClick={() => setSelectedEntity(category.id)}
-          >
-            <CardHeader>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Icon className="h-6 w-6 text-primary" />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold mb-2">Selecciona el tipo de datos</h2>
+        <p className="text-sm text-muted-foreground">
+          Elige qué tipo de información quieres importar desde tu archivo Excel o CSV.
+        </p>
+      </div>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-5xl">
+        {IMPORT_CATEGORIES.map((category) => {
+          const Icon = category.icon;
+          
+          return (
+            <Card
+              key={category.id}
+              className="cursor-pointer hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all"
+              onClick={() => setSelectedEntity(category.id)}
+            >
+              <CardHeader>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle className="text-lg">{category.label}</CardTitle>
                 </div>
-                <CardTitle className="text-lg">{category.label}</CardTitle>
-              </div>
-              <CardDescription>{category.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Haz clic para comenzar a importar {category.label.toLowerCase()}
-              </p>
-            </CardContent>
-          </Card>
-        );
-      })}
+                <CardDescription>{category.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Haz clic para comenzar a importar {category.label.toLowerCase()}
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 }

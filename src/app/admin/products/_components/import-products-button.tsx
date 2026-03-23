@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { FileSpreadsheet, Upload } from "lucide-react";
-import { importProducts, type ImportProductRow } from "@/app/admin/actions/products.actions";
+import { importProductsLegacy, type ImportProductRow } from "@/app/admin/actions/products.actions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -24,7 +24,7 @@ export function ImportProductsButton() {
   const [open, setOpen] = useState(false);
 
   const handleImport = async (data: ImportProductRow[]): Promise<ImportResult> => {
-    const result = await importProducts(data);
+    const result = await importProductsLegacy(data);
 
     if (!result.success) {
       return {
