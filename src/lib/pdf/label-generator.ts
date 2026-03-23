@@ -136,15 +136,19 @@ async function formatLabelData(label: LabelData, baseUrl: string): Promise<Forma
     },
   });
 
+  const recipientName = label.clients?.contact_name ? truncateText(normalizeText(label.clients.contact_name), 30) : null;
+  const deliveryWindow = label.clients?.delivery_window ? normalizeText(label.clients.delivery_window) : null;
+  const notes = label.notes ? truncateText(normalizeText(label.notes), 100) : null;
+
   return {
     id: label.id,
     shortId: label.id.slice(-6).toUpperCase(),
     clientName: normalizeText(label.client_name_cache || 'Cliente').toUpperCase(),
-    recipientName: label.clients?.contact_name ? normalizeText(label.clients.contact_name) : null,
-    address: normalizeText(label.clients?.address || 'Sin direccion registrada'),
-    deliveryWindow: label.clients?.delivery_window ? normalizeText(label.clients.delivery_window) : null,
-    notes: label.notes ? normalizeText(label.notes) : null,
-    contactLine: buildContactLine(label.clients),
+    recipientName,
+    address: truncateText(normalizeText(label.clients?.address || 'Sin direccion registrada'), 80),
+    deliveryWindow,
+    notes,
+    contactLine: buildCompactContactLine(label.clients),
     bundleText: `${label.bundleIdx}/${label.totalBundles}`,
     dateText: DATE_FORMATTER.format(new Date(label.created_at)),
     scanText: 'Escanear para confirmar entrega',
@@ -171,6 +175,19 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   const rightPanelX = x + width - rightPanelWidth - THEME.spacing.padding;
   const qrX = rightPanelX + (rightPanelWidth - qrSize) / 2;
   const qrY = y + THEME.spacing.headerHeight + 12;
+
+  const hasRecipient = !!data.recipientName;
+  const hasDeliveryWindow = !!data.deliveryWindow;
+  const hasNotes = !!data.notes;
+  const fieldCount = [hasRecipient, hasDeliveryWindow, hasNotes].filter(Boolean).length;
+  const isCompact = fieldCount >= 2;
+  
+  const nameFontSize = data.clientName.length > 20 
+    ? (isCompact ? 13 : 15) 
+    : (isCompact ? 14 : 17);
+  const addressFontSize = isCompact ? 9 : 10;
+  const infoBlockFontSize = isCompact ? 8 : 9;
+  const titleFontSize = isCompact ? 6.5 : 7.5;
 
   doc.setDrawColor(...THEME.colors.border);
   doc.setLineWidth(0.8);
@@ -242,21 +259,21 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
 
   const nameY = contentY + 13;
   doc.setTextColor(...THEME.colors.primaryText);
-  doc.setFontSize(THEME.fonts.title);
+  doc.setFontSize(nameFontSize);
   const clientLines = fitLines(doc, data.clientName, leftWidth, 2);
   doc.text(clientLines, contentX, nameY);
 
-  let currentY = nameY + clientLines.length * 7 + 2;
+  let currentY = nameY + clientLines.length * (nameFontSize * 0.7) + 2;
 
   if (data.recipientName) {
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(isCompact ? 7 : 9);
     doc.setTextColor(...THEME.colors.secondaryText);
     doc.text(`Recibe: ${data.recipientName}`, contentX, currentY);
-    currentY += 6;
+    currentY += isCompact ? 5 : 6;
   }
 
-  currentY += drawAddressCard(doc, contentX, currentY, leftWidth, data.address) + 4;
+  currentY += drawAddressCard(doc, contentX, currentY, leftWidth, data.address, isCompact, addressFontSize, titleFontSize) + (isCompact ? 2 : 4);
 
   if (data.deliveryWindow) {
     currentY += drawInfoBlock(doc, {
@@ -268,7 +285,10 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
       fillColor: THEME.colors.chipBg,
       borderColor: THEME.colors.panelBorder,
       fontStyle: 'bold',
-    }) + 3;
+      compact: isCompact,
+      fontSize: infoBlockFontSize,
+      titleSize: titleFontSize,
+    }) + (isCompact ? 2 : 3);
   }
 
   if (data.notes) {
@@ -281,7 +301,10 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
       fillColor: THEME.colors.noteBg,
       borderColor: THEME.colors.noteBorder,
       fontStyle: 'italic',
-    }) + 3;
+      compact: isCompact,
+      fontSize: infoBlockFontSize,
+      titleSize: titleFontSize,
+    }) + (isCompact ? 2 : 3);
   }
 
   doc.setDrawColor(...THEME.colors.panelBorder);
@@ -295,21 +318,21 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   doc.text(`Emitido ${data.dateText}`, x + width - THEME.spacing.padding, y + height - 5.2, { align: 'right' });
 }
 
-function drawAddressCard(doc: jsPDF, x: number, y: number, width: number, address: string): number {
-  const height = 31;
+function drawAddressCard(doc: jsPDF, x: number, y: number, width: number, address: string, isCompact = false, fontSize = 10, titleSize = 7.5): number {
+  const height = isCompact ? 24 : 31;
   doc.setFillColor(...THEME.colors.panelBg);
   doc.setDrawColor(...THEME.colors.panelBorder);
   doc.roundedRect(x, y, width, height, 1, 1, 'FD');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
+  doc.setFontSize(titleSize);
   doc.setTextColor(...THEME.colors.secondaryText);
-  doc.text('DIRECCION DE ENTREGA', x + 3, y + 5);
+  doc.text('DIRECCION DE ENTREGA', x + 3, y + (isCompact ? 4.5 : 5));
 
-  doc.setFontSize(11);
+  doc.setFontSize(fontSize);
   doc.setTextColor(...THEME.colors.primaryText);
-  const lines = fitLines(doc, address, width - 6, 3);
-  doc.text(lines, x + 3, y + 11);
+  const lines = fitLines(doc, address, width - 6, isCompact ? 2 : 3);
+  doc.text(lines, x + 3, y + (isCompact ? 10 : 11));
 
   return height;
 }
@@ -325,29 +348,33 @@ function drawInfoBlock(
     fillColor: [number, number, number];
     borderColor: [number, number, number];
     fontStyle: 'bold' | 'italic' | 'normal';
+    compact?: boolean;
+    fontSize?: number;
+    titleSize?: number;
   }
 ): number {
-  const { x, y, width, title, text, fillColor, borderColor, fontStyle } = options;
-  const padding = 3;
+  const { x, y, width, title, text, fillColor, borderColor, fontStyle, compact = false, fontSize = THEME.fonts.body, titleSize = 7.5 } = options;
+  const padding = compact ? 2 : 3;
 
   doc.setFont('helvetica', fontStyle);
-  doc.setFontSize(THEME.fonts.body);
-  const lines = fitLines(doc, text, width - padding * 2, 3);
-  const height = 11 + lines.length * 4.5;
+  doc.setFontSize(fontSize);
+  const lines = fitLines(doc, text, width - padding * 2, compact ? 2 : 3);
+  const lineHeight = compact ? 4 : 4.5;
+  const height = (compact ? 9 : 11) + lines.length * lineHeight;
 
   doc.setFillColor(...fillColor);
   doc.setDrawColor(...borderColor);
   doc.roundedRect(x, y, width, height, 1, 1, 'FD');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
+  doc.setFontSize(titleSize);
   doc.setTextColor(...THEME.colors.secondaryText);
-  doc.text(title, x + padding, y + 4.5);
+  doc.text(title, x + padding, y + (compact ? 4 : 4.5));
 
   doc.setFont('helvetica', fontStyle);
-  doc.setFontSize(THEME.fonts.body);
+  doc.setFontSize(fontSize);
   doc.setTextColor(...THEME.colors.primaryText);
-  doc.text(lines, x + padding, y + 10);
+  doc.text(lines, x + padding, y + (compact ? 8.5 : 10));
 
   return height;
 }
@@ -374,6 +401,11 @@ function normalizeText(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
 
+function truncateText(value: string, maxLength: number): string {
+  if (value.length <= maxLength) return value;
+  return value.slice(0, maxLength - 3) + '...';
+}
+
 function buildContactLine(clients: LabelData['clients']): string {
   const parts = [
     clients?.phone ? `Tel: ${normalizeText(clients.phone)}` : null,
@@ -381,6 +413,20 @@ function buildContactLine(clients: LabelData['clients']): string {
   ].filter(Boolean);
 
   return parts.length > 0 ? parts.join(' | ') : 'Sin datos de contacto';
+}
+
+function buildCompactContactLine(clients: LabelData['clients']): string {
+  const phone = clients?.phone ? normalizeText(clients.phone) : null;
+  const email = clients?.email ? normalizeText(clients.email) : null;
+  
+  if (phone && email) {
+    return `${phone} | ${truncateText(email, 25)}`;
+  }
+  
+  if (phone) return `Tel: ${phone}`;
+  if (email) return truncateText(email, 40);
+  
+  return 'Sin datos de contacto';
 }
 
 async function prepareLogoAsset(logoUrl: string | null): Promise<PreparedLogoAsset | null> {
