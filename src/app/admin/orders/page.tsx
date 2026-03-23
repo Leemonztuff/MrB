@@ -8,13 +8,15 @@ import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SearchInput } from "@/components/shared/search-input";
 import { Pagination } from "@/components/shared/pagination";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Package } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
 import { ShippingLabelButton } from "../_components/shipping-label-button";
 import { OrderStatusBadge } from "../_components/order-status-badge";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { OrderWithItems } from "@/types";
@@ -156,13 +158,29 @@ export default function OrdersHistoryPage() {
                       {order.client_name_cache}
                     </TableCell>
                     <TableCell>
-                      <div className="max-w-[250px] flex flex-wrap gap-1">
-                        {order.order_items?.map((item, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-[9px] bg-white/5 font-normal">
-                            {item.quantity}x {item.products?.name}
-                          </Badge>
-                        )) || <span className="text-xs text-muted-foreground italic">Sin detalle</span>}
-                      </div>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-widest gap-2 bg-white/5 border-white/10 hover:bg-white/10">
+                            <Package className="w-3 h-3" />
+                            Ver Contenido
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md bg-slate-950 border-white/10 text-white">
+                          <DialogHeader>
+                            <DialogTitle className="font-black italic tracking-tighter text-xl">Contenido del Pedido</DialogTitle>
+                          </DialogHeader>
+                          <div className="flex flex-col gap-1 mt-4 max-h-[60vh] overflow-y-auto pr-2">
+                            {order.order_items?.map((item, idx) => (
+                              <div key={idx} className="flex justify-between items-center py-3 border-b border-white/5 last:border-0 group">
+                                <span className="text-sm font-semibold text-slate-200 group-hover:text-primary transition-colors">{item.products?.name}</span>
+                                <Badge variant="secondary" className="bg-white/10 text-xs font-black">
+                                  x{item.quantity}
+                                </Badge>
+                              </div>
+                            )) || <p className="text-sm text-muted-foreground italic py-4">Sin detalle registrado</p>}
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                     </TableCell>
                     <TableCell className="font-headline font-black text-primary/80">
                       ${order.total_amount.toLocaleString()}
