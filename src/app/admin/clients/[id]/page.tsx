@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FileWarning } from "lucide-react";
 import { getClientById, getClientStats } from "@/app/admin/actions/clients.actions";
 import { getClientOrders } from "@/app/admin/actions/dashboard.actions";
+import { getSettings } from "@/app/admin/actions/settings.actions";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import dynamic from "next/dynamic";
@@ -43,10 +44,11 @@ export default async function ClientDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [clientResult, statsResult, ordersResult] = await Promise.all([
+  const [clientResult, statsResult, ordersResult, settings] = await Promise.all([
     getClientById(id),
     getClientStats(id),
-    getClientOrders(id)
+    getClientOrders(id),
+    getSettings()
   ]);
 
   if (clientResult.error || !clientResult.data) {
@@ -71,6 +73,7 @@ export default async function ClientDetailPage({
   const client = clientResult.data;
   const stats = statsResult.data ?? null;
   const orders = ordersResult;
+  const whatsappNumber = settings?.whatsapp_number || "";
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
@@ -84,6 +87,7 @@ export default async function ClientDetailPage({
           client={client}
           stats={stats}
           orders={orders}
+          whatsappNumber={whatsappNumber}
         />
       </Suspense>
     </div>

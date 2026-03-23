@@ -14,7 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Client } from "@/types";
-import { Archive, Copy, Link as LinkIcon } from "lucide-react";
+import { Archive, Copy, Link as LinkIcon, MessageCircle } from "lucide-react";
+import { openWhatsAppLink, getClientWelcomeMessage, getOnboardingInviteMessage } from "@/lib/whatsapp-utils";
 
 type ClientActionButtonsProps = {
     onArchive: () => void;
@@ -25,6 +26,8 @@ type ClientActionButtonsProps = {
     editDialog: React.ReactNode;
     agreementDialog: React.ReactNode;
     clientStatus: Client["status"];
+    clientName: string;
+    whatsappNumber: string;
 };
 
 const ActionButton = ({ children, className, variant = "secondary", ...props }: React.ComponentProps<typeof Button>) => (
@@ -50,8 +53,37 @@ export function ClientActionButtons({
     editDialog,
     agreementDialog,
     clientStatus,
+    clientName,
+    whatsappNumber,
 }: ClientActionButtonsProps) {
-    const portalLink = typeof window !== "undefined" ? `${window.location.origin}/portal/login` : null;
+    const handleSendWhatsApp = () => {
+        if (!whatsappNumber) return;
+        
+        let message: string;
+        let link: string | null = null;
+
+        switch (clientStatus) {
+            case "active":
+                link = orderLink;
+                message = getClientWelcomeMessage(clientName || "Cliente", link || "");
+                break;
+            case "pending_onboarding":
+                link = onboardingLink;
+                message = getOnboardingInviteMessage(clientName || "Cliente", link || "");
+                break;
+            default:
+                return;
+        }
+
+        if (link) {
+            openWhatsAppLink(whatsappNumber, message);
+        }
+    };
+
+    const canSendWhatsApp = (clientStatus === "active" && orderLink) || 
+                          (clientStatus === "pending_onboarding" && onboardingLink);
+    const whatsappLabel = clientStatus === "active" ? "Enviar Link" : 
+                         clientStatus === "pending_onboarding" ? "Enviar Invitación" : "";
 
     return (
         <div className="flex flex-wrap items-center gap-2">
@@ -61,33 +93,47 @@ export function ClientActionButtons({
             </div>
 
             <div className="flex items-center gap-2">
-                <ActionButton
-                    variant="outline"
-                    disabled={!onboardingLink || clientStatus !== "pending_onboarding"}
-                    onClick={() => onCopyLink(onboardingLink, "Enlace de alta copiado!")}
-                    className="border-primary/20 hover:border-primary/40 bg-primary/5"
-                >
-                    <Copy className="h-4 w-4" />
-                    <span>Enlace Alta</span>
-                </ActionButton>
+                {canSendWhatsApp && whatsappNumber && (
+                    <ActionButton
+                        variant="default"
+                        onClick={handleSendWhatsApp}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                        <MessageCircle className="h-4 w-4" />
+                        <span>WhatsApp</span>
+                    </ActionButton>
+                )}
 
-                <ActionButton
-                    variant="outline"
-                    disabled={!portalLink}
-                    onClick={() => onCopyLink(portalLink, "Enlace del portal copiado!")}
-                >
-                    <LinkIcon className="h-4 w-4" />
-                    <span>Link Portal</span>
-                </ActionButton>
+                {clientStatus === "pending_onboarding" && (
+                    <ActionButton
+                        variant="outline"
+                        disabled={!onboardingLink}
+                        onClick={() => onCopyLink(onboardingLink, "Enlace de alta copiado!")}
+                        className="border-primary/20 hover:border-primary/40 bg-primary/5"
+                    >
+                        <Copy className="h-4 w-4" />
+                        <span>Copiar {whatsappLabel}</span>
+                    </ActionButton>
+                )}
 
-                <ActionButton
-                    variant="outline"
-                    disabled={!orderLink}
-                    onClick={() => onCopyLink(orderLink, "Enlace de pedido copiado!")}
-                >
-                    <LinkIcon className="h-4 w-4" />
-                    <span>Link Pedido</span>
-                </ActionButton>
+                {clientStatus === "active" && (
+                    <>
+                        <ActionButton
+                            variant="outline"
+                            disabled={!orderLink}
+                            onClick={() => onCopyLink(orderLink, "Link de pedido copiado!")}
+                        >
+                            <LinkIcon className="h-4 w-4" />
+                            <span>Copiar Link</span>
+                        </ActionButton>
+                    </>
+                )}
+
+                {clientStatus === "pending_agreement" && (
+                    <span className="text-xs text-muted-foreground italic px-2">
+                        Esperando asignación de convenio
+                    </span>
+                )}
             </div>
 
             <div className="ml-auto">

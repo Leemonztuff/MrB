@@ -10,16 +10,22 @@ import { ClientOrders } from "./client-orders";
 import { ClientSummaryTab } from "./client-summary-tab";
 import { ClientInfoTab } from "./client-info-tab";
 import { ClientConditionsTab } from "./client-conditions-tab";
+import { ClientActionButtons, ActionButtonWrapper } from './client-action-buttons';
 import type { Client, ClientStats as StatsType, OrderWithItems } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { AssignAgreementDialog } from '../../_components/assign-agreement-dialog';
-import { ActionButtonWrapper } from './client-action-buttons';
 import { UpsertClientDialog } from '../../_components/upsert-client-dialog';
 import { deleteClient } from '@/app/admin/actions/clients.actions';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
-export default function ClientDetailsClient({ client: initialClient, stats, orders }: { client: Client, stats: StatsType | null, orders: OrderWithItems[] }) {
+interface ClientDetailsClientProps {
+    client: Client;
+    stats: StatsType | null;
+    orders: OrderWithItems[];
+    whatsappNumber?: string;
+}
+
+export default function ClientDetailsClient({ client: initialClient, stats, orders, whatsappNumber = "" }: ClientDetailsClientProps) {
     const { toast } = useToast();
     const [isPending, startTransition] = useTransition();
     const [client, setClient] = useState(initialClient);
@@ -78,6 +84,7 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
                         <ActionButtonWrapper><FilePen className="h-5 w-5" /><span>Convenio</span></ActionButtonWrapper>
                     </AssignAgreementDialog>
                 }
+                whatsappNumber={whatsappNumber}
             />
 
             <Tabs defaultValue="resumen" className="w-full">

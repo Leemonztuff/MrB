@@ -42,6 +42,17 @@ const statusMap: Record<Client['status'], { label: string; variant: "default" | 
   archived: { label: "Archivado", variant: "outline" },
 };
 
+interface ClientHeaderProps {
+  client: Client;
+  onArchive: () => void;
+  isArchiving: boolean;
+  onCopyLink: (link: string | null, message: string, errorMessage?: string) => void;
+  orderLink: string | null;
+  editDialog: React.ReactNode;
+  agreementDialog: React.ReactNode;
+  whatsappNumber?: string;
+}
+
 export function ClientHeader({
   client,
   onArchive,
@@ -50,15 +61,8 @@ export function ClientHeader({
   orderLink,
   editDialog,
   agreementDialog,
-}: {
-  client: Client;
-  onArchive: () => void;
-  isArchiving: boolean;
-  onCopyLink: (link: string | null, message: string, errorMessage?: string) => void;
-  orderLink: string | null;
-  editDialog: React.ReactNode;
-  agreementDialog: React.ReactNode;
-}) {
+  whatsappNumber = "",
+}: ClientHeaderProps) {
   const [onboardingLink, setOnboardingLink] = useState<string | null>(null);
 
   useEffect(() => {
@@ -127,6 +131,8 @@ export function ClientHeader({
             editDialog={editDialog}
             agreementDialog={agreementDialog}
             clientStatus={client.status}
+            clientName={client.contact_name || ""}
+            whatsappNumber={whatsappNumber}
           />
         </div>
       </div>
