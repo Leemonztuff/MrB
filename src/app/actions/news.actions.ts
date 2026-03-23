@@ -12,6 +12,8 @@ export async function getPublicNews(): Promise<ActionResponse<NewsPost[]>> {
     const supabase = await createServerClient();
     const portalClient = await getPortalClient();
 
+    const clientType = portalClient?.agreements?.client_type || null;
+
     const { data, error } = await supabase
       .from('news')
       .select('*')
@@ -23,14 +25,22 @@ export async function getPublicNews(): Promise<ActionResponse<NewsPost[]>> {
       return { success: false, error: { message: error.message } };
     }
 
-    // Filter by date in JavaScript to be 100% sure about the logic
+    // Filter by date and client type
+    const nowTime = new Date();
     const activeNews = (data || []).filter(item => {
+      // Date filtering
       const starts = item.starts_at ? new Date(item.starts_at) : null;
       const ends = item.ends_at ? new Date(item.ends_at) : null;
-      const nowTime = new Date();
 
       if (starts && starts > nowTime) return false;
       if (ends && ends < nowTime) return false;
+
+      // Client type filtering - show news that:
+      // 1. Have no target_client_type (visible to all)
+      // 2. Match the client's agreement type
+      const targetType = item.target_client_type;
+      if (targetType && targetType !== clientType) return false;
+
       return true;
     });
 

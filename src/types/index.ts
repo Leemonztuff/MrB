@@ -86,7 +86,7 @@ export type Client = {
     latitude?: number | null;
     longitude?: number | null;
     created_at?: string;
-    agreements?: { agreement_name: string } | null;
+    agreements?: { agreement_name: string; client_type?: 'barberia' | 'distribuidor' | 'especial' } | null;
 }
 
 export type ClientStats = {
