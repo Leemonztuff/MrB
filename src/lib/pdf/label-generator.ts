@@ -289,13 +289,13 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   currentY += standardBlockHeight + 3;
 
   // Draw Extras Block (Window and Notes side-by-side if both present)
-  if (hasWindow || hasNotes) {
-    const both = hasWindow && hasNotes;
+  if (hasDeliveryWindow || hasNotes) {
+    const both = hasDeliveryWindow && hasNotes;
     const blockWidth = both ? (leftWidth - 2) / 2 : leftWidth;
     
     let currentX = contentX;
     
-    if (hasWindow) {
+    if (hasDeliveryWindow) {
       drawInfoBlockStandard(doc, {
         x: currentX,
         y: currentY,
