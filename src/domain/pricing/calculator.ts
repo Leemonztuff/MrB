@@ -5,6 +5,8 @@ export type BonusInfo = {
     [productId: string]: {
         productName: string;
         bonusQuantity: number;
+        promoId: string;
+        promoName: string;
     }
 }
 
@@ -27,8 +29,21 @@ export const getProductSpecificPromotion = (
 };
 
 /**
+ * Checks if a product has a specific promotion assigned to it.
+ */
+export const hasProductSpecificPromotion = (
+    productId: string,
+    productPromotions: PriceListProductPromotion[]
+): boolean => {
+    return productPromotions.some(pp => pp.product_id === productId);
+};
+
+/**
  * Domain-specific logic for calculating applied promotions and bonus items.
- * This is a pure function that can be used on both client and server.
+ * 
+ * IMPORTANT: If a product has a specific promotion assigned, the agreement-level
+ * promotion is INVALIDATED for that product. The product-specific promotion takes
+ * precedence and overrides any agreement-level promotion.
  */
 export const calculatePromotions = (
     items: CartItemType[], 
@@ -41,6 +56,13 @@ export const calculatePromotions = (
     const bonusInfo: BonusInfo = {};
     let discountPercentage = 0;
 
+    const productsWithSpecificPromo = new Set<string>();
+    items.forEach(item => {
+        if (hasProductSpecificPromotion(item.product.id, productPromotions)) {
+            productsWithSpecificPromo.add(item.product.id);
+        }
+    });
+
     promotions.forEach(promo => {
         if (!promo.rules || !promo.rules.type) return;
 
@@ -48,18 +70,37 @@ export const calculatePromotions = (
             case 'buy_x_get_y_free':
                 items.forEach(item => {
                     const productSpecificPromo = getProductSpecificPromotion(item.product.id, productPromotions);
-                    const promoToApply = productSpecificPromo || promo;
                     
-                    if (promoToApply && item.quantity >= promoToApply.rules.buy) {
-                        const times = Math.floor(item.quantity / promoToApply.rules.buy);
-                        const bonusQuantity = times * promoToApply.rules.get;
-                        if (bonusQuantity > 0) {
-                            bonusInfo[item.product.id] = {
-                                productName: item.product.name,
-                                bonusQuantity: bonusQuantity
-                            };
-                            if (!appliedPromotions.find(p => p.id === promoToApply!.id)) {
-                                appliedPromotions.push(promoToApply);
+                    if (productSpecificPromo) {
+                        if (item.quantity >= productSpecificPromo.rules.buy) {
+                            const times = Math.floor(item.quantity / productSpecificPromo.rules.buy);
+                            const bonusQuantity = times * productSpecificPromo.rules.get;
+                            if (bonusQuantity > 0) {
+                                bonusInfo[item.product.id] = {
+                                    productName: item.product.name,
+                                    bonusQuantity: bonusQuantity,
+                                    promoId: productSpecificPromo.id,
+                                    promoName: productSpecificPromo.name
+                                };
+                                if (!appliedPromotions.find(p => p.id === productSpecificPromo.id)) {
+                                    appliedPromotions.push(productSpecificPromo);
+                                }
+                            }
+                        }
+                    } else {
+                        if (item.quantity >= promo.rules.buy) {
+                            const times = Math.floor(item.quantity / promo.rules.buy);
+                            const bonusQuantity = times * promo.rules.get;
+                            if (bonusQuantity > 0) {
+                                bonusInfo[item.product.id] = {
+                                    productName: item.product.name,
+                                    bonusQuantity: bonusQuantity,
+                                    promoId: promo.id,
+                                    promoName: promo.name
+                                };
+                                if (!appliedPromotions.find(p => p.id === promo.id)) {
+                                    appliedPromotions.push(promo);
+                                }
                             }
                         }
                     }
@@ -84,7 +125,7 @@ export const calculatePromotions = (
                 break;
         }
     });
-    return { appliedPromotions, bonusInfo, discountPercentage };
+    return { appliedPromotions, bonusInfo, discountPercentage, productsWithSpecificPromo: Array.from(productsWithSpecificPromo) };
 }
 
 /**
@@ -226,7 +267,7 @@ export const calculatePricing = (
         }
     });
 
-    const { appliedPromotions, bonusInfo, discountPercentage } = calculatePromotions(items, subtotal, promotions, productPromotions);
+    const { appliedPromotions, bonusInfo, discountPercentage, productsWithSpecificPromo } = calculatePromotions(items, subtotal, promotions, productPromotions);
 
     const discountApplied = subtotal * ((discountPercentage ?? 0) / 100);
     const subtotalWithPromos = subtotal - discountApplied;
@@ -249,6 +290,7 @@ export const calculatePricing = (
         appliedPromotions,
         appliedConditions,
         bonusInfo,
-        minimumOrderValidation
+        minimumOrderValidation,
+        productsWithSpecificPromo
     };
 };
