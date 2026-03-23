@@ -160,17 +160,27 @@ function RefinedLabelCard({
   const recipient = label.clients?.contact_name
     ? normalizeText(label.clients.contact_name)
     : null;
-  const address = normalizeText(label.clients?.address || "Sin direccion registrada");
+  const address = truncateText(normalizeText(label.clients?.address || "Sin direccion registrada"), 80);
   const deliveryWindow = label.clients?.delivery_window
     ? normalizeText(label.clients.delivery_window)
     : null;
-  const notes = label.notes ? normalizeText(label.notes) : null;
-  const contactLine = buildContactLine(label.clients);
+  const notes = label.notes ? truncateText(normalizeText(label.notes), 100) : null;
+  const contactLine = buildCompactContactLine(label.clients);
   const date = new Date(label.created_at).toLocaleDateString("es-AR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
   });
+
+  const hasRecipient = !!recipient;
+  const hasDeliveryWindow = !!deliveryWindow;
+  const hasNotes = !!notes;
+  const fieldCount = [hasRecipient, hasDeliveryWindow, hasNotes].filter(Boolean).length;
+  const isCompact = fieldCount >= 2;
+  
+  const nameSize = clientName.length > 20 ? (isCompact ? "14pt" : "16pt") : (isCompact ? "15pt" : "18pt");
+  const addressSize = isCompact ? "10pt" : "12pt";
+  const infoCardPadding = isCompact ? "2mm" : "3mm";
 
   return (
     <div
@@ -285,7 +295,7 @@ function RefinedLabelCard({
           <div
             style={{
               marginTop: "3mm",
-              fontSize: "18pt",
+              fontSize: nameSize,
               fontWeight: 900,
               lineHeight: 1.05,
               color: "#0f172a",
@@ -303,24 +313,28 @@ function RefinedLabelCard({
             <div
               style={{
                 marginTop: "2mm",
-                fontSize: "9pt",
+                fontSize: isCompact ? "8pt" : "9pt",
                 color: "#475569",
                 fontWeight: 600,
               }}
             >
-              Recibe: {recipient}
+              Recibe: {truncateText(recipient, 30)}
             </div>
           )}
 
-          <InfoCard title="Direccion de entrega" style={{ marginTop: "4mm" }}>
+          <InfoCard 
+            title="Direccion de entrega" 
+            style={{ marginTop: isCompact ? "2mm" : "4mm" }}
+            compact={isCompact}
+          >
             <div
               style={{
-                fontSize: "12pt",
+                fontSize: addressSize,
                 fontWeight: 800,
                 color: "#0f172a",
                 lineHeight: 1.2,
                 display: "-webkit-box",
-                WebkitLineClamp: 3,
+                WebkitLineClamp: isCompact ? 2 : 3,
                 WebkitBoxOrient: "vertical",
                 overflow: "hidden",
               }}
@@ -330,14 +344,22 @@ function RefinedLabelCard({
           </InfoCard>
 
           {deliveryWindow && (
-            <InfoCard title="Ventana de entrega" tone="slate" style={{ marginTop: "3mm" }}>
+            <InfoCard 
+              title="Ventana de entrega" 
+              tone="slate" 
+              style={{ marginTop: isCompact ? "2mm" : "3mm" }}
+              compact={isCompact}
+            >
               <div
                 style={{
-                  fontSize: "10.5pt",
+                  fontSize: isCompact ? "9pt" : "10.5pt",
                   fontWeight: 800,
                   color: "#0f172a",
                   lineHeight: 1.2,
                   textTransform: "uppercase",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {deliveryWindow}
@@ -346,16 +368,21 @@ function RefinedLabelCard({
           )}
 
           {notes && (
-            <InfoCard title="Indicaciones" tone="amber" style={{ marginTop: "3mm" }}>
+            <InfoCard 
+              title="Indicaciones" 
+              tone="amber" 
+              style={{ marginTop: isCompact ? "2mm" : "3mm" }}
+              compact={isCompact}
+            >
               <div
                 style={{
-                  fontSize: "10pt",
+                  fontSize: isCompact ? "9pt" : "10pt",
                   fontStyle: "italic",
                   fontWeight: 600,
                   color: "#0f172a",
                   lineHeight: 1.25,
                   display: "-webkit-box",
-                  WebkitLineClamp: 3,
+                  WebkitLineClamp: isCompact ? 2 : 3,
                   WebkitBoxOrient: "vertical",
                   overflow: "hidden",
                 }}
@@ -448,12 +475,12 @@ function RefinedLabelCard({
       <div
         style={{
           borderTop: "1px solid #cbd5e1",
-          padding: "3.5mm 6mm",
+          padding: "3mm 6mm",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          gap: "6mm",
-          fontSize: "8.5pt",
+          gap: "4mm",
+          fontSize: "8pt",
           color: "#64748b",
           background: "#ffffff",
         }}
@@ -464,11 +491,12 @@ function RefinedLabelCard({
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
+            flex: 1,
           }}
         >
           {contactLine}
         </span>
-        <span style={{ flexShrink: 0 }}>Emitido {date}</span>
+        <span style={{ flexShrink: 0, marginLeft: "4mm" }}>Emitido {date}</span>
       </div>
     </div>
   );
@@ -479,11 +507,13 @@ function InfoCard({
   children,
   tone = "default",
   style,
+  compact = false,
 }: {
   title: string;
   children: ReactNode;
   tone?: "default" | "slate" | "amber";
   style?: CSSProperties;
+  compact?: boolean;
 }) {
   const palette =
     tone === "amber"
@@ -497,19 +527,19 @@ function InfoCard({
       style={{
         border: `1px solid ${palette.border}`,
         background: palette.background,
-        borderRadius: "8px",
-        padding: "3mm",
+        borderRadius: "6px",
+        padding: compact ? "2mm" : "3mm",
         ...style,
       }}
     >
       <div
         style={{
-          fontSize: "7.5pt",
+          fontSize: compact ? "6.5pt" : "7.5pt",
           fontWeight: 800,
           color: "#475569",
           letterSpacing: "0.08em",
           textTransform: "uppercase",
-          marginBottom: "1.5mm",
+          marginBottom: compact ? "1mm" : "1.5mm",
         }}
       >
         {title}
@@ -523,6 +553,11 @@ function normalizeText(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
+function truncateText(value: string, maxLength: number): string {
+  if (value.length <= maxLength) return value;
+  return value.slice(0, maxLength - 3) + "...";
+}
+
 function buildContactLine(clients: LabelData["clients"]): string {
   const parts = [
     clients?.phone ? `Tel: ${normalizeText(clients.phone)}` : null,
@@ -530,4 +565,18 @@ function buildContactLine(clients: LabelData["clients"]): string {
   ].filter(Boolean);
 
   return parts.length > 0 ? parts.join(" | ") : "Sin datos de contacto";
+}
+
+function buildCompactContactLine(clients: LabelData["clients"]): string {
+  const phone = clients?.phone ? normalizeText(clients.phone) : null;
+  const email = clients?.email ? normalizeText(clients.email) : null;
+  
+  if (phone && email) {
+    return `${phone} | ${truncateText(email, 25)}`;
+  }
+  
+  if (phone) return `Tel: ${phone}`;
+  if (email) return truncateText(email, 40);
+  
+  return "Sin datos de contacto";
 }
