@@ -1,8 +1,14 @@
 
+"use client";
+
+import { useState, useEffect, useTransition, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getOrders } from "@/app/admin/actions/orders.actions";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
-import { ShoppingCart, ShoppingBasket } from "lucide-react";
+import { SearchInput } from "@/components/shared/search-input";
+import { Pagination } from "@/components/shared/pagination";
+import { ShoppingCart } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
@@ -11,7 +17,7 @@ import { OrderStatusBadge } from "../_components/order-status-badge";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { SearchInput } from "@/components/shared/search-input";
+import type { OrderWithItems } from "@/types";
 
 const statusFilters = [
     { label: 'Todos', value: 'all' },
@@ -20,18 +26,62 @@ const statusFilters = [
     { label: 'Entregado', value: 'entregado' },
 ];
 
-export default async function OrdersHistoryPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ status?: string; query?: string }>;
-}) {
-  const filters = await searchParams;
-  const currentStatus = filters?.status || 'all';
-  const { data: result } = await getOrders({
-    status: currentStatus === 'all' ? undefined : currentStatus,
-    query: filters?.query
-  });
-  const orders = result?.orders || [];
+const PAGE_SIZE = 20;
+
+export default function OrdersHistoryPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  const currentStatus = searchParams.get("status") || "all";
+  const currentQuery = searchParams.get("query") || "";
+  const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  
+  const [orders, setOrders] = useState<OrderWithItems[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [isLoading, startTransition] = useTransition();
+
+  const fetchOrders = useCallback((status: string, query: string, page: number) => {
+    startTransition(async () => {
+      const result = await getOrders({
+        status: status === 'all' ? undefined : status,
+        query: query || undefined,
+        page,
+        limit: PAGE_SIZE,
+      });
+      
+      if (result.data) {
+        setOrders(result.data.orders || []);
+        setTotal(result.data.total || 0);
+        setTotalPages(result.data.totalPages || 0);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    fetchOrders(currentStatus, currentQuery, currentPage);
+  }, [currentStatus, currentQuery, currentPage, fetchOrders]);
+
+  const updateUrl = useCallback((params: Record<string, string | null>) => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(params)) {
+      if (value === null || value === "") {
+        newParams.delete(key);
+      } else {
+        newParams.set(key, value);
+      }
+    }
+    router.push(`/admin/orders?${newParams.toString()}`);
+  }, [router, searchParams]);
+
+  const handleStatusChange = (status: string) => {
+    updateUrl({ status: status === 'all' ? null : status, page: null });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    updateUrl({ page: newPage.toString() });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div className="grid gap-4 md:gap-8">
@@ -48,9 +98,9 @@ export default async function OrdersHistoryPage({
           <CardDescription className="text-xs uppercase font-bold tracking-widest opacity-60">Control histórico de transacciones.</CardDescription>
           <div className="flex gap-1 mt-4 flex-wrap">
             {statusFilters.map((filter) => (
-              <Link
+              <button
                 key={filter.value}
-                href={filter.value === 'all' ? '/admin/orders' : `/admin/orders?status=${filter.value}`}
+                onClick={() => handleStatusChange(filter.value)}
                 className={cn(
                   "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-colors",
                   currentStatus === filter.value
@@ -59,7 +109,7 @@ export default async function OrdersHistoryPage({
                 )}
               >
                 {filter.label}
-              </Link>
+              </button>
             ))}
           </div>
         </CardHeader>
@@ -78,7 +128,15 @@ export default async function OrdersHistoryPage({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {!orders || orders.length === 0 ? (
+              {isLoading && orders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-12">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : orders.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6}>
                     <EmptyState
@@ -121,6 +179,18 @@ export default async function OrdersHistoryPage({
             </TableBody>
           </Table>
         </CardContent>
+        
+        {orders.length > 0 && (
+          <div className="border-t border-white/5">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={total}
+              pageSize={PAGE_SIZE}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        )}
       </Card>
     </div>
   );

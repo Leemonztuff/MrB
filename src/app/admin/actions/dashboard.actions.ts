@@ -222,7 +222,7 @@ export async function getDashboardData() {
             .eq("status", "armado")
             .order("created_at", { ascending: false })
             .limit(10),
-        supabase.from("clients").select("*").eq("status", "pending_agreement").order("created_at", { ascending: false }),
+        supabase.from("clients").select("*").eq("status", "pending_agreement").order("created_at", { ascending: false }).limit(20),
     ]);
 
     const statsError = statsResult.error;

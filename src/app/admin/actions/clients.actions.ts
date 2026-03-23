@@ -32,16 +32,20 @@ async function insertClientWithOptionalOnboardingExpiry(createData: Record<strin
 }
 
 export async function getClients(
-  query?: string
-): Promise<ActionResponse<Client[]>> {
+  query?: string,
+  page: number = 1,
+  pageSize: number = 20
+): Promise<ActionResponse<{ clients: Client[]; total: number; page: number; pageSize: number; totalPages: number }>> {
   return handleAction(async () => {
     const supabase = await getSupabaseClientWithAuth();
+    const from = (page - 1) * pageSize;
 
     let queryBuilder = supabase
       .from('clients')
-      .select(`*, agreements ( agreement_name )`)
+      .select(`*, agreements ( agreement_name )`, { count: 'exact' })
       .in('status', ['active', 'pending_agreement', 'pending_onboarding'])
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(from, from + pageSize - 1);
 
     if (query) {
       const cleanedQuery = `%${query.replace(/\s/g, '%')}%`;
@@ -50,9 +54,19 @@ export async function getClients(
       );
     }
 
-    const { data, error } = await queryBuilder;
+    const { data, error, count } = await queryBuilder;
     if (error) throw error;
-    return data || [];
+    
+    const total = count || 0;
+    const totalPages = Math.ceil(total / pageSize);
+
+    return {
+      clients: data || [],
+      total,
+      page,
+      pageSize,
+      totalPages,
+    };
   });
 }
 

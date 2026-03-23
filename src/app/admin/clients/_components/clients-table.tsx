@@ -308,7 +308,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
         </CardContent>
         <CardFooter className="px-6 py-4 border-t border-border/50">
           <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">
-            Mostrando <strong className="text-foreground">{clients.length}</strong> de <strong className="text-foreground">{clients.length}</strong> clientes.
+            {/* Pagination handled externally */}
           </div>
         </CardFooter>
       </Card>
