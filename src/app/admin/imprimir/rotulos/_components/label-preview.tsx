@@ -244,7 +244,7 @@ function RefinedLabelCard({
               />
             </div>
           ) : (
-            <span style={{ fontSize: "11pt", flexShrink: 0 }}>Mr. Blonde</span>
+            <span style={{ fontSize: "11pt", flexShrink: 0, marginRight: "4mm" }}>MR. BLONDE</span>
           )}
 
           <span
@@ -256,7 +256,7 @@ function RefinedLabelCard({
               textOverflow: "ellipsis",
             }}
           >
-            Rotulo de entrega
+            ROTULO DE ENTREGA
           </span>
         </div>
 
@@ -343,53 +343,36 @@ function RefinedLabelCard({
             </div>
           </InfoCard>
 
-          {deliveryWindow && (
-            <InfoCard 
-              title="Ventana de entrega" 
-              tone="slate" 
-              style={{ marginTop: isCompact ? "2mm" : "3mm" }}
-              compact={isCompact}
-            >
-              <div
-                style={{
-                  fontSize: isCompact ? "9pt" : "10.5pt",
-                  fontWeight: 800,
-                  color: "#0f172a",
-                  lineHeight: 1.2,
-                  textTransform: "uppercase",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {deliveryWindow}
-              </div>
-            </InfoCard>
-          )}
-
-          {notes && (
-            <InfoCard 
-              title="Indicaciones" 
-              tone="amber" 
-              style={{ marginTop: isCompact ? "2mm" : "3mm" }}
-              compact={isCompact}
-            >
-              <div
-                style={{
-                  fontSize: isCompact ? "9pt" : "10pt",
-                  fontStyle: "italic",
-                  fontWeight: 600,
-                  color: "#0f172a",
-                  lineHeight: 1.25,
-                  display: "-webkit-box",
-                  WebkitLineClamp: isCompact ? 2 : 3,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }}
-              >
-                {notes}
-              </div>
-            </InfoCard>
+          {deliveryWindow && notes ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2mm", marginTop: isCompact ? "2mm" : "3mm" }}>
+              <InfoCard title="Ventana de entrega" tone="slate" compact={true}>
+                <div style={{ fontSize: "8.5pt", fontWeight: 800, color: "#0f172a", lineHeight: 1.2, textTransform: "uppercase", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                  {deliveryWindow}
+                </div>
+              </InfoCard>
+              <InfoCard title="Indicaciones" tone="amber" compact={true}>
+                <div style={{ fontSize: "8.5pt", fontStyle: "italic", fontWeight: 600, color: "#0f172a", lineHeight: 1.25, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                  {notes}
+                </div>
+              </InfoCard>
+            </div>
+          ) : (
+            <>
+              {deliveryWindow && (
+                <InfoCard title="Ventana de entrega" tone="slate" style={{ marginTop: isCompact ? "2mm" : "3mm" }} compact={isCompact}>
+                  <div style={{ fontSize: "8.5pt", fontWeight: 800, color: "#0f172a", lineHeight: 1.2, textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {deliveryWindow}
+                  </div>
+                </InfoCard>
+              )}
+              {notes && (
+                <InfoCard title="Indicaciones" tone="amber" style={{ marginTop: isCompact ? "2mm" : "3mm" }} compact={isCompact}>
+                  <div style={{ fontSize: "8.5pt", fontStyle: "italic", fontWeight: 600, color: "#0f172a", lineHeight: 1.25, display: "-webkit-box", WebkitLineClamp: isCompact ? 2 : 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                    {notes}
+                  </div>
+                </InfoCard>
+              )}
+            </>
           )}
         </div>
 
@@ -402,8 +385,10 @@ function RefinedLabelCard({
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "flex-start",
-            padding: "5mm 4mm",
-            gap: "4mm",
+            padding: "4mm",
+            gap: "3mm",
+            height: "calc(100% - 2mm)", // Deja margen para que no toque el footer
+            boxSizing: "border-box",
           }}
         >
           {qrDataUrl ? (
@@ -411,8 +396,8 @@ function RefinedLabelCard({
               src={qrDataUrl}
               alt="QR"
               style={{
-                width: "42mm",
-                height: "42mm",
+                width: "38mm",
+                height: "38mm",
                 display: "block",
                 background: "#ffffff",
                 padding: "2mm",
@@ -422,8 +407,8 @@ function RefinedLabelCard({
           ) : (
             <div
               style={{
-                width: "42mm",
-                height: "42mm",
+                width: "38mm",
+                height: "38mm",
                 background: "#e2e8f0",
                 borderRadius: "6px",
               }}
@@ -432,7 +417,7 @@ function RefinedLabelCard({
 
           <div
             style={{
-              fontSize: "8pt",
+              fontSize: "7pt",
               fontWeight: 800,
               color: "#475569",
               textTransform: "uppercase",
@@ -450,13 +435,14 @@ function RefinedLabelCard({
               borderRadius: "8px",
               background: "#0f172a",
               color: "#ffffff",
-              padding: "3mm",
+              padding: "2.5mm",
               textAlign: "center",
+              marginTop: "auto",
             }}
           >
             <div
               style={{
-                fontSize: "7pt",
+                fontSize: "6.5pt",
                 fontWeight: 800,
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
@@ -465,7 +451,7 @@ function RefinedLabelCard({
             >
               Bulto
             </div>
-            <div style={{ fontSize: "17pt", fontWeight: 900, lineHeight: 1.1 }}>
+            <div style={{ fontSize: "14pt", fontWeight: 900, lineHeight: 1.1 }}>
               {label.bundleIdx}/{label.totalBundles}
             </div>
           </div>
