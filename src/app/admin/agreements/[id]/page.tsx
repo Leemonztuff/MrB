@@ -1,6 +1,6 @@
 
 import Link from "next/link";
-import { ArrowLeft, Edit, FileWarning, Landmark, Package, Percent, PlusCircle, Users } from "lucide-react";
+import { Edit, FileWarning } from "lucide-react";
 import { getAgreementById } from "@/app/admin/actions/agreements.actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/card";
 import AgreementPromotionsList from "./_components/agreement-promotions-list";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EntityDialog } from "../../_components/entity-dialog";
 import { agreementFormConfig } from "../_components/form-config";
 import AgreementSalesConditionsList from "./_components/agreement-sales-conditions-list";
@@ -69,7 +68,7 @@ export default async function AgreementDetailPage({
                 </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2">
                 <Card>
                     <CardHeader>
                         <CardTitle>Lista de Precios</CardTitle>
@@ -92,37 +91,6 @@ export default async function AgreementDetailPage({
                                 <EntityDialog formConfig={agreementFormConfig} entity={agreement}>
                                     <Button variant="link" className="p-0 h-auto">Asignar una ahora</Button>
                                 </EntityDialog>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Clientes Asignados</CardTitle>
-                        <CardDescription>
-                            Clientes que actualmente utilizan este convenio.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {agreement.clients && agreement.clients.length > 0 ? (
-                            <div className="space-y-4">
-                                {agreement.clients.map(client => (
-                                    <div key={client.id} className="flex items-center gap-4">
-                                        <Avatar className="h-9 w-9">
-                                            <AvatarImage src={`https://avatar.vercel.sh/${client.id}.png`} alt="Avatar" />
-                                            <AvatarFallback>{client.contact_name?.charAt(0) ?? 'C'}</AvatarFallback>
-                                        </Avatar>
-                                        <div className="grid gap-1">
-                                            <Link href={`/admin/clients/${client.id}`} className="text-sm font-medium leading-none hover:underline">
-                                                {client.contact_name}
-                                            </Link>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-sm text-muted-foreground text-center py-4">
-                                <p>No hay clientes asignados a este convenio.</p>
                             </div>
                         )}
                     </CardContent>
