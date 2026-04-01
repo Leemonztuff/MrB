@@ -114,7 +114,7 @@ export default function PortalLayout({
     if (canOrder) {
         navItems.push({
             href: '/portal/catalogo',
-            label: 'Catalogo',
+            label: 'Catálogo',
             icon: ShoppingCart,
             exact: false,
         });

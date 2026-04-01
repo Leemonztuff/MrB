@@ -1,8 +1,11 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Atom } from "lucide-react";
+
+const LOGO_PLACEHOLDER_PATH = "/branding/logo-placeholder.svg";
 
 export function Logo({
   className,
@@ -13,18 +16,27 @@ export function Logo({
   showText?: boolean;
   logoUrl?: string | null;
 }) {
+  const [logoLoadFailed, setLogoLoadFailed] = useState(false);
+
+  useEffect(() => {
+    setLogoLoadFailed(false);
+  }, [logoUrl]);
+
   const textStyle: React.CSSProperties = {
     filter: 'drop-shadow(1px 2px 1px hsl(var(--primary) / 0.4))',
   };
 
   const IconOrLogo = () => {
-    if (logoUrl) {
+    const logoSource = logoUrl ?? LOGO_PLACEHOLDER_PATH;
+
+    if (logoSource && !logoLoadFailed) {
       return (
         <img
-          src={logoUrl}
+          src={logoSource}
           alt="App Logo"
           className="h-full w-full object-contain p-1"
           loading={showText ? "eager" : "lazy"}
+          onError={() => setLogoLoadFailed(true)}
         />
       );
     }

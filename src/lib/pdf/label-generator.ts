@@ -196,7 +196,7 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   if (logoAsset) {
     const logoBoxX = contentX;
     const logoBoxY = y + 2.2;
-    const logoBoxWidth = 28;
+    const logoBoxWidth = 34;
     const logoBoxHeight = 9.6;
 
     doc.setFillColor(255, 255, 255);
@@ -211,7 +211,7 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
       undefined,
       'FAST'
     );
-    headerTextX = logoBoxX + logoBoxWidth + 3;
+    headerTextX = logoBoxX + logoBoxWidth + 3.5;
   } else {
     doc.setFontSize(THEME.fonts.header);
     doc.text('MR. BLONDE', contentX, y + 9.5);
@@ -219,7 +219,7 @@ function renderLabel(doc: jsPDF, data: FormattedLabel, layout: LabelLayout, logo
   }
 
   doc.setFontSize(11);
-  doc.text('ROTULO DE ENTREGA', headerTextX, y + 9.5);
+  doc.text('RÓTULO DE ENTREGA', headerTextX, y + 9.5);
   doc.text(`Pedido #${data.shortId}`, x + width - THEME.spacing.padding, y + 9.5, { align: 'right' });
 
   // Right Panel specific rendering

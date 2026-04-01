@@ -155,6 +155,7 @@ function RefinedLabelCard({
   qrDataUrl?: string;
   logoUrl?: string | null;
 }) {
+  const [logoLoadFailed, setLogoLoadFailed] = useState(false);
   const shortId = label.id?.slice(-6).toUpperCase() || "N/A";
   const clientName = normalizeText(label.client_name_cache || "Cliente").toUpperCase();
   const recipient = label.clients?.contact_name
@@ -217,7 +218,7 @@ function RefinedLabelCard({
             flex: 1,
           }}
         >
-          {logoUrl ? (
+          {logoUrl && !logoLoadFailed ? (
             <div
               style={{
                 background: "#ffffff",
@@ -235,6 +236,7 @@ function RefinedLabelCard({
               <img
                 src={logoUrl}
                 alt="Logo"
+                onError={() => setLogoLoadFailed(true)}
                 style={{
                   maxWidth: "100%",
                   maxHeight: "100%",
@@ -256,7 +258,7 @@ function RefinedLabelCard({
               textOverflow: "ellipsis",
             }}
           >
-            ROTULO DE ENTREGA
+            RÓTULO DE ENTREGA
           </span>
         </div>
 

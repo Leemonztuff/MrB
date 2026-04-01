@@ -56,7 +56,7 @@ export async function updateClientProfile(data: {
             return {
                 success: false,
                 error: {
-                    message: 'El CUIT debe tener 11 digitos.',
+                    message: 'El CUIT debe tener 11 dígitos.',
                     code: 'INVALID_CUIT',
                 },
             };

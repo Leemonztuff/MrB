@@ -1,18 +1,18 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
+import { Package2 } from 'lucide-react';
 import { getPortalClient } from '@/app/actions/portal.actions';
 import { getOrderPageData } from '@/app/actions/user.actions';
 import { ProductCard } from '@/app/pedido/[id]/_components/product-card';
 import { OrderSummary } from '@/app/pedido/[id]/_components/order-summary';
 import { ProductHighlighter } from '@/app/pedido/[id]/_components/product-highlighter';
+import { MobileCartIndicator } from '@/app/pedido/[id]/_components/mobile-cart-indicator';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { EmptyState } from '@/components/shared/empty-state';
-import { Package2 } from 'lucide-react';
-import { Suspense } from 'react';
 import type { AgreementPromotion, ProductWithPrice } from '@/types';
-import { MobileCartIndicator } from '@/app/pedido/[id]/_components/mobile-cart-indicator';
 
 export default async function PortalCatalogoPage({
     searchParams,
@@ -51,7 +51,7 @@ export default async function PortalCatalogoPage({
         productPromotions = [],
     } = data;
 
-    const customSortOrder = ["Cabello", "Rostro", "Merchandising"];
+    const customSortOrder = ['Cabello', 'Rostro', 'Merchandising'];
     const categories = Object.keys(productsByCategory).sort((a, b) => {
         const defaultIndex = 999;
         const indexA = customSortOrder.indexOf(a) !== -1 ? customSortOrder.indexOf(a) : defaultIndex;
@@ -108,15 +108,17 @@ export default async function PortalCatalogoPage({
                 </div>
 
                 <div id="order-summary-container" className="lg:col-span-1 lg:sticky lg:top-24 space-y-4 pb-24 md:pb-4">
-                    <Suspense fallback={
-                        <div className="glass p-6 rounded-2xl border-border/50 animate-pulse text-center italic font-bold">
-                            Cargando resumen...
-                        </div>
-                    }>
+                    <Suspense
+                        fallback={
+                            <div className="glass p-6 rounded-2xl border-border/50 animate-pulse text-center italic font-bold">
+                                Cargando resumen...
+                            </div>
+                        }
+                    >
                         <OrderSummary
                             agreementId={agreement.id}
-                            clientId={clientData?.id ?? "generic"}
-                            clientName={clientData?.contact_name ?? "Cliente"}
+                            clientId={clientData?.id ?? 'generic'}
+                            clientName={clientData?.contact_name ?? 'Cliente'}
                             pricesIncludeVat={agreement.price_lists?.prices_include_vat ?? true}
                             promotions={promotions}
                             vatPercentage={vatPercentage}

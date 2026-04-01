@@ -151,7 +151,7 @@ function LabelsPrintContent() {
       };
     } catch (err) {
       console.error("Print error:", err);
-      alert("Error al generar el PDF para impresion");
+      alert("Error al generar el PDF para impresión");
     } finally {
       setIsPrinting(false);
     }
@@ -176,10 +176,10 @@ function LabelsPrintContent() {
           </div>
           <div>
             <h1 className="text-xl font-black italic uppercase tracking-tighter text-white">
-              Rotulos de entrega
+              Rótulos de entrega
             </h1>
             <p className="text-sm font-medium text-muted-foreground">
-              {labels.length} rotulos listos para imprimir ({pageCount}{" "}
+              {labels.length} rótulos listos para imprimir ({pageCount}{" "}
               {pageCount === 1 ? "hoja" : "hojas"} A4)
             </p>
           </div>
@@ -215,7 +215,7 @@ function LabelsPrintContent() {
             ) : (
               <Printer className="mr-2 h-4 w-4" />
             )}
-            Imprimir fisico
+            Imprimir físico
           </Button>
         </div>
       </div>
@@ -235,20 +235,20 @@ function LabelsPrintContent() {
             </h2>
             <p className="mb-6 text-base font-medium text-muted-foreground">
               Revisa la hoja en pantalla o imprime directamente el PDF final para
-              conservar el diseno exacto del rotulo.
+              conservar el diseño exacto del rótulo.
             </p>
             <div className="space-y-2 rounded-xl border border-white/5 bg-black/50 p-4">
               <p className="text-[10px] font-black uppercase tracking-widest text-primary">
-                Especificaciones tecnicas
+                Especificaciones técnicas
               </p>
               <p className="text-sm font-medium text-white/80">
                 • Formato A4 vertical (210x297mm)
               </p>
               <p className="text-sm font-medium text-white/80">
-                • 3 rotulos completos por hoja
+                • 3 rótulos completos por hoja
               </p>
               <p className="text-sm font-medium text-white/80">
-                • Impresion fisica basada en el PDF real
+                • Impresión física basada en el PDF real
               </p>
             </div>
           </div>

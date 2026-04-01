@@ -10,9 +10,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+const LOGO_PLACEHOLDER_PATH = "/branding/logo-placeholder.svg";
+
 export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null }) {
   const [isPending, startTransition] = useTransition();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [persistedLogoUrl, setPersistedLogoUrl] = useState<string | null>(currentLogoUrl);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { toast } = useToast();
   const router = useRouter();
@@ -40,6 +43,7 @@ export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null
       }
 
       toast({ title: "Exito", description: "Logo actualizado correctamente." });
+      setPersistedLogoUrl((previous) => result.logoUrl ?? previous);
       setPreviewUrl(null);
       setSelectedFile(null);
       router.refresh();
@@ -56,13 +60,14 @@ export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null
       }
 
       toast({ title: "Exito", description: "Logo eliminado correctamente." });
+      setPersistedLogoUrl(null);
       setPreviewUrl(null);
       setSelectedFile(null);
       router.refresh();
     });
   };
 
-  const effectiveLogoUrl = previewUrl || currentLogoUrl;
+  const effectiveLogoUrl = previewUrl || persistedLogoUrl || LOGO_PLACEHOLDER_PATH;
 
   return (
     <Card>
@@ -76,16 +81,15 @@ export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null
         <div className="space-y-2">
           <Label>Logo actual</Label>
           <div className="relative flex h-32 w-32 items-center justify-center rounded-md border bg-muted">
-            {effectiveLogoUrl ? (
-              <img
-                src={effectiveLogoUrl}
-                alt="Logo"
-                className="h-full w-full object-contain p-2"
-              />
-            ) : (
-              <span className="text-sm text-muted-foreground">Sin logo</span>
-            )}
+            <img
+              src={effectiveLogoUrl}
+              alt="Logo"
+              className="h-full w-full object-contain p-2"
+            />
           </div>
+          {!persistedLogoUrl && !previewUrl ? (
+            <p className="text-xs text-muted-foreground">Se está mostrando un logo placeholder temporal.</p>
+          ) : null}
         </div>
 
         <div className="space-y-2">

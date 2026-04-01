@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { createClient as createServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+
+type AppSettingRow = {
+  key: string;
+  value: unknown;
+};
 
 function extractStoredLogoPath(value: unknown): string | null {
   if (typeof value !== "string" || !value.trim()) {
@@ -37,8 +41,7 @@ export async function GET() {
     return NextResponse.json({ error: "Supabase admin not configured" }, { status: 500 });
   }
 
-  const supabase = await createServerClient();
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("app_settings")
     .select("key, value")
     .in("key", ["logo_path", "logo_url"]);
@@ -47,9 +50,10 @@ export async function GET() {
     return NextResponse.json({ error: "Logo not configured" }, { status: 404 });
   }
 
+  const rows = (data ?? []) as AppSettingRow[];
   const logoRow =
-    data.find((row) => row.key === "logo_path") ||
-    data.find((row) => row.key === "logo_url") ||
+    rows.find((row) => row.key === "logo_path") ||
+    rows.find((row) => row.key === "logo_url") ||
     null;
 
   const logoPath = extractStoredLogoPath(logoRow?.value);

@@ -82,11 +82,11 @@ export async function loginPortal(prevState: AuthState | null, formData: FormDat
     const isDniLogin = cleanIdentifier.length >= 7 && cleanIdentifier.length <= 8;
 
     if (!isCuitLogin && !isDniLogin) {
-        return { error: { message: 'Ingresa un CUIT (11 digitos) o DNI (7-8 digitos) valido.' } };
+        return { error: { message: 'Ingresa un CUIT (11 dígitos) o DNI (7-8 dígitos) válido.' } };
     }
 
     if (token.length !== 6) {
-        return { error: { message: 'Token invalido. Debe tener 6 digitos.' } };
+        return { error: { message: 'Token inválido. Debe tener 6 dígitos.' } };
     }
 
     const supabase = await createClient();
@@ -99,7 +99,7 @@ export async function loginPortal(prevState: AuthState | null, formData: FormDat
 
     if (error) {
         console.error('Portal login error:', error);
-        return { error: { message: 'Error al iniciar sesion. Intentalo de nuevo.' } };
+        return { error: { message: 'Error al iniciar sesión. Inténtalo de nuevo.' } };
     }
 
     if (!matchedClients || matchedClients.length === 0) {
@@ -143,7 +143,7 @@ export async function loginPortal(prevState: AuthState | null, formData: FormDat
     }
 
     if (!['active', 'pending_agreement'].includes(client.status)) {
-        return { error: { message: `Tu cuenta esta en estado: ${client.status}. Contacta al administrador.` } };
+        return { error: { message: `Tu cuenta está en estado: ${client.status}. Contacta al administrador.` } };
     }
 
     const cookieStore = await cookies();
@@ -154,7 +154,7 @@ export async function loginPortal(prevState: AuthState | null, formData: FormDat
         signedValue = signCookie(`${client.id}|${cuitFlag}`);
     } catch (error) {
         console.error('Portal login cookie setup failed:', error);
-        return { error: { message: 'Error de configuracion del portal. Contacta al administrador.' } };
+        return { error: { message: 'Error de configuración del portal. Contacta al administrador.' } };
     }
 
     cookieStore.set('portal_client_id', signedValue, {

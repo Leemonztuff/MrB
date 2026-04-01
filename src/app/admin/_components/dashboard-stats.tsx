@@ -101,7 +101,7 @@ export function DashboardStats() {
             setLoadError(null);
         } catch (error) {
             console.error('Error loading metrics:', error);
-            setLoadError('No se pudieron cargar las estadisticas.');
+            setLoadError('No se pudieron cargar las estadísticas.');
         } finally {
             if (isRefresh) {
                 setRefreshing(false);
@@ -126,7 +126,7 @@ export function DashboardStats() {
             <CardHeader className="pb-2">
                 <div className="flex items-center justify-between gap-2">
                     <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground/80">
-                        Estadisticas
+                        Estadísticas
                     </CardTitle>
                     <button
                         type="button"
@@ -257,7 +257,7 @@ export function DashboardStats() {
                         </AccordionItem>
                     </Accordion>
                 ) : (
-                    <p className="py-4 text-center text-xs text-muted-foreground">Error al cargar estadisticas</p>
+                    <p className="py-4 text-center text-xs text-muted-foreground">Error al cargar estadísticas</p>
                 )}
             </CardContent>
         </Card>

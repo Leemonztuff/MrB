@@ -19,6 +19,8 @@ interface LabelData {
   } | null;
 }
 
+const LOGO_PLACEHOLDER_PATH = "/branding/logo-placeholder.svg";
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -43,9 +45,8 @@ export async function POST(request: NextRequest) {
     const url = new URL(request.url);
     const baseUrl = url.origin;
     const settings = await getSettings();
-    const logoUrl = settings.logo_url
-      ? new URL(settings.logo_url, baseUrl).toString()
-      : null;
+    const resolvedLogoPath = settings.logo_url ?? LOGO_PLACEHOLDER_PATH;
+    const logoUrl = new URL(resolvedLogoPath, baseUrl).toString();
 
     const allLabels: LabelData[] = [];
     selections.forEach((sel: { id: string; bundles: number }) => {

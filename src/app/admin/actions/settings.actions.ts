@@ -157,6 +157,30 @@ export async function getPublicWhatsappNumber(): Promise<string> {
 export async function getPublicLogoUrl(): Promise<string | null> {
   noStore();
 
+  if (supabaseAdmin) {
+    const { data, error } = await supabaseAdmin
+      .from("app_settings")
+      .select("key, value, updated_at")
+      .in("key", [...LOGO_SETTING_KEYS])
+      .order("updated_at", { ascending: false });
+
+    const rows = (data ?? []) as AppSettingRow[];
+
+    if (!error && rows.length > 0) {
+      const preferredRow =
+        rows.find((row) => row.key === "logo_path") ||
+        rows.find((row) => row.key === "logo_url") ||
+        null;
+
+      const logoPath = extractStoredLogoPath(preferredRow?.value);
+      if (logoPath) {
+        return buildLogoAppUrl(preferredRow?.updated_at ?? null);
+      }
+    } else if (error) {
+      console.error("getPublicLogoUrl (admin) error:", error.message);
+    }
+  }
+
   const supabase = await createServerClient();
   const logoSetting = await getLogoSettingRecord(supabase);
 
@@ -191,12 +215,12 @@ export async function updateSettings(formData: FormData): Promise<{ error?: stri
   return {};
 }
 
-export async function updateLogo(formData: FormData): Promise<{ error?: string }> {
+export async function updateLogo(formData: FormData): Promise<{ error?: string; logoUrl?: string | null }> {
   const authSupabase = await getSupabaseClientWithAuth();
   const logoImage = formData.get("logo_image") as File | null;
 
   if (!logoImage || logoImage.size === 0) {
-    return { error: "No se proporciono ninguna imagen." };
+    return { error: "No se proporcionó ninguna imagen." };
   }
 
   if (!supabaseAdmin) {
@@ -259,8 +283,10 @@ export async function updateLogo(formData: FormData): Promise<{ error?: string }
   revalidatePath("/portal");
   revalidatePath("/onboarding/[token]", "page");
   revalidatePath("/pedido/[id]", "page");
+  revalidatePath("/admin/imprimir/rotulos");
 
-  return {};
+  const refreshVersion = new Date().toISOString();
+  return { logoUrl: buildLogoAppUrl(refreshVersion) };
 }
 
 export async function deleteLogo(): Promise<{ error?: string }> {

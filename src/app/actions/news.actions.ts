@@ -98,7 +98,7 @@ export async function toggleNewsLike(
   try {
     const portalClient = await getPortalClient();
     if (!portalClient?.id) {
-      return { success: false, error: { message: 'Sesion de portal no valida.' } };
+      return { success: false, error: { message: 'Sesión de portal no válida.' } };
     }
 
     const supabase = await createServerClient();

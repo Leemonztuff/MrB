@@ -18,6 +18,8 @@ interface LabelData {
   } | null;
 }
 
+const LOGO_PLACEHOLDER_PATH = "/branding/logo-placeholder.svg";
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -69,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       labels: allLabels,
-      logoUrl: settings.logo_url ?? null,
+      logoUrl: settings.logo_url ?? LOGO_PLACEHOLDER_PATH,
     });
   } catch (error) {
     console.error('Preview Error:', error);
