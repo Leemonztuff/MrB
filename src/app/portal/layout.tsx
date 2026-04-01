@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { User, Package, ShoppingCart, LogOut, Newspaper, AlertTriangle } from 'lucide-react';
 import { PageLoader } from '@/components/loading';
 import { PortalProvider, type PortalClientData, type PortalPendingChange } from '@/contexts/portal-context';
+import { logoutPortal } from '@/app/actions/portal.actions';
 
 export default function PortalLayout({
     children,
@@ -35,7 +36,8 @@ export default function PortalLayout({
         async function checkAuth() {
             try {
                 const response = await fetch('/api/portal/client', {
-                    credentials: 'include'
+                    credentials: 'include',
+                    cache: 'no-store',
                 });
 
                 if (cancelled) return;
@@ -73,7 +75,7 @@ export default function PortalLayout({
         return () => {
             cancelled = true;
         };
-    }, [isPortalLoginRoute, router]);
+    }, [isPortalLoginRoute]);
 
     if (isPortalLoginRoute) {
         return (
@@ -167,11 +169,11 @@ export default function PortalLayout({
                             })}
                         </nav>
                         
-                        <a href="/api/portal/logout" title="Cerrar Sesion">
-                            <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl">
+                        <form action={logoutPortal}>
+                            <Button type="submit" variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl">
                                 <LogOut className="h-5 w-5" />
                             </Button>
-                        </a>
+                        </form>
                     </div>
                 </div>
             </header>

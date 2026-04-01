@@ -93,6 +93,7 @@ export async function getNotificationItems(): Promise<NotificationItem[]> {
             contact_name: "Nombre",
             email: "Email",
             phone: "Telefono",
+            cuit: "CUIT",
             address: "Direccion",
             instagram: "Instagram",
             delivery_window: "Ventana de entrega",
@@ -159,6 +160,22 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
         supabase.from("order_items").select("quantity, product_id, products(id, name)"),
     ]);
 
+    [
+        pendingOrdersResult,
+        inTransitOrdersResult,
+        deliveredOrdersResult,
+        orderItemsResult,
+        allOrdersResult,
+        activeClientsResult,
+        pendingClientsResult,
+        newClientsThisMonthResult,
+        topProductsResult,
+    ].forEach((result) => {
+        if (result.error) {
+            console.error("getDashboardMetrics query error:", result.error.message);
+        }
+    });
+
     const totalUnits = orderItemsResult.data?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
     const totalOrderValue = allOrdersResult.data?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
     const orderCount = allOrdersResult.data?.length || 0;
@@ -166,8 +183,9 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
 
     const productMap: Record<string, { name: string; quantity: number }> = {};
     topProductsResult.data?.forEach((item: any) => {
-        const productId = item.product_id || item.products?.id || "unknown";
-        const productName = item.products?.name || "Sin nombre";
+        const productInfo = Array.isArray(item.products) ? item.products[0] : item.products;
+        const productId = item.product_id || productInfo?.id || "unknown";
+        const productName = productInfo?.name || "Sin nombre";
 
         if (!productMap[productId]) {
             productMap[productId] = { name: productName, quantity: 0 };

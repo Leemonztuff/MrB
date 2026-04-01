@@ -10,6 +10,26 @@ import {
   AppliedSalesCondition
 } from "@/domain/pricing/calculator";
 
+function samePromotionList(a: Promotion[], b: Promotion[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((item, index) => item.id === b[index]?.id);
+}
+
+function sameSalesConditionList(a: SalesCondition[], b: SalesCondition[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((item, index) => item.id === b[index]?.id);
+}
+
+function sameProductPromotionList(a: PriceListProductPromotion[], b: PriceListProductPromotion[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every(
+    (item, index) =>
+      item.price_list_id === b[index]?.price_list_id &&
+      item.product_id === b[index]?.product_id &&
+      item.promotion_id === b[index]?.promotion_id
+  );
+}
+
 type CartState = {
   items: CartItemType[];
   totalItems: number;
@@ -60,7 +80,21 @@ export const useCartStore = create<CartState>()(
       productPromotions: [],
 
       setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[], vatPercentage: number, salesConditions: SalesCondition[] = [], productPromotions: PriceListProductPromotion[] = []) => {
-        const currentAgreementId = get().agreementId;
+        const currentState = get();
+        const currentAgreementId = currentState.agreementId;
+
+        const sameAgreementConfig =
+          id === currentAgreementId &&
+          pricesIncludeVat === currentState.pricesIncludeVat &&
+          vatPercentage === currentState.vatPercentage &&
+          samePromotionList(promotions, currentState.promotions) &&
+          sameSalesConditionList(salesConditions, currentState.salesConditions) &&
+          sameProductPromotionList(productPromotions, currentState.productPromotions);
+
+        if (sameAgreementConfig) {
+          return;
+        }
+
         if (id !== currentAgreementId) {
           set({
             agreementId: id,
@@ -83,7 +117,7 @@ export const useCartStore = create<CartState>()(
             bonusInfo: {},
           });
         } else {
-          const { items } = get();
+          const { items } = currentState;
           set({
             pricesIncludeVat: pricesIncludeVat,
             promotions: promotions,

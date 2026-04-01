@@ -83,17 +83,31 @@ export function Notifications() {
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [readIds, setReadIds] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
 
-    const fetchNotifications = async () => {
+    const fetchNotifications = async (isRefresh = false) => {
+        if (isRefresh) {
+            setRefreshing(true);
+        } else {
+            setLoading(true);
+        }
+
         try {
             const { getNotificationItems } = await import("@/app/admin/actions/dashboard.actions");
             const items = await getNotificationItems();
             setNotifications(items);
+            setLoadError(null);
         } catch (error) {
             console.error("Error fetching notifications:", error);
+            setLoadError("No se pudieron cargar las notificaciones.");
         } finally {
-            setLoading(false);
+            if (isRefresh) {
+                setRefreshing(false);
+            } else {
+                setLoading(false);
+            }
         }
     };
 
@@ -154,7 +168,7 @@ export function Notifications() {
                     <span className="sr-only">Abrir notificaciones</span>
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-96 p-0" align="end">
+            <PopoverContent className="w-[min(95vw,24rem)] p-0" align="end">
                 <Card className="border-0 shadow-none">
                     <CardHeader className="flex flex-row items-center justify-between px-4 py-3">
                         <CardTitle className="flex items-center gap-2 text-sm font-black uppercase tracking-widest">
@@ -172,8 +186,8 @@ export function Notifications() {
                                     <CheckCheck className="h-3 w-3" />
                                 </Button>
                             ) : null}
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={fetchNotifications} title="Actualizar">
-                                <RefreshCw className="h-3 w-3" />
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => fetchNotifications(true)} title="Actualizar" disabled={refreshing || loading}>
+                                <RefreshCw className={cn("h-3 w-3", (refreshing || loading) && "animate-spin")} />
                             </Button>
                         </div>
                     </CardHeader>
@@ -182,6 +196,18 @@ export function Notifications() {
                             {loading ? (
                                 <div className="p-8 text-center">
                                     <RefreshCw className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                                </div>
+                            ) : loadError ? (
+                                <div className="space-y-3 py-10 text-center">
+                                    <p className="px-4 text-xs text-destructive">{loadError}</p>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => fetchNotifications()}
+                                        className="h-8 text-[10px] font-black uppercase tracking-widest"
+                                    >
+                                        Reintentar
+                                    </Button>
                                 </div>
                             ) : notifications.length > 0 ? (
                                 notifications.map((notification) => {

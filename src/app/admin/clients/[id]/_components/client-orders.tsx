@@ -31,7 +31,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, Eye } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
@@ -87,7 +86,7 @@ export function ClientOrders({ orders }: { orders: OrderWithItems[] }) {
                           </DialogTitle>
                         </DialogHeader>
                         <div className="flex min-h-0 flex-1 flex-col px-6 pb-6">
-                          <ScrollArea className="mt-4 min-h-0 flex-1 pr-4">
+                          <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-4 [scrollbar-gutter:stable]">
                             <div className="grid gap-2">
                               {order.order_items?.map((item, idx) => (
                                 <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
@@ -103,7 +102,7 @@ export function ClientOrders({ orders }: { orders: OrderWithItems[] }) {
                                 </div>
                               ))}
                             </div>
-                          </ScrollArea>
+                          </div>
                           <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
                             <span className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Total</span>
                             <span className="text-lg font-headline font-black text-primary">

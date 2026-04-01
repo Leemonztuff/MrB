@@ -84,20 +84,34 @@ function MetricSkeleton() {
 export function DashboardStats() {
     const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [openSections, setOpenSections] = useState<string[]>(['orders']);
 
-    useEffect(() => {
-        async function loadMetrics() {
-            try {
-                const data = await getDashboardMetrics();
-                setMetrics(data);
-            } catch (error) {
-                console.error('Error loading metrics:', error);
-            } finally {
+    const loadMetrics = async (isRefresh = false) => {
+        if (isRefresh) {
+            setRefreshing(true);
+        } else {
+            setLoading(true);
+        }
+
+        try {
+            const data = await getDashboardMetrics();
+            setMetrics(data);
+            setLoadError(null);
+        } catch (error) {
+            console.error('Error loading metrics:', error);
+            setLoadError('No se pudieron cargar las estadisticas.');
+        } finally {
+            if (isRefresh) {
+                setRefreshing(false);
+            } else {
                 setLoading(false);
             }
         }
+    };
 
+    useEffect(() => {
         loadMetrics();
     }, []);
 
@@ -110,13 +124,34 @@ export function DashboardStats() {
     return (
         <Card className="glass border-border/50">
             <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground/80">
-                    Estadisticas
-                </CardTitle>
+                <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground/80">
+                        Estadisticas
+                    </CardTitle>
+                    <button
+                        type="button"
+                        onClick={() => loadMetrics(true)}
+                        disabled={loading || refreshing}
+                        className="rounded-md border border-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        {refreshing ? 'Actualizando...' : 'Actualizar'}
+                    </button>
+                </div>
             </CardHeader>
             <CardContent className="space-y-2">
                 {loading ? (
                     <MetricSkeleton />
+                ) : loadError ? (
+                    <div className="space-y-3 py-4 text-center">
+                        <p className="text-xs text-destructive">{loadError}</p>
+                        <button
+                            type="button"
+                            onClick={() => loadMetrics()}
+                            className="rounded-md border border-destructive/30 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-destructive transition-colors hover:bg-destructive/10"
+                        >
+                            Reintentar
+                        </button>
+                    </div>
                 ) : metrics ? (
                     <Accordion
                         type="multiple"

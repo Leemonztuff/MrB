@@ -24,7 +24,6 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
@@ -192,7 +191,7 @@ export function RecentOrders({ orders: initialOrders }: { orders: OrderWithItems
 
                                                     <div className="mt-4 flex min-h-0 flex-1 flex-col space-y-2">
                                                         <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest ml-1">Contenido</p>
-                                                        <ScrollArea className="min-h-0 flex-1 w-full pr-4">
+                                                        <div className="min-h-0 flex-1 w-full overflow-y-auto pr-4 [scrollbar-gutter:stable]">
                                                             <div className="grid gap-2">
                                                                 {order.order_items?.map((item, idx) => (
                                                                     <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
@@ -208,7 +207,7 @@ export function RecentOrders({ orders: initialOrders }: { orders: OrderWithItems
                                                                     </div>
                                                                 ))}
                                                             </div>
-                                                        </ScrollArea>
+                                                        </div>
                                                     </div>
 
                                                     <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
