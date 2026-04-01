@@ -36,7 +36,7 @@ function signCookie(value: string): string {
     return `${value}.${signature}`;
 }
 
-function verifyAndExtractSignedCookie(signedValue: string): string | null {
+function verifyAndExtractSignedCookie(signedValue: string): { clientId: string; hadCuitAtLogin: boolean } | null {
     const parts = signedValue.split('.');
     if (parts.length !== 2) return null;
 
@@ -52,7 +52,17 @@ function verifyAndExtractSignedCookie(signedValue: string): string | null {
             return null;
         }
 
-        return timingSafeEqual(signatureBuffer, expectedBuffer) ? value : null;
+        if (!timingSafeEqual(signatureBuffer, expectedBuffer)) {
+            return null;
+        }
+
+        const [clientId, cuitFlag] = value.split('|');
+        if (!clientId) return null;
+
+        return {
+            clientId,
+            hadCuitAtLogin: cuitFlag === '1',
+        };
     } catch (error) {
         console.error('Portal cookie secret misconfigured:', error);
         return null;
@@ -60,17 +70,19 @@ function verifyAndExtractSignedCookie(signedValue: string): string | null {
 }
 
 export async function loginPortal(prevState: AuthState | null, formData: FormData): Promise<AuthState | null> {
-    const cuit = formData.get('cuit') as string;
+    const identifierRaw = (formData.get('identifier') || formData.get('cuit')) as string;
     const token = formData.get('token') as string;
 
-    if (!cuit || !token) {
-        return { error: { message: 'CUIT y token son requeridos.' } };
+    if (!identifierRaw || !token) {
+        return { error: { message: 'CUIT o DNI y token son requeridos.' } };
     }
 
-    const cleanCuit = unformatCuit(cuit);
+    const cleanIdentifier = identifierRaw.replace(/[^0-9]/g, '');
+    const isCuitLogin = cleanIdentifier.length === 11;
+    const isDniLogin = cleanIdentifier.length >= 7 && cleanIdentifier.length <= 8;
 
-    if (cleanCuit.length !== 11) {
-        return { error: { message: 'CUIT invalido. Debe tener 11 digitos.' } };
+    if (!isCuitLogin && !isDniLogin) {
+        return { error: { message: 'Ingresa un CUIT (11 digitos) o DNI (7-8 digitos) valido.' } };
     }
 
     if (token.length !== 6) {
@@ -78,24 +90,41 @@ export async function loginPortal(prevState: AuthState | null, formData: FormDat
     }
 
     const supabase = await createClient();
-
-    const { data: client, error } = await supabase
+    const identifierField = isCuitLogin ? 'cuit' : 'contact_dni';
+    const { data: matchedClients, error } = await supabase
         .from('clients')
         .select('*')
-        .eq('cuit', cleanCuit)
-        .maybeSingle();
+        .eq(identifierField, cleanIdentifier)
+        .limit(2);
 
     if (error) {
         console.error('Portal login error:', error);
         return { error: { message: 'Error al iniciar sesion. Intentalo de nuevo.' } };
     }
 
-    if (!client) {
-        return { error: { message: 'No existe un cliente con ese CUIT.' } };
+    if (!matchedClients || matchedClients.length === 0) {
+        return {
+            error: {
+                message: isCuitLogin
+                    ? 'No existe un cliente con ese CUIT.'
+                    : 'No existe un cliente sin CUIT registrado para ese DNI.',
+            },
+        };
+    }
+
+    if (matchedClients.length > 1) {
+        return { error: { message: 'Hay mas de un cliente para ese identificador. Contacta al administrador.' } };
+    }
+
+    const client = matchedClients[0];
+
+    if (isDniLogin && client.cuit) {
+        return { error: { message: 'Este cliente ya tiene CUIT. Ingresa con CUIT para acceder.' } };
     }
 
     if (!client.portal_token) {
-        const newToken = cleanCuit.slice(0, 6);
+        const tokenSource = (client.cuit || client.contact_dni || cleanIdentifier || '').replace(/[^0-9]/g, '');
+        const newToken = tokenSource.slice(0, 6).padStart(6, '0');
         const { error: updateError } = await supabase
             .from('clients')
             .update({ portal_token: newToken })
@@ -121,7 +150,8 @@ export async function loginPortal(prevState: AuthState | null, formData: FormDat
     let signedValue: string;
 
     try {
-        signedValue = signCookie(client.id);
+        const cuitFlag = client.cuit ? '1' : '0';
+        signedValue = signCookie(`${client.id}|${cuitFlag}`);
     } catch (error) {
         console.error('Portal login cookie setup failed:', error);
         return { error: { message: 'Error de configuracion del portal. Contacta al administrador.' } };
@@ -152,8 +182,8 @@ export async function getPortalClient() {
         return null;
     }
 
-    const clientId = verifyAndExtractSignedCookie(signedValue);
-    if (!clientId) {
+    const sessionData = verifyAndExtractSignedCookie(signedValue);
+    if (!sessionData) {
         console.log('Failed to verify signed cookie:', signedValue);
         cookieStore.delete('portal_client_id');
         return null;
@@ -163,11 +193,17 @@ export async function getPortalClient() {
     const { data: client, error } = await supabase
         .from('clients')
         .select('*, agreements:agreements(id, agreement_name, client_type)')
-        .eq('id', clientId)
+        .eq('id', sessionData.clientId)
         .maybeSingle();
 
     if (error) {
         console.error('Error fetching client:', error);
+        return null;
+    }
+
+    // Force re-login when CUIT was missing at login time and then gets approved later.
+    if (client?.cuit && !sessionData.hadCuitAtLogin) {
+        cookieStore.delete('portal_client_id');
         return null;
     }
 

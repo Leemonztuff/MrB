@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import type { AuthState } from '@/types';
 
 const portalLoginSchema = z.object({
-    cuit: z.string().min(11, 'CUIT debe tener 11 digitos'),
+    identifier: z.string().min(7, 'Ingresa CUIT o DNI').max(11, 'CUIT o DNI invalido'),
     token: z.string().length(6, 'Token debe tener 6 digitos'),
 });
 
@@ -35,20 +35,20 @@ export default function PortalLoginPage() {
     const form = useForm<PortalLoginForm>({
         resolver: zodResolver(portalLoginSchema),
         defaultValues: {
-            cuit: '',
+            identifier: '',
             token: '',
         },
     });
 
-    const handleCuitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleIdentifierChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
-        form.setValue('cuit', value);
+        form.setValue('identifier', value);
     };
 
-    const handleCuitBlur = () => {
-        const currentCuit = form.getValues('cuit');
-        if (currentCuit.length === 11) {
-            form.setValue('token', currentCuit.slice(0, 6));
+    const handleIdentifierBlur = () => {
+        const currentIdentifier = form.getValues('identifier');
+        if (currentIdentifier.length >= 6) {
+            form.setValue('token', currentIdentifier.slice(0, 6));
         }
     };
 
@@ -67,7 +67,7 @@ export default function PortalLoginPage() {
                     <CardHeader className="space-y-1 text-center pb-4">
                         <CardTitle className="text-xl">Iniciar Sesion</CardTitle>
                         <CardDescription>
-                            Ingresa tu CUIT y token para acceder a tu cuenta.
+                            Ingresa con CUIT o, si aun no lo tienes cargado, con tu DNI.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -75,19 +75,19 @@ export default function PortalLoginPage() {
                             <form action={action} className="space-y-4">
                                 <FormField
                                     control={form.control}
-                                    name="cuit"
+                                    name="identifier"
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel className="flex items-center gap-2">
                                                 <User className="h-4 w-4" />
-                                                CUIT
+                                                CUIT o DNI
                                             </FormLabel>
                                             <FormControl>
                                                 <Input
                                                     {...field}
-                                                    placeholder="20-31895155-2"
-                                                    onChange={handleCuitChange}
-                                                    onBlur={handleCuitBlur}
+                                                    placeholder="20318951552 o 31895155"
+                                                    onChange={handleIdentifierChange}
+                                                    onBlur={handleIdentifierBlur}
                                                     className="h-10"
                                                 />
                                             </FormControl>
@@ -115,7 +115,7 @@ export default function PortalLoginPage() {
                                             </FormControl>
                                             <FormMessage />
                                             <p className="text-xs text-muted-foreground">
-                                                Por defecto son los primeros 6 digitos del CUIT.
+                                                Por defecto son los primeros 6 digitos del CUIT o DNI.
                                             </p>
                                         </FormItem>
                                     )}

@@ -328,9 +328,26 @@ export async function approveChange(changeId: string): Promise<ActionResponse<nu
 
     if (fetchError || !change) throw new Error('Cambio no encontrado');
 
+    const resolvedChangeType = String(change.change_type);
+    let updatePayload: Record<string, unknown> = {
+      [resolvedChangeType]: change.new_value,
+    };
+
+    if (resolvedChangeType === 'cuit') {
+      const normalizedCuit = String(change.new_value || '').replace(/[^0-9]/g, '');
+      if (normalizedCuit.length !== 11) {
+        throw new Error('CUIT invalido. Debe tener 11 digitos.');
+      }
+
+      updatePayload = {
+        cuit: normalizedCuit,
+        portal_token: normalizedCuit.slice(0, 6),
+      };
+    }
+
     const { error: updateError } = await supabase
       .from('clients')
-      .update({ [change.change_type]: change.new_value })
+      .update(updatePayload)
       .eq('id', change.client_id);
 
     if (updateError) throw updateError;

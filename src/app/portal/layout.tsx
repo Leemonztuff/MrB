@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { formatCuit } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
-import { User, Package, ShoppingCart, LogOut, Newspaper } from 'lucide-react';
+import { User, Package, ShoppingCart, LogOut, Newspaper, AlertTriangle } from 'lucide-react';
 import { PageLoader } from '@/components/loading';
 import { PortalProvider, type PortalClientData, type PortalPendingChange } from '@/contexts/portal-context';
 
@@ -178,6 +178,24 @@ export default function PortalLayout({
 
             {/* Main Content */}
             <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-6 md:py-8 pb-32 md:pb-8">
+                {!client.cuit && (
+                    <div className="mb-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+                        <div className="flex items-start gap-3">
+                            <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-amber-300">
+                                    Ingreso temporal con DNI
+                                </p>
+                                <p className="text-xs text-amber-100/90">
+                                    Tu cuenta no tiene CUIT registrado. Para regularizar el acceso, completa el CUIT en
+                                    <Link href="/portal/profile" className="ml-1 font-bold underline underline-offset-2 text-amber-200 hover:text-white">
+                                        Mi Perfil
+                                    </Link>.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 {children}
             </main>
 

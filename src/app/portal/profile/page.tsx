@@ -24,6 +24,7 @@ import {
     Check,
     Lock,
     Loader2,
+    AlertTriangle,
 } from 'lucide-react';
 import { PortalPageHeader } from '@/components/shared/portal-page-header';
 import { PortalProfileSkeleton } from '@/components/shared/portal-skeleton';
@@ -33,6 +34,7 @@ import { usePortalContext, type PortalClientData } from '@/contexts/portal-conte
 const changeTypeLabels: Record<string, string> = {
     contact_name: 'Nombre de contacto',
     email: 'Email',
+    cuit: 'CUIT',
     address: 'Direccion',
     delivery_window: 'Ventana de entrega',
     instagram: 'Instagram',
@@ -52,6 +54,7 @@ export default function PortalProfilePage() {
     const [formData, setFormData] = useState({
         contact_name: '',
         email: '',
+        cuit: '',
         address: '',
         delivery_window: '',
         instagram: '',
@@ -71,6 +74,7 @@ export default function PortalProfilePage() {
         setFormData({
             contact_name: portalClient.contact_name || '',
             email: portalClient.email || '',
+            cuit: portalClient.cuit || '',
             address: portalClient.address || '',
             delivery_window: portalClient.delivery_window || '',
             instagram: portalClient.instagram || '',
@@ -152,7 +156,7 @@ export default function PortalProfilePage() {
     const infoFields = [
         { key: 'contact_name', label: 'Nombre de Contacto', value: client.contact_name, icon: UserIcon },
         { key: 'email', label: 'Email', value: client.email, icon: Mail },
-        { key: 'cuit', label: 'CUIT', value: formatCuit(client.cuit), icon: FileText, readonly: true },
+        { key: 'cuit', label: 'CUIT', value: formatCuit(client.cuit) || 'Sin registrar', icon: FileText },
         { key: 'contact_dni', label: 'DNI', value: client.contact_dni, icon: FileText },
         { key: 'address', label: 'Direccion', value: client.address, icon: MapPin, span: true },
         { key: 'delivery_window', label: 'Ventana de Entrega', value: client.delivery_window, icon: Calendar },
@@ -179,6 +183,22 @@ export default function PortalProfilePage() {
                     </Button>
                 )}
             />
+
+            {!client.cuit && (
+                <div className="glass-card p-4 border-amber-500/30 bg-amber-500/5 fade-in-up">
+                    <div className="flex items-start gap-3">
+                        <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-amber-300 mb-1">
+                                Regularizacion fiscal pendiente
+                            </p>
+                            <p className="text-xs text-amber-100/90">
+                                Estas ingresando con DNI porque no tienes CUIT registrado. Carga tu CUIT para regularizar el acceso.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {pendingChanges.length > 0 && (
                 <div className="glass-card p-4 border-primary/20 fade-in-up">
@@ -226,8 +246,29 @@ export default function PortalProfilePage() {
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label htmlFor="cuit" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">CUIT</Label>
-                                    <Input id="cuit" value={formatCuit(client.cuit)} disabled className="rounded-xl opacity-50 h-10" />
-                                    <p className="text-[9px] text-muted-foreground italic">No modificable</p>
+                                    <Input
+                                        id="cuit"
+                                        value={formData.cuit}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                cuit: e.target.value.replace(/[^0-9]/g, '').slice(0, 11),
+                                            })
+                                        }
+                                        disabled={Boolean(client.cuit)}
+                                        className={cn(
+                                            "rounded-xl h-10",
+                                            client.cuit
+                                                ? "opacity-50"
+                                                : "border-amber-500/30 bg-amber-500/5 focus:bg-amber-500/10"
+                                        )}
+                                        placeholder="20123456789"
+                                    />
+                                    <p className="text-[9px] text-muted-foreground italic">
+                                        {client.cuit
+                                            ? 'No modificable desde el portal'
+                                            : 'Ingresa tu CUIT para enviar la regularizacion al administrador'}
+                                    </p>
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label htmlFor="contact_dni" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">DNI</Label>

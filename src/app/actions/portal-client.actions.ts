@@ -36,6 +36,7 @@ export async function getPortalClientData(): Promise<ActionResponse<any>> {
 export async function updateClientProfile(data: {
     contact_name: string;
     email: string;
+    cuit?: string;
     address: string;
     delivery_window: string;
     instagram: string;
@@ -50,9 +51,21 @@ export async function updateClientProfile(data: {
 
         const supabase = await createClient();
 
+        const normalizedCuit = (data.cuit || '').replace(/[^0-9]/g, '');
+        if (normalizedCuit && normalizedCuit.length !== 11) {
+            return {
+                success: false,
+                error: {
+                    message: 'El CUIT debe tener 11 digitos.',
+                    code: 'INVALID_CUIT',
+                },
+            };
+        }
+
         const fieldsToCheck = [
             { key: 'contact_name', label: 'nombre de contacto' },
             { key: 'email', label: 'email' },
+            { key: 'cuit', label: 'CUIT' },
             { key: 'address', label: 'direccion' },
             { key: 'delivery_window', label: 'ventana de entrega' },
             { key: 'instagram', label: 'instagram' },
@@ -63,7 +76,10 @@ export async function updateClientProfile(data: {
         const currentData = client as any;
 
         for (const field of fieldsToCheck) {
-            const newValue = data[field.key as keyof typeof data] || null;
+            const rawNewValue = field.key === 'cuit'
+                ? normalizedCuit
+                : data[field.key as keyof typeof data];
+            const newValue = rawNewValue || null;
             const oldValue = currentData[field.key];
 
             if (newValue !== oldValue) {
