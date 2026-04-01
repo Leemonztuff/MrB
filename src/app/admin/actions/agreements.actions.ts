@@ -28,8 +28,7 @@ export async function getAgreementById(id: string): Promise<ActionResponse<Detai
                 *,
                 agreement_promotions ( promotions ( * ) ),
                 agreement_sales_conditions ( sales_conditions ( * ) ),
-                price_lists ( id, name, prices_include_vat ),
-                clients ( id, contact_name )
+                price_lists ( id, name, prices_include_vat )
             `)
             .eq("id", id)
             .single();
@@ -41,7 +40,7 @@ export async function getAgreementById(id: string): Promise<ActionResponse<Detai
             agreement_promotions: data.agreement_promotions ?? [],
             agreement_sales_conditions: data.agreement_sales_conditions ?? [],
             price_lists: data.price_lists,
-            clients: data.clients ?? [],
+            clients: [],
         };
         return detailedAgreement;
     });

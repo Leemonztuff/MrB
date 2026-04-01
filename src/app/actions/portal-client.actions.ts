@@ -74,6 +74,32 @@ export async function updateClientProfile(data: {
         ];
 
         const currentData = client as any;
+        const pendingTypes = fieldsToCheck.map((field) => field.key);
+        const { data: existingPendingRows, error: pendingFetchError } = await supabase
+            .from('pending_changes')
+            .select('id, change_type, new_value')
+            .eq('client_id', client.id)
+            .eq('status', 'pending')
+            .in('change_type', pendingTypes)
+            .order('created_at', { ascending: false });
+
+        if (pendingFetchError) {
+            console.error('Error fetching pending changes:', pendingFetchError);
+            return {
+                success: false,
+                error: {
+                    message: 'No se pudieron validar los cambios pendientes actuales.',
+                    code: 'PENDING_CHANGE_FETCH_FAILED',
+                },
+            };
+        }
+
+        const pendingByType = (existingPendingRows || []).reduce((acc: Record<string, any>, row: any) => {
+            if (!acc[row.change_type]) {
+                acc[row.change_type] = row;
+            }
+            return acc;
+        }, {});
 
         for (const field of fieldsToCheck) {
             const rawNewValue = field.key === 'cuit'
@@ -83,25 +109,51 @@ export async function updateClientProfile(data: {
             const oldValue = currentData[field.key];
 
             if (newValue !== oldValue) {
-                const { error: insertError } = await supabase
-                    .from('pending_changes')
-                    .insert({
-                        client_id: client.id,
-                        change_type: field.key,
-                        old_value: oldValue || null,
-                        new_value: newValue,
-                        status: 'pending',
-                    });
+                const existingPending = pendingByType[field.key];
+                if (existingPending) {
+                    if ((existingPending.new_value ?? null) === newValue) {
+                        continue;
+                    }
 
-                if (insertError) {
-                    console.error('Error creating pending change:', insertError);
-                    return {
-                        success: false,
-                        error: {
-                            message: `Error al crear solicitud de cambio para ${field.label}`,
-                            code: 'PENDING_CHANGE_CREATE_FAILED',
-                        },
-                    };
+                    const { error: updatePendingError } = await supabase
+                        .from('pending_changes')
+                        .update({
+                            old_value: oldValue || null,
+                            new_value: newValue,
+                        })
+                        .eq('id', existingPending.id);
+
+                    if (updatePendingError) {
+                        console.error('Error updating pending change:', updatePendingError);
+                        return {
+                            success: false,
+                            error: {
+                                message: `Error al actualizar solicitud de cambio para ${field.label}`,
+                                code: 'PENDING_CHANGE_UPDATE_FAILED',
+                            },
+                        };
+                    }
+                } else {
+                    const { error: insertError } = await supabase
+                        .from('pending_changes')
+                        .insert({
+                            client_id: client.id,
+                            change_type: field.key,
+                            old_value: oldValue || null,
+                            new_value: newValue,
+                            status: 'pending',
+                        });
+
+                    if (insertError) {
+                        console.error('Error creating pending change:', insertError);
+                        return {
+                            success: false,
+                            error: {
+                                message: `Error al crear solicitud de cambio para ${field.label}`,
+                                code: 'PENDING_CHANGE_CREATE_FAILED',
+                            },
+                        };
+                    }
                 }
             }
         }

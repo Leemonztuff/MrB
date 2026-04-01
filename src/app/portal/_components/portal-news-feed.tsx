@@ -42,6 +42,7 @@ function RichContent({ content }: { content: string }) {
 export function PortalNewsFeed() {
   const [news, setNews] = useState<NewsPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isLikePending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -50,9 +51,16 @@ export function PortalNewsFeed() {
     async function loadNews() {
       try {
         const result = await getPublicNews();
-        if (!cancelled && result.data) {
-          setNews(result.data);
+        if (cancelled) return;
+
+        if (!result.success) {
+          setLoadError(result.error?.message || "No se pudieron cargar las novedades.");
+          setNews([]);
+          return;
         }
+
+        setLoadError(null);
+        setNews(result.data || []);
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -149,6 +157,12 @@ export function PortalNewsFeed() {
           <PortalNewsCardSkeleton />
           <PortalNewsCardSkeleton />
         </div>
+      ) : loadError ? (
+        <PortalEmptyState
+          icon={Sparkles}
+          title="No se pudieron cargar las novedades"
+          description={loadError}
+        />
       ) : news.length === 0 ? (
         <PortalEmptyState
           icon={Sparkles}

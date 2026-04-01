@@ -86,7 +86,7 @@ export async function getPublicNews(): Promise<ActionResponse<NewsPost[]>> {
     };
   } catch (error) {
     console.error('News exception:', error);
-    return { success: true, data: [] };
+    return { success: false, error: { message: 'No se pudieron cargar las novedades.' } };
   }
 }
 

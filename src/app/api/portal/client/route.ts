@@ -19,7 +19,7 @@ export async function GET() {
     } catch (error) {
         console.error('Error in /api/portal/client:', error);
         return NextResponse.json(
-            { error: 'Error interno del servidor', details: String(error) },
+            { error: 'Error interno del servidor' },
             { status: 500 }
         );
     }
