@@ -50,12 +50,12 @@ function formatWhatsAppMessage(
   messageParts.push(itemsText);
 
   if (appliedPromotions.length > 0 || Object.keys(bonusInfo).length > 0) {
-    const promotionLines: string[] = ["", "Beneficios aplicados:"];
+    const promotionLines: string[] = ["", "Beneficios appliedPromotions:"];
     const bonusText = Object.values(bonusInfo).map(
       (info) => `Bonificacion: +${(info as any).bonusQuantity} un. ${(info as any).productName}`
     );
 
-    if (appliedPromotions.some((promo) => promo.rules.type === "min_amount_discount")) {
+    if (appliedPromotions.some((promo) => promo.rules?.type === "min_amount_discount")) {
       promotionLines.push(`Descuento: -${formatCurrency(discountApplied)}`);
     }
 
@@ -63,7 +63,7 @@ function formatWhatsAppMessage(
       promotionLines.push(...bonusText);
     }
 
-    if (appliedPromotions.some((promo) => promo.rules.type === "free_shipping")) {
+    if (appliedPromotions.some((promo) => promo.rules?.type === "free_shipping")) {
       promotionLines.push("Envio gratis");
     }
 
@@ -92,7 +92,7 @@ function AppliedPromotions() {
   return (
     <div className="space-y-4 w-full">
       {appliedPromotions.map((promo) => {
-        if (promo.rules.type === "min_amount_discount") {
+        if (promo.rules?.type === "min_amount_discount") {
           return (
             <div key={promo.id} className="p-4 bg-primary/10 border border-primary/20 rounded-xl glass transition-all duration-300">
               <div className="flex items-start gap-3">
@@ -110,7 +110,7 @@ function AppliedPromotions() {
           );
         }
 
-        if (promo.rules.type === "buy_x_get_y_free" && bonusEntries.length > 0) {
+        if (promo.rules?.type === "buy_x_get_y_free" && bonusEntries.length > 0) {
           return (
             <div key={promo.id} className="p-4 bg-primary/10 border border-primary/20 rounded-xl glass transition-all duration-300">
               <div className="flex items-start gap-3">
@@ -136,7 +136,7 @@ function AppliedPromotions() {
           );
         }
 
-        if (promo.rules.type === "free_shipping") {
+        if (promo.rules?.type === "free_shipping") {
           return (
             <div key={promo.id} className="p-4 bg-primary/10 border border-primary/20 rounded-xl glass transition-all duration-300">
               <div className="flex items-center gap-3">

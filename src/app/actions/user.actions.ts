@@ -77,7 +77,10 @@ export async function getOrderPageData(id: string, options?: { newsId?: string, 
         }
 
         const supabase = await createServerClient();
-        const agreementId = session.agreement?.id || session.client?.agreement_id;
+        const agreementData = session.agreement;
+        const agreementId = (agreementData && !Array.isArray(agreementData)) 
+            ? agreementData.id 
+            : session.client?.agreement_id;
 
         if (!agreementId) {
             // Case where we have a client from onboarding but no agreement assigned yet

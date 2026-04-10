@@ -43,14 +43,14 @@ function StatCard({
     return (
         <div
             className={cn(
-                'flex items-center gap-3 rounded-xl border bg-white/5 p-3',
+                'flex items-center gap-3 rounded-xl border bg-white/5 p-3 sm:p-4',
                 variant === 'warning' && 'border-yellow-500/20 bg-yellow-500/5',
                 variant === 'success' && 'border-green-500/20 bg-green-500/5'
             )}
         >
             <div
                 className={cn(
-                    'rounded-lg p-2',
+                    'rounded-lg p-2 shrink-0',
                     variant === 'warning' ? 'bg-yellow-500/10' : variant === 'success' ? 'bg-green-500/10' : 'bg-primary/10'
                 )}
             >
@@ -61,9 +61,9 @@ function StatCard({
                     )}
                 />
             </div>
-            <div>
-                <p className="text-xl font-black tracking-tight">{value}</p>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
+            <div className="min-w-0 flex-1">
+                <p className="text-lg sm:text-xl font-black tracking-tight truncate">{value}</p>
+                <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-muted-foreground truncate">{label}</p>
             </div>
         </div>
     );

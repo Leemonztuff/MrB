@@ -127,28 +127,27 @@ export default function PortalLayout({
 
     return (
         <PortalProvider isPortalContext={true} client={client} pendingChanges={pendingChanges}>
-        <div className="flex flex-col min-h-screen bg-background relative">
+        <div className="flex flex-col min-h-screen bg-background relative portal-layout">
             {/* Top Header */}
             <header className="glass border-b border-primary/10 sticky top-0 z-40 backdrop-blur-md flex-none">
-                <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-                    <Link href="/portal" className="flex items-center gap-3 group">
-                        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 text-primary-foreground font-black text-lg italic tracking-tighter">
+                <div className="max-w-7xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
+                    <Link href="/portal" className="flex items-center gap-2 sm:gap-3 group">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 text-primary-foreground font-black text-sm sm:text-lg italic tracking-tighter">
                             MB
                         </div>
-                        <div>
-                            <h1 className="text-xl font-black italic tracking-tighter uppercase leading-none">Mr. Blonde</h1>
-                            <p className="text-[9px] text-muted-foreground font-black tracking-widest uppercase opacity-60">Portal de Cliente</p>
+                        <div className="hidden xs:block">
+                            <h1 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase leading-none">Mr. Blonde</h1>
+                            <p className="text-[8px] sm:text-[9px] text-muted-foreground font-black tracking-widest uppercase opacity-60">Portal de Cliente</p>
                         </div>
                     </Link>
                     
-                    <div className="flex items-center gap-4">
-                        <div className="hidden md:flex flex-col items-end gap-0.5 text-xs mr-4">
+                    <div className="flex items-center gap-2 sm:gap-4">
+                        <div className="hidden sm:block lg:hidden flex-col items-end gap-0.5 text-xs mr-2">
                             <span className="font-black italic uppercase tracking-tight text-foreground/80 leading-none">{client.contact_name}</span>
-                            <span className="text-[10px] text-muted-foreground font-bold tracking-widest leading-none mt-1">{formatCuit(client.cuit)}</span>
                         </div>
                         
                         {/* Desktop Nav */}
-                        <nav className="hidden md:flex items-center gap-1 bg-white/5 border border-white/10 p-1 rounded-2xl">
+                        <nav className="hidden lg:flex items-center gap-1 bg-white/5 border border-white/10 p-1 rounded-2xl">
                             {navItems.map((item) => {
                                 const active = isNavActive(item.href, item.exact);
                                 return (
@@ -156,13 +155,13 @@ export default function PortalLayout({
                                         key={item.href}
                                         href={item.href}
                                         className={cn(
-                                            "flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all",
+                                            "flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-xl transition-all",
                                             active
                                                 ? "text-primary bg-primary/10"
                                                 : "text-muted-foreground hover:text-primary hover:bg-primary/10"
                                         )}
                                     >
-                                        <item.icon className="h-4 w-4" />
+                                        <item.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                         {item.label}
                                     </Link>
                                 );
@@ -170,8 +169,8 @@ export default function PortalLayout({
                         </nav>
                         
                         <form action={logoutPortal}>
-                            <Button type="submit" variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl">
-                                <LogOut className="h-5 w-5" />
+                            <Button type="submit" variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl">
+                                <LogOut className="h-4 w-4" />
                             </Button>
                         </form>
                     </div>
@@ -179,13 +178,13 @@ export default function PortalLayout({
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-6 md:py-8 pb-32 md:pb-8">
+            <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:6 md:py-8 pb-24 sm:pb-8">
                 {!client.cuit && (
-                    <div className="mb-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-                        <div className="flex items-start gap-3">
+                    <div className="mb-4 sm:mb-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-3 sm:px-4 py-2.5 sm:py-3">
+                        <div className="flex items-start gap-2 sm:gap-3">
                             <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
                             <div className="min-w-0">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-amber-300">
+                                <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-amber-300">
                                     Ingreso temporal con DNI
                                 </p>
                                 <p className="text-xs text-amber-100/90">
@@ -202,7 +201,7 @@ export default function PortalLayout({
             </main>
 
             {/* Mobile Bottom Navigation */}
-            <nav className="md:hidden fixed bottom-6 left-4 right-4 z-50 glass border border-white/10 rounded-3xl shadow-2xl p-2 flex items-center justify-between gap-1">
+            <nav className="lg:hidden fixed bottom-4 sm:bottom-6 left-4 right-4 z-50 glass border border-white/10 rounded-3xl shadow-2xl p-1.5 sm:p-2 flex items-center justify-between gap-1">
                 {navItems.map((item) => {
                     const active = isNavActive(item.href, item.exact);
                     return (
@@ -210,14 +209,14 @@ export default function PortalLayout({
                             key={item.href}
                             href={item.href}
                             className={cn(
-                                "flex flex-col items-center justify-center gap-1 flex-1 py-2 px-1 rounded-2xl transition-all min-w-[64px]",
+                                "flex flex-col items-center justify-center gap-0.5 sm:gap-1 flex-1 py-2 px-1 sm:px-1.5 rounded-2xl transition-all min-w-[56px] sm:min-w-[64px]",
                                 active
                                     ? "text-primary bg-primary/10"
                                     : "text-muted-foreground hover:text-primary hover:bg-white/5"
                             )}
                         >
-                            <item.icon className="h-5 w-5 mb-0.5" />
-                            <span className="text-[8px] font-black uppercase tracking-widest truncate w-full text-center">
+                            <item.icon className="h-4 w-4 sm:h-5 sm:w-5 mb-0.5" />
+                            <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest truncate w-full text-center leading-none">
                                 {item.label}
                             </span>
                             {active && (

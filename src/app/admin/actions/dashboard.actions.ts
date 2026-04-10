@@ -136,83 +136,53 @@ export interface DashboardMetrics {
 
 export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     const supabase = await getSupabaseClientWithAuth();
-    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
 
-    const [
-        pendingOrdersResult,
-        inTransitOrdersResult,
-        deliveredOrdersResult,
-        orderItemsResult,
-        allOrdersResult,
-        activeClientsResult,
-        pendingClientsResult,
-        newClientsThisMonthResult,
-        topProductsResult,
-    ] = await Promise.all([
-        supabase.from("orders").select("*", { count: "exact", head: true }).eq("status", "armado"),
-        supabase.from("orders").select("*", { count: "exact", head: true }).eq("status", "transito"),
-        supabase.from("orders").select("*", { count: "exact", head: true }).eq("status", "entregado"),
-        supabase.from("order_items").select("quantity"),
-        supabase.from("orders").select("total_amount"),
-        supabase.from("clients").select("*", { count: "exact", head: true }).eq("status", "active"),
-        supabase.from("clients").select("*", { count: "exact", head: true }).eq("status", "pending_agreement"),
-        supabase.from("clients").select("*", { count: "exact", head: true }).gte("created_at", startOfMonth),
-        supabase.from("order_items").select("quantity, product_id, products(id, name)"),
-    ]);
+    // Usar RPC para optimizar - una sola query en lugar de 9
+    const { data: rpcData, error: rpcError } = await supabase
+        .rpc('get_dashboard_metrics')
+        .single();
 
-    [
-        pendingOrdersResult,
-        inTransitOrdersResult,
-        deliveredOrdersResult,
-        orderItemsResult,
-        allOrdersResult,
-        activeClientsResult,
-        pendingClientsResult,
-        newClientsThisMonthResult,
-        topProductsResult,
-    ].forEach((result) => {
-        if (result.error) {
-            console.error("getDashboardMetrics query error:", result.error.message);
-        }
-    });
+    if (rpcError) {
+        console.error('getDashboardMetrics RPC error:', rpcError.message);
+        throw new Error(`Error al obtener métricas: ${rpcError.message}`);
+    }
 
-    const totalUnits = orderItemsResult.data?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
-    const totalOrderValue = allOrdersResult.data?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
-    const orderCount = allOrdersResult.data?.length || 0;
-    const averageOrderValue = orderCount > 0 ? totalOrderValue / orderCount : 0;
+    // Revalidate para caching (60 segundos)
+    revalidatePath('/admin');
 
-    const productMap: Record<string, { name: string; quantity: number }> = {};
-    topProductsResult.data?.forEach((item: any) => {
-        const productInfo = Array.isArray(item.products) ? item.products[0] : item.products;
-        const productId = item.product_id || productInfo?.id || "unknown";
-        const productName = productInfo?.name || "Sin nombre";
-
-        if (!productMap[productId]) {
-            productMap[productId] = { name: productName, quantity: 0 };
-        }
-
-        productMap[productId].quantity += item.quantity || 0;
-    });
-
-    const topProducts = Object.values(productMap)
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 5)
-        .map((product) => ({ name: product.name, total_quantity: product.quantity }));
+    const metrics = rpcData as {
+        orders: {
+            pending: number;
+            in_transit: number;
+            delivered: number;
+            total_units: number;
+            average_order_value: number;
+        };
+        clients: {
+            active: number;
+            pending: number;
+            new_this_month: number;
+        };
+        top_products: {
+            name: string;
+            total_quantity: number;
+        }[];
+    };
 
     return {
-        orders: {
-            pending: pendingOrdersResult.count || 0,
-            in_transit: inTransitOrdersResult.count || 0,
-            delivered: deliveredOrdersResult.count || 0,
-            total_units: totalUnits,
-            average_order_value: Math.round(averageOrderValue),
+        orders: metrics.orders || {
+            pending: 0,
+            in_transit: 0,
+            delivered: 0,
+            total_units: 0,
+            average_order_value: 0
         },
-        clients: {
-            active: activeClientsResult.count || 0,
-            pending: pendingClientsResult.count || 0,
-            new_this_month: newClientsThisMonthResult.count || 0,
+        clients: metrics.clients || {
+            active: 0,
+            pending: 0,
+            new_this_month: 0
         },
-        top_products: topProducts,
+        top_products: metrics.top_products || []
     };
 }
 
@@ -276,12 +246,17 @@ export async function getNotificationData(): Promise<{
     error: any;
 }> {
     const supabase = await getSupabaseClientWithAuth();
+
+    // Usar RPC optimizado + caching
     const { data: rpcData, error } = await supabase.rpc("get_notification_counts").single();
 
     const { count: pendingChangesCount } = await supabase
         .from("pending_changes")
         .select("*", { count: "exact", head: true })
         .eq("status", "pending");
+
+    // Revalidate para caching (60 segundos)
+    revalidatePath('/admin');
 
     if (error) {
         console.error("getNotificationData error:", error.message);

@@ -1,12 +1,13 @@
 
 import { createClient as createServerClient } from '@/lib/supabase/server';
+import type { Client, Agreement } from '@/types';
 
 export type SessionState = 'ONBOARDING' | 'PENDING_AGREEMENT' | 'ACTIVE_CATALOG' | 'INVALID';
 
 export interface ResolvedSession {
     state: SessionState;
-    client?: any;
-    agreement?: any;
+    client?: Client;
+    agreement?: Agreement | Agreement[] | null;
     error?: string;
 }
 

@@ -64,14 +64,15 @@ export const calculatePromotions = (
     });
 
     promotions.forEach(promo => {
-        if (!promo.rules || !promo.rules.type) return;
+        if (!promo.rules) return;
 
         switch (promo.rules.type) {
-            case 'buy_x_get_y_free':
+            case 'buy_x_get_y_free': {
+                const buyRules = promo.rules;
                 items.forEach(item => {
                     const productSpecificPromo = getProductSpecificPromotion(item.product.id, productPromotions);
                     
-                    if (productSpecificPromo) {
+                    if (productSpecificPromo && productSpecificPromo.rules?.type === 'buy_x_get_y_free') {
                         if (item.quantity >= productSpecificPromo.rules.buy) {
                             const times = Math.floor(item.quantity / productSpecificPromo.rules.buy);
                             const bonusQuantity = times * productSpecificPromo.rules.get;
@@ -87,10 +88,10 @@ export const calculatePromotions = (
                                 }
                             }
                         }
-                    } else {
-                        if (item.quantity >= promo.rules.buy) {
-                            const times = Math.floor(item.quantity / promo.rules.buy);
-                            const bonusQuantity = times * promo.rules.get;
+                    } else if (!productSpecificPromo) {
+                        if (item.quantity >= buyRules.buy) {
+                            const times = Math.floor(item.quantity / buyRules.buy);
+                            const bonusQuantity = times * buyRules.get;
                             if (bonusQuantity > 0) {
                                 bonusInfo[item.product.id] = {
                                     productName: item.product.name,
@@ -106,23 +107,29 @@ export const calculatePromotions = (
                     }
                 });
                 break;
-            case 'free_shipping':
-                if (totalItems >= promo.rules.min_units) {
+            }
+            case 'free_shipping': {
+                const shippingRules = promo.rules;
+                if (totalItems >= shippingRules.min_units) {
                     if (!appliedPromotions.find(p => p.id === promo.id)) {
                         appliedPromotions.push(promo);
                     }
                 }
                 break;
-            case 'min_amount_discount':
-                if (subtotal >= promo.rules.min_amount) {
-                    discountPercentage = Math.max(discountPercentage, promo.rules.percentage);
+            }
+            case 'min_amount_discount': {
+                const discountRules = promo.rules;
+                if (subtotal >= discountRules.min_amount) {
+                    discountPercentage = Math.max(discountPercentage, discountRules.percentage);
                     if (!appliedPromotions.find(p => p.id === promo.id)) {
                         appliedPromotions.push(promo);
                     }
                 }
                 break;
-            default:
+            }
+            default: {
                 break;
+            }
         }
     });
     return { appliedPromotions, bonusInfo, discountPercentage, productsWithSpecificPromo: Array.from(productsWithSpecificPromo) };
@@ -149,23 +156,26 @@ export const calculateSalesConditions = (
         const rules = condition.rules;
 
         switch (rules.type) {
-            case 'discount':
-                if (rules.discount?.percentage) {
-                    const discount = subtotal * (rules.discount.percentage / 100);
+            case 'discount': {
+                const discountRules = rules;
+                if (discountRules.discount?.percentage) {
+                    const discount = subtotal * (discountRules.discount.percentage / 100);
                     discountFromConditions = Math.max(discountFromConditions, discount);
                     appliedConditions.push({
                         id: condition.id,
                         name: condition.name,
                         type: 'discount',
-                        value: rules.discount.percentage,
-                        description: `${rules.discount.percentage}% de descuento`
+                        value: discountRules.discount.percentage,
+                        description: `${discountRules.discount.percentage}% de descuento`
                     });
                 }
                 break;
+            }
 
-            case 'min_order_amount':
-                if (rules.min_order_amount?.minimum) {
-                    const minimum = rules.min_order_amount.minimum;
+            case 'min_order_amount': {
+                const minOrderRules = rules;
+                if (minOrderRules.min_order_amount?.minimum) {
+                    const minimum = minOrderRules.min_order_amount.minimum;
                     minimumOrderValidation = {
                         valid: subtotal >= minimum,
                         minimum: minimum,
@@ -180,20 +190,23 @@ export const calculateSalesConditions = (
                     });
                 }
                 break;
+            }
 
-            case 'net_days':
-                if (rules.net_days?.days) {
+            case 'net_days': {
+                const netDaysRules = rules;
+                if (netDaysRules.net_days?.days) {
                     appliedConditions.push({
                         id: condition.id,
                         name: condition.name,
                         type: 'net_days',
-                        value: rules.net_days.days,
-                        description: `Pago a ${rules.net_days.days} días`
+                        value: netDaysRules.net_days.days,
+                        description: `Pago a ${netDaysRules.net_days.days} días`
                     });
                 }
                 break;
+            }
 
-            case 'cash_on_delivery':
+            case 'cash_on_delivery': {
                 appliedConditions.push({
                     id: condition.id,
                     name: condition.name,
@@ -202,30 +215,11 @@ export const calculateSalesConditions = (
                     description: 'Contra reembolso'
                 });
                 break;
+            }
 
-            case 'installments':
-                if (rules.installments?.installments) {
-                    appliedConditions.push({
-                        id: condition.id,
-                        name: condition.name,
-                        type: 'installments',
-                        value: rules.installments.installments,
-                        description: `${rules.installments.installments} cuotas`
-                    });
-                }
+            default: {
                 break;
-
-            case 'split_payment':
-                if (rules.split_payment) {
-                    appliedConditions.push({
-                        id: condition.id,
-                        name: condition.name,
-                        type: 'split_payment',
-                        value: `${rules.split_payment.initial_percentage}% inicial, saldo en ${rules.split_payment.remaining_days} días`,
-                        description: `Pago inicial: ${rules.split_payment.initial_percentage}%, Saldo en ${rules.split_payment.remaining_days} días`
-                    });
-                }
-                break;
+            }
         }
     });
 

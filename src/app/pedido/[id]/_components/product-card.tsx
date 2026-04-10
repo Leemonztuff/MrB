@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { TrendingUp, Clock, Tag } from "lucide-react";
 
 const PromoButton = ({ promo, onClick, isProductSpecific }: { promo: Promotion, onClick: (quantity: number) => void, isProductSpecific?: boolean }) => {
+  if (!promo.rules || promo.rules.type !== 'buy_x_get_y_free') return null;
+  
   const buyQuantity = promo.rules.buy;
   const getQuantity = promo.rules.get;
   if (!buyQuantity || !getQuantity) return null;
@@ -64,13 +66,14 @@ const ProductCardComponent = ({
       return [productSpecificPromo];
     }
     return promotions.filter(promo => {
-      if (promo.rules?.type !== 'buy_x_get_y_free') return false;
+      if (!promo.rules || promo.rules.type !== 'buy_x_get_y_free') return false;
 
-      const hasNoScope = !promo.rules.product_ids && !promo.rules.category_names;
+      const buyXRules = promo.rules;
+      const hasNoScope = !buyXRules.product_ids && !buyXRules.category_names;
       if (hasNoScope) return true;
 
-      const appliesToProduct = promo.rules.product_ids?.includes(product.id);
-      const appliesToCategory = product.category && promo.rules.category_names?.includes(product.category);
+      const appliesToProduct = buyXRules.product_ids?.includes(product.id);
+      const appliesToCategory = product.category && buyXRules.category_names?.includes(product.category);
 
       return !!(appliesToProduct || appliesToCategory);
     });

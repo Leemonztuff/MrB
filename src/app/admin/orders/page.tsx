@@ -115,16 +115,16 @@ export default function OrdersHistoryPage() {
             ))}
           </div>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="border-white/5 hover:bg-transparent">
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 pl-6">Fecha</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Cliente</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Contenido</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Monto</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Estado</TableHead>
-                <TableHead className="text-right pr-6">
+                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 pl-4 sm:pl-6 whitespace-nowrap">Fecha</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 whitespace-nowrap">Cliente</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 whitespace-nowrap hidden md:table-cell">Contenido</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 whitespace-nowrap">Monto</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 whitespace-nowrap">Estado</TableHead>
+                <TableHead className="text-right pr-4 sm:pr-6 whitespace-nowrap">
                   <span className="sr-only">Acciones</span>
                 </TableHead>
               </TableRow>
@@ -151,18 +151,18 @@ export default function OrdersHistoryPage() {
               ) : (
                 orders.map((order) => (
                   <TableRow key={order.id} className="border-white/5 hover:bg-white/5 transition-colors group">
-                    <TableCell className="pl-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+                    <TableCell className="pl-4 sm:pl-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 whitespace-nowrap">
                       {formatDate(order.created_at)}
                     </TableCell>
-                    <TableCell className="font-black italic tracking-tighter text-base group-hover:text-primary transition-colors">
+                    <TableCell className="font-black italic tracking-tighter text-sm sm:text-base group-hover:text-primary transition-colors">
                       {order.client_name_cache}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold uppercase tracking-widest gap-2 bg-white/5 border-white/10 hover:bg-white/10">
                             <Package className="w-3 h-3" />
-                            Ver Contenido
+                            <span className="hidden sm:inline">Ver Contenido</span>
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-md bg-slate-950 border-white/10 text-white">
@@ -182,11 +182,11 @@ export default function OrdersHistoryPage() {
                         </DialogContent>
                       </Dialog>
                     </TableCell>
-                    <TableCell className="font-headline font-black text-primary/80">
+                    <TableCell className="font-headline font-black text-primary/80 whitespace-nowrap">
                       ${order.total_amount.toLocaleString()}
                     </TableCell>
-                    <TableCell><OrderStatusBadge status={order.status} /></TableCell>
-                    <TableCell className="text-right pr-6">
+                    <TableCell className="whitespace-nowrap"><OrderStatusBadge status={order.status} /></TableCell>
+                    <TableCell className="text-right pr-4 sm:pr-6">
                       {order.status === 'armado' && (
                         <ShippingLabelButton orders={[{ id: order.id, bundles: 1 }]} />
                       )}

@@ -36,11 +36,33 @@ export type CartItem = {
 
 export type { CartItem as CartItemType };
 
+// Promotion rule types
+export type BuyXGetYRules = {
+    type: 'buy_x_get_y_free';
+    buy: number;
+    get: number;
+    product_ids?: string[];
+    category_names?: string[];
+};
+
+export type FreeShippingRules = {
+    type: 'free_shipping';
+    min_units: number;
+};
+
+export type MinAmountDiscountRules = {
+    type: 'min_amount_discount';
+    min_amount: number;
+    percentage: number;
+};
+
+export type PromotionRules = BuyXGetYRules | FreeShippingRules | MinAmountDiscountRules;
+
 export type Promotion = {
     id: string;
     name: string;
     description: string | null;
-    rules: any;
+    rules: PromotionRules | null;
     created_at: string;
 };
 
@@ -128,7 +150,7 @@ export type AppSettings = {
 
 export type AppSettingsRow = {
     key: string;
-    value: any;
+    value: string | number | boolean | null;
 };
 
 export type AnalyzeClientOutput = {
@@ -167,11 +189,60 @@ export type AgreementSalesCondition = {
     sales_conditions: SalesCondition;
 };
 
+// SalesCondition rule types
+export type DiscountRules = {
+    type: 'discount';
+    discount: {
+        percentage: number;
+    };
+};
+
+export type MinOrderAmountRules = {
+    type: 'min_order_amount';
+    min_order_amount: {
+        minimum: number;
+    };
+};
+
+export type NetDaysRules = {
+    type: 'net_days';
+    net_days: {
+        days: number;
+    };
+};
+
+export type CashOnDeliveryRules = {
+    type: 'cash_on_delivery';
+};
+
+export type InstallmentsRules = {
+    type: 'installments';
+    installments: {
+        installments: number;
+    };
+};
+
+export type SplitPaymentRules = {
+    type: 'split_payment';
+    split_payment: {
+        initial_percentage: number;
+        remaining_days: number;
+    };
+};
+
+export type SalesConditionRules = 
+    | DiscountRules 
+    | MinOrderAmountRules 
+    | NetDaysRules 
+    | CashOnDeliveryRules 
+    | InstallmentsRules 
+    | SplitPaymentRules;
+
 export type SalesCondition = {
     id: string;
     name: string;
     description: string | null;
-    rules: any;
+    rules: SalesConditionRules | null;
     created_at: string;
 };
 
