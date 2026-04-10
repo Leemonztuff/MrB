@@ -69,18 +69,18 @@ export default async function PortalCatalogoPage({
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
-                <div className="lg:col-span-2 space-y-6">
+                <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                     {categories.length > 0 ? (
-                        <Accordion type="multiple" defaultValue={categories} className="w-full space-y-4">
+                        <Accordion type="multiple" defaultValue={categories} className="w-full space-y-3 sm:space-y-4">
                             {categories.map((category) => (
                                 <AccordionItem key={category} value={category} className="border-none">
                                     <Card className="glass border-border/50 overflow-hidden shadow-lg">
                                         <CardHeader className="p-0">
-                                            <AccordionTrigger className="px-5 py-4 text-sm md:text-base font-black italic tracking-tighter hover:no-underline hover:bg-muted/10 transition-colors uppercase">
+                                            <AccordionTrigger className="px-4 sm:px-5 py-4 sm:py-4 text-sm md:text-base font-black italic tracking-tighter hover:no-underline hover:bg-muted/10 transition-colors uppercase min-h-[56px] touch-manipulation">
                                                 {category}
                                             </AccordionTrigger>
                                         </CardHeader>
-                                        <AccordionContent className="px-5 pb-5 pt-2">
+                                        <AccordionContent className="px-4 sm:px-5 pb-5 pt-2">
                                             <div className="flex flex-col gap-3">
                                                 {productsByCategory[category].map((product: ProductWithPrice & { consumer_price?: number | null; consumer_volume_price?: number | null }) => (
                                                     <ProductCard

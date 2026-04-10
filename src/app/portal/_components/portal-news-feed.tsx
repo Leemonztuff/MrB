@@ -127,20 +127,20 @@ export function PortalNewsFeed() {
 
       {featuredNews && (
         <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background">
-          <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-end sm:justify-between">
-            <div className="space-y-2">
+          <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-end sm:justify-between sm:p-5">
+            <div className="space-y-2 min-w-0">
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">
                 Destacado
               </p>
-              <h2 className="max-w-xl text-2xl font-black italic uppercase tracking-tight text-foreground">
+              <h2 className="max-w-xl text-xl sm:text-2xl font-black italic uppercase tracking-tight text-foreground truncate sm:truncate-none">
                 {featuredNews.title}
               </h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {relativeDate(featuredNews.created_at)}
               </p>
             </div>
             {featuredNews.promotion_id ? (
-              <Button asChild className="rounded-xl font-black uppercase tracking-wider">
+              <Button asChild className="rounded-xl font-black uppercase tracking-wider text-xs sm:text-sm py-2.5 sm:py-2 min-h-[44px]">
                 <Link href={`/portal/catalogo?newsId=${featuredNews.id}&promoId=${featuredNews.promotion_id}`}>
                   <Ticket className="mr-2 h-4 w-4" />
                   Ver promo
@@ -170,50 +170,51 @@ export function PortalNewsFeed() {
           description="Todavia no hay publicaciones activas para mostrar."
         />
       ) : (
-        <div className="space-y-6">
+          <div className="space-y-6">
           {news.map((item) => {
             return (
-              <Card key={item.id} className="overflow-hidden border-white/10 bg-card/95 shadow-xl">
+              <Card key={item.id} className="overflow-hidden border-white/10 bg-card/95 shadow-xl mx-2 sm:mx-0">
                 <CardContent className="p-0">
-                  <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/40 text-sm font-black uppercase text-primary-foreground shadow-lg">
+                  <div className="flex items-center justify-between border-b border-white/5 px-3 sm:px-4 py-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/40 text-xs sm:text-sm font-black uppercase text-primary-foreground shadow-lg">
                         MB
                       </div>
                       <div>
-                        <p className="text-sm font-black uppercase tracking-wide text-foreground">
+                        <p className="text-xs sm:text-sm font-black uppercase tracking-wide text-foreground">
                           Mr. Blonde
                         </p>
-                        <p className="text-[11px] text-muted-foreground">
+                        <p className="text-[10px] sm:text-[11px] text-muted-foreground">
                           {relativeDate(item.created_at)}
                         </p>
                       </div>
                     </div>
                     {item.promotion_id ? (
-                      <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+                      <span className="rounded-full border border-primary/30 bg-primary/10 px-2 sm:px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-primary">
                         Promo
                       </span>
                     ) : null}
                   </div>
 
                   {item.image_url ? (
-                    <div className="relative aspect-[4/5] w-full overflow-hidden bg-muted/30">
+                    <div className="relative aspect-[4/5] sm:aspect-video w-full overflow-hidden bg-muted/30">
                       <img
                         src={item.image_url}
                         alt={item.title}
+                        loading="lazy"
                         className="h-full w-full object-cover"
                       />
                     </div>
                   ) : null}
 
-                  <div className="space-y-4 px-4 py-4">
-                    <div className="flex items-center gap-3">
+                  <div className="space-y-4 px-4 py-4 sm:py-6">
+                    <div className="flex items-center gap-3 sm:gap-4">
                       <button
                         type="button"
                         onClick={() => handleLikeToggle(item.id)}
                         disabled={isLikePending}
                         className={cn(
-                          "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-bold transition-colors",
+                          "inline-flex items-center gap-2 sm:gap-2.5 rounded-full border px-4 py-2.5 sm:py-2 text-sm font-bold transition-colors min-h-[44px] touch-manipulation",
                           item.liked_by_current_client
                             ? "border-red-500/30 bg-red-500/10 text-red-500"
                             : "border-white/10 bg-background text-foreground hover:border-primary/30 hover:text-primary"
@@ -222,14 +223,14 @@ export function PortalNewsFeed() {
                       >
                         <Heart
                           className={cn(
-                            "h-4 w-4",
+                            "h-5 w-5",
                             item.liked_by_current_client && "fill-current"
                           )}
                         />
-                        Me gusta
+                        <span className="hidden xs:inline">Me gusta</span>
                       </button>
                       <span className="text-sm font-medium text-muted-foreground">
-                        {item.likes_count ?? 0} me gusta
+                        {item.likes_count ?? 0}
                       </span>
                     </div>
 
