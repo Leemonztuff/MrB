@@ -2,6 +2,7 @@
 import { Package, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts } from "@/app/admin/actions/products.actions";
+import { getCategories } from "@/app/admin/categories/actions/categories.actions";
 import ProductsTable from "./_components/products-table";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -27,10 +28,13 @@ export default async function ProductsPage({
   const { query: queryParam } = await searchParams;
   const query = queryParam?.toLowerCase() || "";
 
-  const [productsResult, stockResult] = await Promise.all([
+  const [productsResult, stockResult, categoriesResult] = await Promise.all([
     getProducts(),
-    import("@/app/admin/actions/inventory.actions").then(m => m.getAllProductsStock())
+    import("@/app/admin/actions/inventory.actions").then(m => m.getAllProductsStock()),
+    getCategories()
   ]);
+
+  const dbCategories = categoriesResult.success ? categoriesResult.data ?? [] : [];
 
   const { data: products, error } = productsResult;
   const stockMap = stockResult.data || {};
@@ -57,7 +61,7 @@ export default async function ProductsPage({
   }, {} as Record<string, Product[]>);
 
   const customSortOrder = ["Cabello", "Rostro", "Merchandising"];
-  const categories = Object.keys(productsByCategory).sort((a, b) => {
+  const productCategories = Object.keys(productsByCategory).sort((a, b) => {
     const defaultIndex = 999;
     const indexA = customSortOrder.indexOf(a) !== -1 ? customSortOrder.indexOf(a) : defaultIndex;
     const indexB = customSortOrder.indexOf(b) !== -1 ? customSortOrder.indexOf(b) : defaultIndex;
@@ -70,7 +74,7 @@ export default async function ProductsPage({
       title="No hay productos"
       description="Aún no has creado ningún producto. ¡Empieza por añadir el primero!"
     >
-      <EntityDialog formConfig={productFormConfig}>
+      <EntityDialog formConfig={productFormConfig} extraProps={{ categories: dbCategories }}>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
           Crear Producto
@@ -96,7 +100,7 @@ export default async function ProductsPage({
         <div className="flex items-center gap-3">
           <SearchInput placeholder="Buscar por nombre, categoría..." />
           <ImportProductsDialog />
-          <EntityDialog formConfig={productFormConfig}>
+          <EntityDialog formConfig={productFormConfig} extraProps={{ categories: dbCategories }}>
             <Button size="sm" className="h-10 gap-2 font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground">
               <PlusCircle className="h-4 w-4" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap italic">
@@ -110,10 +114,10 @@ export default async function ProductsPage({
       {filteredProducts.length > 0 ? (
         <Accordion
           type="multiple"
-          defaultValue={categories}
+          defaultValue={productCategories}
           className="w-full space-y-4"
         >
-          {categories.map((category) => (
+          {productCategories.map((category) => (
             <AccordionItem
               key={category}
               value={category}

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { z } from "zod";
@@ -10,28 +9,26 @@ import type { FormConfig } from "../../_components/entity-dialog";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Categories } from "@/types"; // We will add Categories to types/index.ts in a second
+import type { Category } from "@/types";
 
-// 1. Esquema de validación para Producto
 const productSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
   description: z.string().optional(),
-  category: z.string().optional(),
+  category_id: z.string().optional(),
   image: z.any().optional(),
 });
 
-// 2. Función para obtener los valores por defecto del formulario de Producto
 const getProductDefaultValues = (product?: any) => ({
   name: product?.name ?? "",
   description: product?.description ?? "",
-  category: product?.category ?? "",
+  category_id: product?.category_id ?? "",
   image_url: product?.image_url ?? null,
   image: undefined,
 });
 
-// 3. Función para renderizar los campos del formulario de Producto
-const renderProductFields = (form: any) => {
+const renderProductFields = (form: any, props: { categories?: Category[] } = {}) => {
   const currentImageUrl = form.watch("image_url");
+  const categories = props.categories || [];
 
   return (
     <>
@@ -100,7 +97,7 @@ const renderProductFields = (form: any) => {
       />
       <FormField
         control={form.control}
-        name="category"
+        name="category_id"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Categoría</FormLabel>
@@ -111,9 +108,11 @@ const renderProductFields = (form: any) => {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="Cabello">Cabello</SelectItem>
-                <SelectItem value="Rostro">Rostro</SelectItem>
-                <SelectItem value="Merchandising">Merchandising</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.icon} {cat.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <FormMessage />
@@ -121,19 +120,15 @@ const renderProductFields = (form: any) => {
         )}
       />
     </>
-  )
+  );
 };
 
-
-// Wrapper action: uploads image client-side to Supabase Storage first,
-// then sends only the URL string to the Server Action (avoids 1MB body limit).
 const handleUpsertProduct = async (payload: z.infer<typeof productSchema> & { id?: string; image_url?: string }) => {
   const { createClient } = await import('@/lib/supabase/client');
   const supabase = createClient();
 
   let finalImageUrl = payload.image_url ?? null;
 
-  // If there's a File object, upload it client-side first
   if (payload.image instanceof File && payload.image.size > 0) {
     const imageFile = payload.image;
     const fileExt = imageFile.name.split('.').pop();
@@ -160,14 +155,12 @@ const handleUpsertProduct = async (payload: z.infer<typeof productSchema> & { id
   if (payload.id) formData.append('id', payload.id);
   formData.append('name', payload.name);
   if (payload.description) formData.append('description', payload.description);
-  if (payload.category) formData.append('category', payload.category);
+  if (payload.category_id) formData.append('category_id', payload.category_id);
   if (finalImageUrl) formData.append('image_url', finalImageUrl);
-  // Do NOT append the image File — it's already uploaded above
 
   return upsertProduct(formData);
 }
 
-// 4. Configuración completa para el formulario de Producto
 export const productFormConfig: FormConfig<typeof productSchema> = {
   entityName: "Producto",
   schema: productSchema,

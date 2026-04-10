@@ -22,7 +22,7 @@ export async function upsertProduct(formData: FormData): Promise<ActionResponse<
     const id = formData.get('id') as string | null;
     const name = formData.get('name') as string;
     const description = formData.get('description') as string | null;
-    const category = formData.get('category') as string | null;
+    const category_id = formData.get('category_id') as string | null;
     const imageFile = formData.get('image') as File | null;
     const image_url = formData.get('image_url') as string | null;
 
@@ -50,7 +50,7 @@ export async function upsertProduct(formData: FormData): Promise<ActionResponse<
       id: id || undefined,
       name,
       description,
-      category,
+      category_id,
       image_url: finalImageUrl
     };
 

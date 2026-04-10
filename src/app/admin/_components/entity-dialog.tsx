@@ -36,12 +36,14 @@ interface EntityDialogProps {
   children: React.ReactElement;
   formConfig: FormConfig<any>;
   entity?: any;
+  extraProps?: Record<string, any>;
 }
 
 export function EntityDialog({
   children,
   formConfig,
   entity,
+  extraProps,
 }: EntityDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -98,8 +100,8 @@ export function EntityDialog({
     if (FormWrapper) {
       return <FormWrapper>{renderFields(form)}</FormWrapper>;
     }
-    // Pass an empty object to ensure props are never undefined
-    return renderFields(form, {});
+    // Pass extraProps to renderFields
+    return renderFields(form, extraProps || {});
   };
 
   return (
