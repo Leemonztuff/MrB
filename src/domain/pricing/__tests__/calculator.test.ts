@@ -7,7 +7,7 @@ const mockProduct = {
     name: 'Test Product',
     price: 1000,
     volume_price: 800,
-    category: 'Cabello',
+    category: 'cabello' as const,
     created_at: '',
     updated_at: '',
     image_url: null,

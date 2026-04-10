@@ -13,13 +13,15 @@ export type AuthState = {
     } | null;
 };
 
-export type Categories = "Cabello" | "Rostro" | "Merchandising";
+export type ProductCategory = 'cabello' | 'barba' | 'merch';
+
+export type Categories = ProductCategory;
 
 export type Product = {
     id: string;
     name: string;
     description: string | null;
-    category: string | null;
+    category: ProductCategory | null;
     image_url: string | null;
     created_at: string;
 };
@@ -41,6 +43,7 @@ export type BuyXGetYRules = {
     type: 'buy_x_get_y_free';
     buy: number;
     get: number;
+    // Legacy fields (deprecated - use application_scope instead)
     product_ids?: string[];
     category_names?: string[];
 };
@@ -184,6 +187,20 @@ export type AgreementWithCount = Agreement & {
 
 export type AgreementPromotion = {
     promotions: Promotion;
+    // Scope de aplicación - define dónde aplica esta promoción en el acuerdo
+    application_scope?: PromotionApplicationScope;
+};
+
+// Scope de aplicación de promoción en un acuerdo
+export type PromotionApplicationScope = 
+    | { type: 'all' }
+    | { type: 'category'; category: ProductCategory }
+    | { type: 'products'; product_ids: string[] };
+
+// Catálogo de productos específicos con promoción especial
+export type ProductPromotionOverride = {
+    product_id: string;
+    promotion: Promotion;
 };
 
 export type AgreementSalesCondition = {

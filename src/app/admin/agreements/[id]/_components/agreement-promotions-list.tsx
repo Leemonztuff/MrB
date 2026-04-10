@@ -34,6 +34,21 @@ const formatRule = (rules: any): string => {
   }
 };
 
+const getScopeLabel = (scope: any): string => {
+  if (!scope || scope.type === 'all') {
+    return 'Todos los productos';
+  }
+  if (scope.type === 'category') {
+    const labels: Record<string, string> = {
+      'cabello': 'Cabello',
+      'barba': 'Barba',
+      'merch': 'Merch'
+    };
+    return `Categoría: ${labels[scope.category] || scope.category}`;
+  }
+  return 'Personalizado';
+};
+
 export default function AgreementPromotionsList({ promotions, agreementId }: { promotions: AgreementPromotion[], agreementId: string }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -97,9 +112,14 @@ export default function AgreementPromotionsList({ promotions, agreementId }: { p
                     </AlertDialog>
                 </CardHeader>
                 <CardContent>
-                    <div className="mt-2 text-sm bg-muted/50 p-3 rounded-md text-muted-foreground">
-                        <p className="font-semibold text-foreground">Regla Aplicada:</p>
-                        <p>{formatRule(item.promotions.rules)}</p>
+                    <div className="space-y-2">
+                        <div className="text-xs bg-primary/10 text-primary p-2 rounded-md font-medium">
+                            {getScopeLabel(item.application_scope)}
+                        </div>
+                        <div className="text-sm bg-muted/50 p-3 rounded-md text-muted-foreground">
+                            <p className="font-semibold text-foreground text-xs">Regla:</p>
+                            <p>{formatRule(item.promotions.rules)}</p>
+                        </div>
                     </div>
                 </CardContent>
             </Card>

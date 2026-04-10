@@ -28,6 +28,8 @@ const promotionSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
   description: z.string().optional(),
   type: z.enum(["buy_x_get_y_free", "free_shipping", "min_amount_discount"]),
+  scope_type: z.enum(["all", "category"]).default("all"),
+  scope_category: z.enum(["cabello", "barba", "merch"]).optional(),
   rules: z.object({
     buy_x_get_y_free: buyXgetYFreeSchema.optional(),
     free_shipping: freeShippingSchema.optional(),
@@ -77,6 +79,8 @@ const getPromotionDefaultValues = (promotion?: any) => {
       name: "",
       description: "",
       type: "buy_x_get_y_free" as const,
+      scope_type: "all" as const,
+      scope_category: undefined as undefined,
       rules: {
         buy_x_get_y_free: { buy: 8, get: 2 },
         free_shipping: { min_units: 12, locations: "" },
@@ -86,10 +90,14 @@ const getPromotionDefaultValues = (promotion?: any) => {
   }
 
   const rules = promotion.rules || {};
+  const scope = promotion.application_scope;
+  
   return {
     name: promotion.name,
     description: promotion.description ?? "",
     type: rules.type || "buy_x_get_y_free",
+    scope_type: (scope?.type === 'category' ? 'category' : 'all') as "category" | "all",
+    scope_category: scope?.type === 'category' ? scope.category : undefined,
     rules: {
       buy_x_get_y_free: {
         buy: rules.buy || 8,
@@ -120,6 +128,12 @@ const processPromotionPayload = (values: z.infer<typeof promotionSchema>) => {
     ruleDetails = values.rules.min_amount_discount;
   }
 
+  // Build application scope based on form values
+  let applicationScope: any = { type: 'all' };
+  if (values.scope_type === 'category' && values.scope_category) {
+    applicationScope = { type: 'category', category: values.scope_category };
+  }
+
   return {
     name: values.name,
     description: values.description ?? null,
@@ -127,6 +141,7 @@ const processPromotionPayload = (values: z.infer<typeof promotionSchema>) => {
         type: values.type,
         ...ruleDetails
     },
+    application_scope: applicationScope,
   };
 };
 

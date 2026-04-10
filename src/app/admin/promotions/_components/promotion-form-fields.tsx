@@ -21,9 +21,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+const PRODUCT_CATEGORIES = [
+  { value: "cabello", label: "Cabello" },
+  { value: "barba", label: "Barba" },
+  { value: "merch", label: "Merch" },
+] as const;
+
 export function PromotionFormFields({ form }: { form: any }) {
   const { watch, setValue, clearErrors } = form;
   const selectedType = watch("type");
+  const scopeType = watch("scope_type");
 
   useEffect(() => {
     const rulesToKeep: any = {};
@@ -98,7 +105,60 @@ export function PromotionFormFields({ form }: { form: any }) {
         )}
       />
 
-      {/* --- Conditional Fields --- */}
+      <FormField
+        control={form.control}
+        name="scope_type"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Alcance de la Promoción</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value || "all"}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona el alcance" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="all">
+                  Todos los productos
+                </SelectItem>
+                <SelectItem value="category">
+                  Por categoría específica
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <FormDescription>
+              Define a qué productos aplicará esta promoción cuando se asigne a un acuerdo.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="scope_category"
+        render={({ field }) => (
+          <FormItem className={cn(scopeType === "category" ? "block" : "hidden", "space-y-4 p-4 border rounded-md bg-muted/30")}>
+            <FormLabel>Selecciona la Categoría</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona una categoría" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {PRODUCT_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
       <div
         className={cn(
           "space-y-4 p-4 border rounded-md bg-muted/30",

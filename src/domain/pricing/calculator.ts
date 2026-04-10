@@ -1,5 +1,5 @@
 
-import { ProductWithPrice, Promotion, CartItem as CartItemType, SalesCondition, PriceListProductPromotion } from "@/types";
+import { ProductWithPrice, Promotion, CartItem as CartItemType, SalesCondition, PriceListProductPromotion, PromotionApplicationScope } from "@/types";
 
 export type BonusInfo = {
     [productId: string]: {
@@ -20,6 +20,54 @@ export type AppliedSalesCondition = {
 
 export const VOLUME_THRESHOLD = 150;
 
+/**
+ * Check if a promotion applies to a product based on its scope
+ */
+export const isPromotionApplicableToProduct = (
+    promotion: Promotion,
+    productId: string,
+    productCategory: string | null,
+    productPromotions: PriceListProductPromotion[]
+): boolean => {
+    // 1. First check if product has a specific promotion (highest priority)
+    const productSpecificPromo = productPromotions.find(pp => pp.product_id === productId);
+    if (productSpecificPromo?.promotions) {
+        return productSpecificPromo.promotions.id === promotion.id;
+    }
+
+    // 2. If no specific promotion, promotion always applies for agreement-level promotions
+    // (The scope filtering is handled at the agreement level when loading promotions)
+    return true;
+};
+
+/**
+ * Get the best applicable promotion for a product from a list
+ * considering priority: product-specific > by category > global
+ */
+export const getBestPromotionForProduct = (
+    productId: string,
+    productCategory: string | null,
+    promotions: Promotion[],
+    productPromotions: PriceListProductPromotion[]
+): Promotion | null => {
+    // 1. Check for product-specific promotion first (highest priority)
+    const productSpecificPromo = productPromotions.find(pp => pp.product_id === productId);
+    if (productSpecificPromo?.promotions) {
+        return productSpecificPromo.promotions;
+    }
+
+    // 2. Filter promotions that apply to this product's category
+    const applicablePromotions = promotions.filter(promo => {
+        // If promotion has no scope defined, it applies to all
+        return true; // Scope filtering done at agreement level
+    });
+
+    if (applicablePromotions.length === 0) return null;
+
+    // 3. Return the first one (could be enhanced to pick the best one based on rules)
+    return applicablePromotions[0];
+};
+
 export const getProductSpecificPromotion = (
     productId: string,
     productPromotions: PriceListProductPromotion[]
@@ -39,22 +87,69 @@ export const hasProductSpecificPromotion = (
 };
 
 /**
+ * Check if a promotion applies to a product based on the promotion's scope
+ * and the product's category
+ */
+export const isPromotionScopeValid = (
+    productCategory: string | null,
+    scope: PromotionApplicationScope | undefined
+): boolean => {
+    if (!scope || scope.type === 'all') {
+        return true; // Applies to everything
+    }
+
+    if (scope.type === 'category') {
+        // Check if product category matches the scope
+        if (!productCategory) return false;
+        return productCategory === scope.category;
+    }
+
+    if (scope.type === 'products') {
+        // This is handled at product-specific level, not in agreement promotions
+        return true;
+    }
+
+    return true;
+};
+
+/**
+ * Filter promotions that apply to a specific product based on scope
+ */
+export const getApplicablePromotionsForProduct = (
+    productId: string,
+    productCategory: string | null,
+    promotionsWithScope: { promotion: Promotion; scope?: PromotionApplicationScope }[]
+): Promotion[] => {
+    return promotionsWithScope
+        .filter(({ scope }) => isPromotionScopeValid(productCategory, scope))
+        .map(({ promotion }) => promotion);
+};
+
+/**
  * Domain-specific logic for calculating applied promotions and bonus items.
  * 
- * IMPORTANT: If a product has a specific promotion assigned, the agreement-level
- * promotion is INVALIDATED for that product. The product-specific promotion takes
- * precedence and overrides any agreement-level promotion.
+ * Priority order:
+ * 1. Product-specific promotions (highest priority)
+ * 2. Promotions with category scope matching product
+ * 3. Promotions with 'all' scope
  */
 export const calculatePromotions = (
     items: CartItemType[], 
     subtotal: number, 
     promotions: Promotion[],
-    productPromotions: PriceListProductPromotion[] = []
+    productPromotions: PriceListProductPromotion[] = [],
+    // Optional: promotions with scope from agreement
+    promotionsWithScope?: { promotion: Promotion; scope?: PromotionApplicationScope }[]
 ) => {
     const totalItems = items.reduce((total, item) => total + item.quantity, 0);
     const appliedPromotions: Promotion[] = [];
     const bonusInfo: BonusInfo = {};
     let discountPercentage = 0;
+
+    // Map promotions with scope for filtering
+    const promotionsMap = promotionsWithScope 
+        ? new Map(promotionsWithScope.map(ps => [ps.promotion.id, ps.scope]))
+        : new Map();
 
     const productsWithSpecificPromo = new Set<string>();
     items.forEach(item => {
@@ -66,16 +161,20 @@ export const calculatePromotions = (
     promotions.forEach(promo => {
         if (!promo.rules) return;
 
+        const scope = promotionsMap.get(promo.id);
+
         switch (promo.rules.type) {
             case 'buy_x_get_y_free': {
                 const buyRules = promo.rules;
                 items.forEach(item => {
+                    // Skip if product has specific promotion
                     const productSpecificPromo = getProductSpecificPromotion(item.product.id, productPromotions);
-                    
                     if (productSpecificPromo && productSpecificPromo.rules?.type === 'buy_x_get_y_free') {
-                        if (item.quantity >= productSpecificPromo.rules.buy) {
-                            const times = Math.floor(item.quantity / productSpecificPromo.rules.buy);
-                            const bonusQuantity = times * productSpecificPromo.rules.get;
+                        const promoRules = productSpecificPromo.rules;
+                        // Handle product-specific promo separately
+                        if (item.quantity >= promoRules.buy) {
+                            const times = Math.floor(item.quantity / promoRules.buy);
+                            const bonusQuantity = times * promoRules.get;
                             if (bonusQuantity > 0) {
                                 bonusInfo[item.product.id] = {
                                     productName: item.product.name,
@@ -88,20 +187,25 @@ export const calculatePromotions = (
                                 }
                             }
                         }
-                    } else if (!productSpecificPromo) {
-                        if (item.quantity >= buyRules.buy) {
-                            const times = Math.floor(item.quantity / buyRules.buy);
-                            const bonusQuantity = times * buyRules.get;
-                            if (bonusQuantity > 0) {
-                                bonusInfo[item.product.id] = {
-                                    productName: item.product.name,
-                                    bonusQuantity: bonusQuantity,
-                                    promoId: promo.id,
-                                    promoName: promo.name
-                                };
-                                if (!appliedPromotions.find(p => p.id === promo.id)) {
-                                    appliedPromotions.push(promo);
-                                }
+                        return; // Skip agreement-level promo for this product
+                    }
+
+                    // Check if promotion scope applies to this product
+                    const scopeValid = isPromotionScopeValid(item.product.category, scope);
+                    if (!scopeValid) return;
+
+                    if (item.quantity >= buyRules.buy) {
+                        const times = Math.floor(item.quantity / buyRules.buy);
+                        const bonusQuantity = times * buyRules.get;
+                        if (bonusQuantity > 0) {
+                            bonusInfo[item.product.id] = {
+                                productName: item.product.name,
+                                bonusQuantity: bonusQuantity,
+                                promoId: promo.id,
+                                promoName: promo.name
+                            };
+                            if (!appliedPromotions.find(p => p.id === promo.id)) {
+                                appliedPromotions.push(promo);
                             }
                         }
                     }
@@ -110,7 +214,8 @@ export const calculatePromotions = (
             }
             case 'free_shipping': {
                 const shippingRules = promo.rules;
-                if (totalItems >= shippingRules.min_units) {
+                const scopeValid = isPromotionScopeValid(null, scope);
+                if (scopeValid && totalItems >= shippingRules.min_units) {
                     if (!appliedPromotions.find(p => p.id === promo.id)) {
                         appliedPromotions.push(promo);
                     }
@@ -119,7 +224,8 @@ export const calculatePromotions = (
             }
             case 'min_amount_discount': {
                 const discountRules = promo.rules;
-                if (subtotal >= discountRules.min_amount) {
+                const scopeValid = isPromotionScopeValid(null, scope);
+                if (scopeValid && subtotal >= discountRules.min_amount) {
                     discountPercentage = Math.max(discountPercentage, discountRules.percentage);
                     if (!appliedPromotions.find(p => p.id === promo.id)) {
                         appliedPromotions.push(promo);
@@ -246,7 +352,8 @@ export const calculatePricing = (
     promotions: Promotion[],
     vatPercentage: number,
     salesConditions: SalesCondition[] = [],
-    productPromotions: PriceListProductPromotion[] = []
+    productPromotions: PriceListProductPromotion[] = [],
+    promotionsWithScope?: { promotion: Promotion; scope?: PromotionApplicationScope }[]
 ) => {
     const totalItems = items.reduce((total, item) => total + item.quantity, 0);
     const isVolumePricingActive = totalItems >= VOLUME_THRESHOLD;
@@ -271,7 +378,13 @@ export const calculatePricing = (
         }
     });
 
-    const { appliedPromotions, bonusInfo, discountPercentage, productsWithSpecificPromo } = calculatePromotions(items, subtotal, promotions, productPromotions);
+    const { appliedPromotions, bonusInfo, discountPercentage, productsWithSpecificPromo } = calculatePromotions(
+        items, 
+        subtotal, 
+        promotions, 
+        productPromotions,
+        promotionsWithScope
+    );
 
     // Calculate promotion discount (percentage)
     const promotionDiscountAmount = subtotal * ((discountPercentage ?? 0) / 100);
