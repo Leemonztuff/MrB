@@ -109,44 +109,52 @@ export default async function AdminLayout({
         </nav>
       </aside>
       <div className="flex flex-col sm:gap-4 sm:pl-20">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 glass border-b-0 border-white/5 px-4 sm:static sm:h-auto sm:bg-transparent sm:px-8 sm:py-6 sm:backdrop-blur-none">
-          <div className="sm:hidden">
-            <Link href="/admin" className="flex items-center gap-2 text-lg font-semibold">
-              <Logo logoUrl={settings.logo_url} showText={true} />
+        <header className="sticky top-0 z-30 flex h-14 sm:h-16 items-center justify-between gap-2 sm:gap-4 glass border-b-0 border-white/5 px-3 sm:static sm:bg-transparent sm:px-6 sm:py-6 sm:backdrop-blur-none">
+          <div className="sm:hidden flex items-center gap-2">
+            <Link href="/admin" className="flex items-center gap-2 text-base font-semibold">
+              <Logo logoUrl={settings.logo_url} showText={false} />
+              <span className="text-sm font-black italic tracking-tighter">MR.BLONDE</span>
             </Link>
           </div>
-          <div className="ml-auto flex items-center gap-4">
-            <ThemeToggle />
-            <Notifications />
+          <div className="ml-auto flex items-center gap-2 sm:gap-4">
+            <div className="hidden sm:block">
+              <ThemeToggle />
+            </div>
+            <div className="hidden sm:block">
+              <Notifications />
+            </div>
             <Sheet>
               <SheetTrigger asChild>
                 <Button
                   variant="outline"
                   size="icon"
-                  className="shrink-0 sm:hidden"
+                  className="shrink-0 sm:hidden h-10 w-10"
                 >
                   <Menu className="h-5 w-5" />
                   <span className="sr-only">Toggle navigation menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="pt-16">
+              <SheetContent side="right" className="w-[300px] sm:w-[350px] pt-14 sm:pt-16">
                 <SheetHeader>
                   <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
                   <SheetDescription className="sr-only">Navegación principal de la aplicación para dispositivos móviles.</SheetDescription>
                 </SheetHeader>
-                <nav className="grid gap-6 text-base font-medium">
+                <nav className="grid gap-1">
                   <AppNav isMobile={true} stats={stats as DashboardStats} enableStock={settings.enable_stock_management} />
                 </nav>
-                <div className="absolute bottom-4 left-4 right-4 grid gap-4">
+                <div className="absolute bottom-4 left-4 right-4 border-t border-white/10 pt-4 grid gap-1">
+                  <div className="sm:hidden mb-2">
+                    <Notifications />
+                  </div>
                   <Link
                     href="/admin/settings"
-                    className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                    className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-muted-foreground hover:text-foreground rounded-lg hover:bg-white/5 min-h-[44px]"
                   >
                     <Settings className="h-5 w-5" />
                     Configuración
                   </Link>
                   <form action={logout}>
-                    <button className="w-full flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground">
+                    <button className="w-full flex items-center gap-3 px-3 py-3 text-sm font-medium text-muted-foreground hover:text-destructive rounded-lg hover:bg-destructive/5 min-h-[44px]">
                       <LogOut className="h-5 w-5" />
                       Cerrar Sesión
                     </button>
@@ -156,7 +164,7 @@ export default async function AdminLayout({
             </Sheet>
           </div>
         </header>
-        <main id="main-content" className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 pb-24 sm:pb-4">
+        <main id="main-content" className="grid flex-1 items-start gap-3 sm:gap-4 p-3 sm:px-6 sm:py-0 md:gap-6 pb-24 sm:pb-4">
           <Suspense fallback={<PageLoader />}>
             {children}
           </Suspense>

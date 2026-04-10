@@ -64,8 +64,8 @@ export function AppNav({ isMobile, stats, enableStock = false }: { isMobile: boo
           key={item.href}
           href={item.href}
           className={cn(
-            "relative flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground",
-            isActive && "text-foreground"
+            "relative flex items-center gap-3 px-3 py-3 text-sm font-medium text-muted-foreground hover:text-foreground rounded-lg hover:bg-white/5 min-h-[48px] transition-colors",
+            isActive && "text-primary bg-primary/10"
           )}
         >
           {linkContent}
@@ -93,7 +93,7 @@ export function AppNav({ isMobile, stats, enableStock = false }: { isMobile: boo
 
   if (isMobile) {
     return (
-      <nav className="grid gap-6 text-base font-medium">
+      <nav className="grid gap-1">
         {navItems.map(renderNavItem)}
       </nav>
     );
