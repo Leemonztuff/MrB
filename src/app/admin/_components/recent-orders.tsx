@@ -170,14 +170,14 @@ export function RecentOrders({ orders: initialOrders }: { orders: OrderWithItems
                                                     <Eye className="h-2.5 w-2.5 ml-0.5 opacity-50" />
                                                 </Button>
                                             </DialogTrigger>
-                                            <DialogContent className="glass flex max-h-[min(85dvh,720px)] flex-col overflow-hidden border-white/10 p-0 sm:max-w-md">
+                                            <DialogContent className="glass flex max-h-[85dvh] flex-col overflow-hidden border-white/10 p-0 w-[95vw] max-w-md">
                                                 <DialogHeader>
-                                                    <DialogTitle className="flex items-center gap-2 border-b border-white/10 px-6 py-5 font-headline italic">
-                                                        <ShoppingBag className="h-5 w-5 text-primary" />
-                                                        Detalle del Pedido #{order.id.slice(-6).toUpperCase()}
+                                                    <DialogTitle className="flex items-center gap-2 border-b border-white/10 px-4 sm:px-6 py-4 font-headline italic text-base sm:text-lg">
+                                                        <ShoppingBag className="h-5 w-5 text-primary shrink-0" />
+                                                        <span className="truncate">Pedido #{order.id.slice(-6).toUpperCase()}</span>
                                                     </DialogTitle>
                                                 </DialogHeader>
-                                                <div className="flex min-h-0 flex-1 flex-col px-6 pb-6">
+                                                <div className="flex min-h-0 flex-1 flex-col px-4 sm:px-6 pb-4 sm:pb-6 overflow-hidden">
                                                     <div className="mt-4 flex items-center justify-between rounded-xl border border-white/5 bg-white/5 p-3">
                                                         <div className="space-y-0.5">
                                                             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Cliente</p>

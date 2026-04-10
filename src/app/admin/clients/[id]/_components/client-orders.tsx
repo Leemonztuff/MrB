@@ -71,39 +71,39 @@ export function ClientOrders({ orders }: { orders: OrderWithItems[] }) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 px-2 gap-2 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors border border-white/5 rounded-lg"
+                          className="h-7 px-2 gap-2 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors border border-white/5 rounded-lg cursor-pointer"
                         >
                           <ShoppingBag className="h-3.5 w-3.5" />
                           <span>{order.order_items?.length || 0} items</span>
                           <Eye className="h-3 w-3 opacity-50" />
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="glass flex max-h-[min(85dvh,680px)] flex-col overflow-hidden border-white/10 p-0 sm:max-w-md">
+                      <DialogContent className="glass flex max-h-[85dvh] flex-col overflow-hidden border-white/10 p-0 w-[95vw] max-w-md">
                         <DialogHeader>
-                          <DialogTitle className="flex items-center gap-2 border-b border-white/10 px-6 py-5 font-headline italic">
-                            <ShoppingBag className="h-5 w-5 text-primary" />
-                            Contenido del Pedido #{order.id.slice(-6).toUpperCase()}
+                          <DialogTitle className="flex items-center gap-2 border-b border-white/10 px-4 sm:px-6 py-4 font-headline italic text-base sm:text-lg">
+                            <ShoppingBag className="h-5 w-5 text-primary shrink-0" />
+                            <span className="truncate">Pedido #{order.id.slice(-6).toUpperCase()}</span>
                           </DialogTitle>
                         </DialogHeader>
-                        <div className="flex min-h-0 flex-1 flex-col px-6 pb-6">
-                          <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-4 [scrollbar-gutter:stable]">
+                        <div className="flex min-h-0 flex-1 flex-col px-4 sm:px-6 pb-4 sm:pb-6 overflow-hidden">
+                          <div className="flex-1 min-h-0 overflow-y-auto pr-2 [scrollbar-gutter:stable]">
                             <div className="grid gap-2">
                               {order.order_items?.map((item, idx) => (
                                 <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5">
-                                  <div className="flex items-center gap-3">
-                                    <Badge variant="secondary" className="bg-primary/20 text-primary h-6 w-6 flex items-center justify-center p-0 font-black">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <Badge variant="secondary" className="bg-primary/20 text-primary h-6 w-6 flex items-center justify-center p-0 font-black shrink-0">
                                       {item.quantity}
                                     </Badge>
-                                    <span className="text-xs">{item.products?.name}</span>
+                                    <span className="text-xs truncate">{item.products?.name}</span>
                                   </div>
-                                  <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap">
+                                  <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap ml-2">
                                     {formatCurrency((item.price_per_unit || 0) * item.quantity)}
                                   </span>
                                 </div>
                               ))}
                             </div>
                           </div>
-                          <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
+                          <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4 shrink-0">
                             <span className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Total</span>
                             <span className="text-lg font-headline font-black text-primary">
                               {formatCurrency(order.total_amount)}
