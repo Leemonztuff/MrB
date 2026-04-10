@@ -229,6 +229,16 @@ export const calculateSalesConditions = (
 /**
  * Domain Pricing Engine: The single source of truth for all pricing calculations.
  * This is used by the Cart Store (client) and Order Processing (server).
+ * 
+ * IMPORTANT: Discount Priority Logic
+ * ==================================
+ * Only ONE discount (percentage-based) can apply at a time.
+ * The system compares:
+ *   - Promotion discount (from min_amount_discount)
+ *   - SalesCondition discount (from discount type)
+ * 
+ * The larger discount wins and is applied to the subtotal.
+ * See src/domain/pricing/rules.ts for full documentation.
  */
 export const calculatePricing = (
     items: CartItemType[],
@@ -263,12 +273,23 @@ export const calculatePricing = (
 
     const { appliedPromotions, bonusInfo, discountPercentage, productsWithSpecificPromo } = calculatePromotions(items, subtotal, promotions, productPromotions);
 
-    const discountApplied = subtotal * ((discountPercentage ?? 0) / 100);
-    const subtotalWithPromos = subtotal - discountApplied;
+    // Calculate promotion discount (percentage)
+    const promotionDiscountAmount = subtotal * ((discountPercentage ?? 0) / 100);
+    const subtotalWithPromos = subtotal - promotionDiscountAmount;
 
+    // Calculate sales conditions discount
     const { appliedConditions, discountFromConditions, minimumOrderValidation } = calculateSalesConditions(subtotal, salesConditions);
 
-    const subtotalWithDiscount = subtotalWithPromos - (discountFromConditions ?? 0);
+    // DISCOUNT PRIORITY LOGIC: Only apply the larger discount
+    // Compare promotion discount vs sales condition discount and pick the bigger one
+    const totalDiscount = Math.max(promotionDiscountAmount, discountFromConditions ?? 0);
+    const discountSource = promotionDiscountAmount >= (discountFromConditions ?? 0) 
+        ? 'promotion' 
+        : 'salesCondition';
+
+    // Apply the larger discount to the subtotal
+    const subtotalWithDiscount = subtotal - totalDiscount;
+    
     const vatAmount = subtotalWithDiscount * vatRate;
     const totalPrice = subtotalWithDiscount + vatAmount;
 
@@ -276,7 +297,8 @@ export const calculatePricing = (
         totalItems,
         subtotal,
         subtotalWithDiscount,
-        discountApplied,
+        discountApplied: totalDiscount,
+        discountSource,
         discountFromConditions,
         vatAmount,
         totalPrice,

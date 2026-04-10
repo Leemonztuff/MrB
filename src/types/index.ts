@@ -48,6 +48,7 @@ export type BuyXGetYRules = {
 export type FreeShippingRules = {
     type: 'free_shipping';
     min_units: number;
+    locations?: string[];
 };
 
 export type MinAmountDiscountRules = {
