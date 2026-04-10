@@ -13,6 +13,7 @@ import {
   Megaphone,
   Box,
   Upload,
+  Tags,
 } from "lucide-react";
 import {
   Tooltip,
@@ -36,6 +37,7 @@ const baseNavItems: NavItem[] = [
   { href: "/admin/orders", icon: History, label: "Pedidos" },
   { href: "/admin/products", icon: Package, label: "Productos" },
   { href: "/admin/inventory", icon: Box, label: "Inventario" },
+  { href: "/admin/categories", icon: Tags, label: "Categorías" },
   { href: "/admin/clients", icon: Users, label: "Clientes" },
   { href: "/admin/agreements", icon: FileText, label: "Convenios" },
   { href: "/admin/commercial-settings", icon: Briefcase, label: "Comercial" },

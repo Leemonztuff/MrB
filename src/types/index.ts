@@ -15,6 +15,19 @@ export type AuthState = {
 
 export type ProductCategory = 'cabello' | 'barba' | 'merch';
 
+export type Category = {
+    id: string;
+    slug: string;
+    name: string;
+    description: string | null;
+    icon: string | null;
+    color: string | null;
+    sort_order: number;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+};
+
 export type Categories = ProductCategory;
 
 export type Product = {
@@ -22,6 +35,7 @@ export type Product = {
     name: string;
     description: string | null;
     category: ProductCategory | null;
+    category_id?: string | null;
     image_url: string | null;
     created_at: string;
 };
