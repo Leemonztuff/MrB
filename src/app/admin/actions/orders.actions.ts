@@ -81,14 +81,29 @@ export async function updateOrderStatus(orderId: string, status: 'armado' | 'tra
     }, ['/admin', '/admin/orders']);
 }
 
-export async function getPublicOrderDetails(orderId: string): Promise<ActionResponse<OrderWithItems>> {
+export async function getPublicOrderDetails(orderId: string): Promise<ActionResponse<any>> {
     return handleAction(async () => {
         const supabase = await createClient();
+        
+        // Verify order exists and has public access token
+        const { data: order, error: orderError } = await supabase
+            .from('orders')
+            .select('id, client_name_cache, is_public')
+            .eq('id', orderId)
+            .eq('is_public', true)
+            .single();
+        
+        if (orderError || !order) {
+            throw new Error("Pedido no encontrado o no públicamente accesible");
+        }
+        
+        // Return only public-safe fields
         const { data, error } = await supabase
             .from('orders')
-            .select('*, order_items(quantity, products(name))')
+            .select('id, client_name_cache, status, total_amount, created_at, notes, order_items(quantity, products(name))')
             .eq('id', orderId)
             .single();
+        
         if (error) throw error;
         return data;
     });

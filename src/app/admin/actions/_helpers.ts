@@ -17,7 +17,8 @@ export async function getSupabaseClientWithAuth() {
         data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user || user.app_metadata?.role !== 'super_admin' && user.role !== 'authenticated') {
+    const userRole = user?.app_metadata?.role;
+    if (!user || (userRole !== 'super_admin' && userRole !== 'admin')) {
         throw new Error("No tienes permisos de administrador para realizar esta acción.");
     }
     return supabase;

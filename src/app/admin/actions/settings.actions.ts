@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { unstable_noStore as noStore } from "next/cache";
 import { revalidatePath } from "next/cache";
 import { getSupabaseClientWithAuth } from "@/app/admin/actions/_helpers";
@@ -187,18 +188,28 @@ export async function getPublicLogoUrl(): Promise<string | null> {
   return logoSetting.path ? buildLogoAppUrl(logoSetting.updatedAt) : null;
 }
 
+const settingsSchema = z.object({
+    whatsapp_number: z.string().regex(/^\+?[\d\s-]{8,20}$/, "WhatsApp inválido").optional(),
+    vat_percentage: z.string().refine(v => !isNaN(Number(v)) && Number(v) >= 0 && Number(v) <= 100, "IVA inválido").optional(),
+    enable_stock_management: z.boolean().optional(),
+});
+
 export async function updateSettings(formData: FormData): Promise<{ error?: string }> {
-  const supabase = await getSupabaseClientWithAuth();
+    const supabase = await getSupabaseClientWithAuth();
 
-  const whatsapp_number = formData.get("whatsapp_number") as string;
-  const vat_percentage = formData.get("vat_percentage") as string;
-  const enable_stock_management = formData.get("enable_stock_management") === "true";
+    const rawData = {
+        whatsapp_number: formData.get("whatsapp_number") as string,
+        vat_percentage: formData.get("vat_percentage") as string,
+        enable_stock_management: formData.get("enable_stock_management") === "true",
+    };
 
-  const settingsToUpsert = [
-    { key: "whatsapp_number", value: whatsapp_number },
-    { key: "vat_percentage", value: vat_percentage },
-    { key: "enable_stock_management", value: enable_stock_management },
-  ];
+    const validated = settingsSchema.parse(rawData);
+
+    const settingsToUpsert = [
+        { key: "whatsapp_number", value: validated.whatsapp_number ?? "" },
+        { key: "vat_percentage", value: validated.vat_percentage ?? "21" },
+        { key: "enable_stock_management", value: validated.enable_stock_management ?? false },
+    ];
 
   const { error } = await supabase.from("app_settings").upsert(settingsToUpsert, { onConflict: "key" });
 

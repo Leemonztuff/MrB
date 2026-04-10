@@ -63,6 +63,7 @@ export async function middleware(request: NextRequest) {
 
     if (!isDev && !isSameOrigin && !csrfToken) {
       console.warn('CSRF validation failed - suspicious request');
+      return new Response('CSRF validation failed', { status: 403 });
     }
   }
 

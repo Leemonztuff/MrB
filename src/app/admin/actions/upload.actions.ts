@@ -3,6 +3,9 @@
 import { getSupabaseClientWithAuth, handleAction } from "./_helpers";
 import { ActionResponse } from "@/types";
 
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
 export async function uploadImage(
     file: File,
     bucket: string,
@@ -11,7 +14,21 @@ export async function uploadImage(
     return handleAction(async () => {
         const supabase = await getSupabaseClientWithAuth();
 
-        const fileExt = file.name.split('.').pop();
+        // Validate file type
+        if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+            throw new Error(`Tipo de archivo no permitido. Solo: ${ALLOWED_IMAGE_TYPES.join(', ')}`);
+        }
+
+        // Validate file size
+        if (file.size > MAX_FILE_SIZE) {
+            throw new Error(`Archivo muy grande. Máximo 5MB`);
+        }
+
+        const fileExt = file.name.split('.').pop()?.toLowerCase();
+        if (!fileExt || !ALLOWED_IMAGE_TYPES.some(t => t.endsWith(fileExt))) {
+            throw new Error("Extensión no permitida");
+        }
+
         const fileName = `${crypto.randomUUID()}-${Date.now()}.${fileExt}`;
         const filePath = folder ? `${folder}/${fileName}` : fileName;
 
