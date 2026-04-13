@@ -1,0 +1,3 @@
+## 2026-04-13 - Accessible Carousel Controls
+**Learning:** Found a recurring pattern in the app's shared components where interactive pagination elements (like carousels or steps) use icon-only buttons (`variant="icon"`) and dynamic CSS dots for state, but completely lack screen reader context. The `news-carousel.tsx` had navigation arrows and status dots that were completely silent for screen reader users.
+**Action:** When evaluating or creating custom pagination components in this design system, ensure that directional arrows have explicit `aria-label` attributes (e.g. "Noticia anterior") and state-based dots use both `aria-label` for indexing and `aria-current="true/false"` or `aria-pressed` to indicate the active slide.

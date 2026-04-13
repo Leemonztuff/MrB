@@ -151,6 +151,7 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
             <Button
               variant="secondary"
               size="icon"
+              aria-label="Noticia anterior"
               className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-background/60 hover:bg-primary hover:text-primary-foreground backdrop-blur-md text-foreground border border-border/50 rounded-xl transition-all shadow-lg"
               onClick={(e) => {
                 e.stopPropagation();
@@ -162,6 +163,7 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
             <Button
               variant="secondary"
               size="icon"
+              aria-label="Siguiente noticia"
               className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-background/60 hover:bg-primary hover:text-primary-foreground backdrop-blur-md text-foreground border border-border/50 rounded-xl transition-all shadow-lg"
               onClick={(e) => {
                 e.stopPropagation();
@@ -175,6 +177,8 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
               {news.map((_, idx) => (
                 <button
                   key={idx}
+                  aria-label={`Ir a la noticia ${idx + 1}`}
+                  aria-current={idx === currentIndex ? "true" : "false"}
                   className={`w-2 h-2 rounded-full transition-colors ${idx === currentIndex ? "bg-primary" : "bg-muted-foreground/30"
                     }`}
                   onClick={(e) => {
