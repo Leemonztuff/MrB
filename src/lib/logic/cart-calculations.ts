@@ -101,20 +101,9 @@ export const calculateCartTotals = (
 
     const { appliedPromotions, bonusInfo, discountPercentage } = calculatePromotions(items, subtotal, promotions);
 
-    let bonusDiscount = 0;
-    Object.entries(bonusInfo).forEach(([productId, info]) => {
-        const item = items.find(i => i.product.id === productId);
-        if (item) {
-            const unitPrice = isVolumePricingActive && item.product.volume_price != null && item.product.volume_price > 0 && item.product.volume_price < item.product.price
-                ? item.product.volume_price
-                : item.product.price;
-            const priceWithoutVat = pricesIncludeVat ? roundCurrency(unitPrice / (1 + vatRate)) : unitPrice;
-            bonusDiscount += roundCurrency(priceWithoutVat * info.bonusQuantity);
-        }
-    });
-
+    // Only percentage discounts affect the total (buy_x_get_y_free are赠品, not discounts)
     const percentageDiscount = roundCurrency(subtotal * (discountPercentage / 100));
-    const totalDiscount = roundCurrency(percentageDiscount + bonusDiscount);
+    const totalDiscount = percentageDiscount;
     const subtotalWithDiscount = roundCurrency(subtotal - totalDiscount);
     const vatAmount = roundCurrency(subtotalWithDiscount * vatRate);
     const totalPrice = roundCurrency(subtotalWithDiscount + vatAmount);
@@ -124,7 +113,7 @@ export const calculateCartTotals = (
         subtotal,
         subtotalWithDiscount,
         discountApplied: totalDiscount,
-        bonusDiscount,
+        bonusDiscount: 0,
         percentageDiscount,
         vatAmount,
         totalPrice,

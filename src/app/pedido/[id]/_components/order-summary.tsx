@@ -56,12 +56,12 @@ function formatWhatsAppMessage(
     ).join('\n');
 
     const discountPromo = appliedPromotions.find(p => p.rules.type === 'min_amount_discount');
-    if (discountPromo) {
+    if (discountPromo && discountApplied > 0) {
       promotionsText += `💸 *Descuento Aplicado (${discountPromo.rules.percentage}%):*\n-${formatCurrencyWhatsApp(discountApplied)}\n`;
     }
 
     if (bonusText) {
-      promotionsText += `\n🎁 *Bonificaciones:*\n${bonusText}\n`;
+      promotionsText += `\n🎁 *Bonificaciones (sin costo):*\n${bonusText}\n`;
     }
 
     if (appliedPromotions.some(p => p.rules.type === 'free_shipping')) {
