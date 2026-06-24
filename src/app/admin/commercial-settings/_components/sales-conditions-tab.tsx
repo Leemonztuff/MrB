@@ -6,19 +6,14 @@ import SalesConditionsTable from "../../sales-conditions/_components/sales-condi
 import { EmptyState } from "@/components/shared/empty-state";
 import { EntityDialog } from "../../_components/entity-dialog";
 import { salesConditionFormConfig } from "../../sales-conditions/_components/form-config";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
+import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardDescription, GlassCardContent } from "@/components/shared/glass-card";
+import { ErrorDisplay } from "@/components/shared/error-display";
 
 export default async function SalesConditionsTab() {
   const { data: salesConditions, error } = await getSalesConditions();
 
   if (error) {
-    return <p className="text-destructive">{(error as any).message}</p>;
+    return <ErrorDisplay message={(error as any).message} />;
   }
 
   const emptyState = (
@@ -28,8 +23,8 @@ export default async function SalesConditionsTab() {
       description="Crea tu primera condición para definir plazos de pago, descuentos o formas de financiación."
     >
       <EntityDialog formConfig={salesConditionFormConfig}>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
+        <Button variant="brand">
+          <PlusCircle className="h-4 w-4" />
           Crear Condición
         </Button>
       </EntityDialog>
@@ -37,17 +32,17 @@ export default async function SalesConditionsTab() {
   );
 
   return (
-    <Card className="glass border-white/5 overflow-hidden">
-      <CardHeader className="pb-4">
+    <GlassCard>
+      <GlassCardHeader className="pb-4">
         <div className="flex items-center gap-4">
           <div className="flex-grow">
-            <CardTitle className="text-xl font-black italic tracking-tighter">Condiciones de Venta</CardTitle>
-            <CardDescription className="text-xs uppercase font-bold tracking-widest opacity-60">
+            <GlassCardTitle>Condiciones de Venta</GlassCardTitle>
+            <GlassCardDescription>
               Plazos, financiación y logística.
-            </CardDescription>
+            </GlassCardDescription>
           </div>
           <EntityDialog formConfig={salesConditionFormConfig}>
-            <Button size="sm" className="h-10 gap-2 font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button variant="brand" size="sm">
               <PlusCircle className="h-4 w-4" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap italic">
                 Crear Condición
@@ -55,13 +50,13 @@ export default async function SalesConditionsTab() {
             </Button>
           </EntityDialog>
         </div>
-      </CardHeader>
-      <CardContent className="p-0 sm:px-0">
+      </GlassCardHeader>
+      <GlassCardContent className="p-0 sm:px-0">
         <SalesConditionsTable
           salesConditions={salesConditions ?? []}
           emptyState={emptyState}
         />
-      </CardContent>
-    </Card>
+      </GlassCardContent>
+    </GlassCard>
   );
 }

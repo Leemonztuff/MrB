@@ -6,6 +6,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageContainer } from "@/components/shared/page-container";
 import PriceListsTab from './_components/price-lists-tab';
 import PromotionsTab from './_components/promotions-tab';
 import SalesConditionsTab from './_components/sales-conditions-tab';
@@ -28,7 +29,7 @@ export default async function CommercialSettingsPage({
   const currentTab = tab || "pricelists";
 
   return (
-    <div className="grid flex-1 items-start gap-4 md:gap-8">
+    <PageContainer>
       <PageHeader
         title="Gestión Comercial"
         description="Estructura de precios, promociones y reglas."
@@ -68,6 +69,6 @@ export default async function CommercialSettingsPage({
           <SalesConditionsTab />
         </TabsContent>
       </Tabs>
-    </div>
+    </PageContainer>
   );
 }

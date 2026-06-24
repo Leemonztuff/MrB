@@ -3,6 +3,8 @@ import { getAgreements } from "@/app/admin/actions/agreements.actions";
 import AgreementsTable from "./_components/agreements-table";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
+import { PageContainer } from "@/components/shared/page-container";
+import { ErrorDisplay } from "@/components/shared/error-display";
 import { FileText, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EntityDialog } from "../_components/entity-dialog";
@@ -13,8 +15,7 @@ export default async function AgreementsPage() {
   const { data: agreements, error } = await getAgreements();
 
   if (error) {
-    // TODO: Add a better error component
-    return <p className="text-destructive">{error.message}</p>;
+    return <ErrorDisplay message={error.message} />;
   }
 
   const emptyState = (
@@ -24,8 +25,8 @@ export default async function AgreementsPage() {
       description="Crea tu primer convenio para empezar a definir reglas de precios y promociones para tus clientes."
     >
       <EntityDialog formConfig={agreementFormConfig}>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
+        <Button variant="brand">
+          <PlusCircle className="h-4 w-4" />
           Crear Convenio
         </Button>
       </EntityDialog>
@@ -33,13 +34,13 @@ export default async function AgreementsPage() {
   );
 
   return (
-    <div className="grid flex-1 items-start gap-4 md:gap-8">
+    <PageContainer>
       <PageHeader
         title="Convenios"
         description="Reglas dinámicas y enlaces de pedido."
       >
         <EntityDialog formConfig={agreementFormConfig}>
-          <Button size="sm" className="h-10 gap-2 font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Button variant="brand" size="sm">
             <PlusCircle className="h-4 w-4" />
             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap italic">
               Agregar Convenio
@@ -50,6 +51,6 @@ export default async function AgreementsPage() {
       <TooltipProvider>
         <AgreementsTable agreements={agreements ?? []} emptyState={emptyState} />
       </TooltipProvider>
-    </div>
+    </PageContainer>
   );
 }

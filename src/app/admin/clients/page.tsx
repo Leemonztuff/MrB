@@ -3,6 +3,8 @@
 import { getClients } from "@/app/admin/actions/clients.actions";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
+import { PageContainer } from "@/components/shared/page-container";
+import { ErrorDisplay } from "@/components/shared/error-display";
 import { Users } from "lucide-react";
 import { ClientsTable } from "./_components/clients-table";
 import { CreateClientButton } from "./_components/create-client-button";
@@ -18,8 +20,7 @@ export default async function ClientsPage({
   const { data: clients, error } = await getClients(query);
 
   if (error) {
-    // TODO: Add a better error component
-    return <p className="text-destructive">{error.message}</p>;
+    return <ErrorDisplay message={error.message} />;
   }
 
   const emptyState = (
@@ -33,7 +34,7 @@ export default async function ClientsPage({
   );
 
   return (
-    <div className="grid flex-1 items-start gap-4 md:gap-8">
+    <PageContainer>
       <PageHeader
         title="Clientes"
         description="Gestiona tus clientes, asígnales convenios y genera enlaces de alta."
@@ -44,6 +45,6 @@ export default async function ClientsPage({
         </div>
       </PageHeader>
       <ClientsTable clients={clients ?? []} emptyState={emptyState} />
-    </div>
+    </PageContainer>
   );
 }

@@ -8,13 +8,15 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { EntityDialog } from "../_components/entity-dialog";
 import { productFormConfig } from "./_components/form-config";
 import { ImportProductsDialog } from "./_components/import-dialog";
+import { PageContainer } from "@/components/shared/page-container";
+import { GlassCard, GlassCardHeader } from "@/components/shared/glass-card";
+import { ErrorDisplay } from "@/components/shared/error-display";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/types";
 
@@ -22,7 +24,7 @@ export default async function ProductsPage() {
   const { data: products, error } = await getProducts();
 
   if (error) {
-    return <p className="text-destructive">{error.message}</p>;
+    return <ErrorDisplay message={error.message} />;
   }
 
   const productsByCategory = (products ?? []).reduce((acc, product) => {
@@ -43,8 +45,8 @@ export default async function ProductsPage() {
       description="Aún no has creado ningún producto. ¡Empieza por añadir el primero!"
     >
       <EntityDialog formConfig={productFormConfig}>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
+        <Button variant="brand">
+          <PlusCircle className="h-4 w-4" />
           Crear Producto
         </Button>
       </EntityDialog>
@@ -52,7 +54,7 @@ export default async function ProductsPage() {
   );
 
   return (
-    <div className="grid flex-1 items-start gap-4 md:gap-8">
+    <PageContainer>
       <PageHeader
         title="Productos"
         description="Gestión pro de catálogo e inventario."
@@ -60,7 +62,7 @@ export default async function ProductsPage() {
         <div className="flex items-center gap-3">
           <ImportProductsDialog />
           <EntityDialog formConfig={productFormConfig}>
-            <Button size="sm" className="h-10 gap-2 font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button variant="brand" size="sm">
               <PlusCircle className="h-4 w-4" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap italic">
                 Agregar Producto
@@ -82,8 +84,8 @@ export default async function ProductsPage() {
               value={category}
               className="border-none"
             >
-              <Card className="glass border-white/5 overflow-hidden">
-                <CardHeader className="p-0">
+              <GlassCard>
+                <GlassCardHeader className="p-0">
                   <AccordionTrigger className="px-6 py-4 text-xl font-black italic tracking-tighter hover:no-underline hover:bg-white/5 transition-colors group">
                     <div className="flex items-center gap-3">
                       <span className="text-primary group-hover:scale-110 transition-transform">#</span>
@@ -93,20 +95,20 @@ export default async function ProductsPage() {
                       </Badge>
                     </div>
                   </AccordionTrigger>
-                </CardHeader>
+                </GlassCardHeader>
                 <AccordionContent className="p-0 border-t border-white/5 bg-black/20">
                   <ProductsTable
                     products={productsByCategory[category]}
                     emptyState={<></>}
                   />
                 </AccordionContent>
-              </Card>
+              </GlassCard>
             </AccordionItem>
           ))}
         </Accordion>
       ) : (
         emptyState
       )}
-    </div>
+    </PageContainer>
   );
 }
