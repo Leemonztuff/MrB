@@ -21,10 +21,10 @@ type CartState = {
   promotions: Promotion[];
   appliedPromotions: Promotion[];
   bonusInfo: BonusInfo;
-  agreementId: string | null;
+  clientId: string | null;
   pricesIncludeVat: boolean;
   vatPercentage: number;
-  setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[], vatPercentage: number) => void;
+  setAgreement: (clientId: string, pricesIncludeVat: boolean, promotions: Promotion[], vatPercentage: number) => void;
   addItem: (product: ProductWithPrice, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -46,15 +46,15 @@ export const useCartStore = create<CartState>()(
       promotions: [],
       appliedPromotions: [],
       bonusInfo: {},
-      agreementId: null,
+      clientId: null,
       pricesIncludeVat: true,
       vatPercentage: 21,
 
       setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[], vatPercentage: number) => {
-        const currentAgreementId = get().agreementId;
-        if (id !== currentAgreementId) {
+        const currentClientId = get().clientId;
+        if (id !== currentClientId) {
           set({
-            agreementId: id,
+            clientId: id,
             pricesIncludeVat: pricesIncludeVat,
             promotions: promotions,
             vatPercentage: vatPercentage,

@@ -44,7 +44,7 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
 
   useEffect(() => {
     if (typeof window !== 'undefined' && client.agreement_id && client.status === 'active') {
-      setOrderLink(`${window.location.origin}/pedido/${client.agreement_id}`);
+      setOrderLink(`${window.location.origin}/pedido/${client.id}`);
     }
   }, [client.agreement_id, client.status]);
   

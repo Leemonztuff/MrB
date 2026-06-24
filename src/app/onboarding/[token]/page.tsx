@@ -48,7 +48,7 @@ export default async function OnboardingPage({ params }: { params: Promise<{ tok
             <p className="text-muted-foreground mb-4">Tus datos ya fueron completados con éxito.</p>
             {client.agreement_id && (
               <Button asChild className="w-full">
-                <Link href={`/pedido/${client.agreement_id}`}>Ir al Catálogo</Link>
+                <Link href={`/pedido/${client.id}`}>Ir al Catálogo</Link>
               </Button>
             )}
           </CardContent>

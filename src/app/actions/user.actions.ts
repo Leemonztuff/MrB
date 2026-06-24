@@ -56,11 +56,26 @@ export async function logout() {
     redirect('/login');
 }
 
-export async function getOrderPageData(agreementId: string): Promise<ActionResponse<any>> {
+export async function getOrderPageData(clientId: string): Promise<ActionResponse<any>> {
     return handleAction(async () => {
         const supabase = await createServerClient();
+
+        // 1. Buscar el cliente por ID
+        const { data: client, error: clientError } = await supabase
+            .from('clients')
+            .select('*')
+            .eq('id', clientId)
+            .maybeSingle();
+
+        if (clientError || !client) throw new Error("Cliente inválido.");
+        if (!client.agreement_id) throw new Error("Este cliente no tiene un convenio asignado.");
+
+        // 2. Obtener el convenio del cliente con sus promociones y lista de precios
         const [agreementResult, settingsResult] = await Promise.all([
-            supabase.from('agreements').select('*, agreement_promotions(promotions(*)), price_lists(*)').eq('id', agreementId).maybeSingle(),
+            supabase.from('agreements')
+                .select('*, agreement_promotions(promotions(*)), price_lists(*)')
+                .eq('id', client.agreement_id)
+                .maybeSingle(),
             supabase.from('app_settings').select('key, value')
         ]);
 
@@ -69,6 +84,7 @@ export async function getOrderPageData(agreementId: string): Promise<ActionRespo
 
         if (!agreement.price_lists) throw new Error("Este convenio no tiene una lista de precios asignada.");
 
+        // 3. Obtener productos con precios de la lista del convenio
         const { data: priceListItems, error: itemsError } = await supabase
             .from('price_list_items')
             .select('price, volume_price, products(*)')
@@ -88,12 +104,11 @@ export async function getOrderPageData(agreementId: string): Promise<ActionRespo
             return acc;
         }, {} as Record<string, any[]>);
 
+        // 4. Obtener configuración de la app (IVA, logo)
         const settings = (settingsResult.data || []).reduce((acc: any, s: AppSettingsRow) => {
             acc[s.key] = s.value;
             return acc;
         }, {});
-
-        const { data: client } = await supabase.from('clients').select('*').eq('agreement_id', agreementId).maybeSingle();
 
         return {
             agreement,
@@ -108,7 +123,6 @@ export async function getOrderPageData(agreementId: string): Promise<ActionRespo
 export async function submitOrder(payload: {
     cart: CartItem[];
     total: number;
-    agreementId: string;
     clientId: string;
     clientName: string;
     notes?: string;
@@ -120,11 +134,22 @@ export async function submitOrder(payload: {
         // Safe access for clientName, defaulting to "Cliente" if falsy
         const finalClientName = payload.clientName || "Cliente";
 
+        // Obtener el agreement_id del cliente si existe
+        let agreementId = null;
+        if (finalClientId) {
+            const { data: client } = await supabase
+                .from('clients')
+                .select('agreement_id')
+                .eq('id', finalClientId)
+                .maybeSingle();
+            agreementId = client?.agreement_id || null;
+        }
+
         const { data: order, error: orderError } = await supabase
             .from('orders')
             .insert({
                 client_id: finalClientId,
-                agreement_id: payload.agreementId,
+                agreement_id: agreementId,
                 total_amount: payload.total,
                 status: 'armado',
                 client_name_cache: finalClientName, // Using the safely accessed client name

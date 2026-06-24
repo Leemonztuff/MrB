@@ -132,7 +132,6 @@ export default async function OrderPage({
             </div>
           }>
             <OrderSummary
-              agreementId={agreement.id}
               clientId={client?.id ?? "generic"}
               clientName={client?.contact_name ?? "Cliente"}
               pricesIncludeVat={agreement.price_lists?.prices_include_vat ?? true}

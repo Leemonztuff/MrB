@@ -166,21 +166,19 @@ function AppliedPromotions() {
 
 
 export function OrderSummary({
-  agreementId,
   clientId,
   clientName,
   pricesIncludeVat,
   promotions,
   vatPercentage,
 }: {
-  agreementId: string;
   clientId: string;
   clientName: string;
   pricesIncludeVat: boolean;
   promotions: Promotion[];
   vatPercentage: number;
 }) {
-  const { items, totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, clearCart, setAgreement, appliedPromotions, bonusInfo } = useCartStore();
+  const { items, totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, clearCart, setAgreement, clientId: storeClientId, appliedPromotions, bonusInfo } = useCartStore();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [notes, setNotes] = useState("");
@@ -191,8 +189,8 @@ export function OrderSummary({
   }, []);
 
   useEffect(() => {
-    setAgreement(agreementId, pricesIncludeVat, promotions, vatPercentage);
-  }, [agreementId, pricesIncludeVat, promotions, vatPercentage, setAgreement]);
+    setAgreement(clientId, pricesIncludeVat, promotions, vatPercentage);
+  }, [clientId, pricesIncludeVat, promotions, vatPercentage, setAgreement]);
 
 
   const handleSend = () => {
@@ -217,7 +215,6 @@ export function OrderSummary({
       const result = await submitOrder({
         cart: items,
         total: totalPrice,
-        agreementId,
         clientId,
         clientName,
         notes: notes,
