@@ -72,6 +72,19 @@ export async function getPublicOrderDetails(orderId: string): Promise<ActionResp
     });
 }
 
+export async function getLabelData(ids: string[]): Promise<ActionResponse<OrderWithItems[]>> {
+    return handleAction(async () => {
+        const supabase = await getSupabaseClientWithAuth();
+        const { data, error } = await supabase
+            .from('orders')
+            .select('*, order_items(quantity, price_per_unit, products(*)), clients(*)')
+            .in('id', ids);
+
+        if (error) throw error;
+        return data || [];
+    });
+}
+
 export async function publicConfirmOrder(orderId: string): Promise<ActionResponse<null>> {
     return handleAction(async () => {
         const supabase = await createClient();

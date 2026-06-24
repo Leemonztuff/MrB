@@ -176,3 +176,27 @@ export type PriceListItem = {
     volume_price: number | null;
     products: Product;
 };
+
+export type LabelData = {
+    id: string;
+    client_name_cache: string;
+    created_at: string;
+    total_amount: number;
+    notes?: string | null;
+    clients?: {
+        address?: string | null;
+        cuit?: string | null;
+        delivery_window?: string | null;
+        contact_name?: string | null;
+    } | null;
+    order_items?: {
+        quantity: number;
+        price_per_unit: number;
+        products?: { name: string } | null;
+    }[];
+    bundleIdx: number;
+    totalBundles: number;
+    _qrDataUrl?: string;
+};
+
+export type LabelFormat = 1 | 2 | 3;
