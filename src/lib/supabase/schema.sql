@@ -26,7 +26,7 @@ DROP TYPE IF EXISTS public.client_type CASCADE;
 -- 2. TYPES
 CREATE TYPE public.order_status AS ENUM ('armado', 'transito', 'entregado');
 CREATE TYPE public.client_status AS ENUM ('pending_onboarding', 'pending_agreement', 'active', 'archived');
-CREATE TYPE public.client_type AS ENUM ('barberia', 'distribuidor', 'especial');
+CREATE TYPE public.client_type AS ENUM ('barberia', 'distribuidor', 'especial', 'consumidor_final');
 
 -- 3. TABLES
 CREATE TABLE public.products (

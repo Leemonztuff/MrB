@@ -14,7 +14,7 @@ import { AgreementFormFieldsWrapper } from "./form-config-wrapper";
 
 const agreementSchema = z.object({
   agreement_name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
-  client_type: z.enum(["barberia", "distribuidor", "especial"]),
+  client_type: z.enum(["barberia", "distribuidor", "especial", "consumidor_final"]),
   price_list_id: z.string().nullable(),
 });
 
@@ -67,6 +67,7 @@ const AgreementFormFields = ({ form, priceLists = [], onPriceListCreated = () =>
                   <SelectItem value="barberia">Barbería</SelectItem>
                   <SelectItem value="distribuidor">Distribuidor</SelectItem>
                   <SelectItem value="especial">Especial</SelectItem>
+                  <SelectItem value="consumidor_final">Consumidor Final</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />

@@ -125,7 +125,7 @@ export type AnalyzeClientOutput = {
 export type Agreement = {
     id: string;
     agreement_name: string;
-    client_type: 'barberia' | 'distribuidor' | 'especial';
+    client_type: 'barberia' | 'distribuidor' | 'especial' | 'consumidor_final';
     price_list_id: string | null;
     created_at: string;
 };
