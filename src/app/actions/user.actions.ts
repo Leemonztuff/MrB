@@ -14,7 +14,7 @@ export async function hasUsers(): Promise<boolean> {
     if (process.env.VERCEL_ENV === 'production' && !process.env.SUPABASE_SERVICE_ROLE_KEY) return true;
     if (!supabaseAdmin) return true;
     try {
-        const { data } = await supabaseAdmin.auth.admin.listUsers();
+        const { data } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1 });
         return (data?.users?.length ?? 0) > 0;
     } catch (err) {
         return true;
@@ -129,20 +129,55 @@ export async function submitOrder(payload: {
 }): Promise<ActionResponse<{ orderId: string }>> {
     return handleAction(async () => {
         const supabase = await createServerClient();
-        // Safe access for clientId, defaulting to null if 'generic' or falsy
-        const finalClientId = payload.clientId === 'generic' || !payload.clientId ? null : payload.clientId;
-        // Safe access for clientName, defaulting to "Cliente" if falsy
+        const finalClientId = (!payload.clientId || payload.clientId === 'generic') ? null : payload.clientId;
         const finalClientName = payload.clientName || "Cliente";
 
-        // Obtener el agreement_id del cliente si existe
         let agreementId = null;
+        let priceListId = null;
         if (finalClientId) {
             const { data: client } = await supabase
                 .from('clients')
-                .select('agreement_id')
+                .select('agreement_id, price_lists(id, prices_include_vat)')
                 .eq('id', finalClientId)
                 .maybeSingle();
             agreementId = client?.agreement_id || null;
+            priceListId = (client as any)?.price_lists?.id || null;
+        }
+
+        let serverTotal = 0;
+        const orderItems = [];
+
+        for (const item of payload.cart) {
+            let pricePerUnit = item.product.price;
+            let volumePrice = item.product.volume_price;
+
+            if (priceListId) {
+                const { data: pli } = await supabase
+                    .from('price_list_items')
+                    .select('price, volume_price')
+                    .eq('price_list_id', priceListId)
+                    .eq('product_id', item.product.id)
+                    .maybeSingle();
+                if (pli) {
+                    pricePerUnit = pli.price;
+                    volumePrice = pli.volume_price;
+                }
+            }
+
+            const effectivePrice = volumePrice != null && volumePrice > 0 && volumePrice < pricePerUnit
+                ? volumePrice
+                : pricePerUnit;
+            serverTotal += effectivePrice * item.quantity;
+            orderItems.push({
+                product_id: item.product.id,
+                quantity: item.quantity,
+                price_per_unit: effectivePrice,
+            });
+        }
+
+        serverTotal = Math.round(serverTotal * 100) / 100;
+        if (Math.abs(serverTotal - payload.total) > 1) {
+            throw new Error("El total del pedido no coincide. Por favor, recarga la página e intenta de nuevo.");
         }
 
         const { data: order, error: orderError } = await supabase
@@ -150,9 +185,9 @@ export async function submitOrder(payload: {
             .insert({
                 client_id: finalClientId,
                 agreement_id: agreementId,
-                total_amount: payload.total,
+                total_amount: serverTotal,
                 status: 'armado',
-                client_name_cache: finalClientName, // Using the safely accessed client name
+                client_name_cache: finalClientName,
                 notes: payload.notes || null,
             })
             .select()
@@ -160,14 +195,12 @@ export async function submitOrder(payload: {
 
         if (orderError || !order) throw new Error("Error al guardar pedido.");
 
-        const orderItems = payload.cart.map(item => ({
+        const itemsWithOrderId = orderItems.map(item => ({
+            ...item,
             order_id: order.id,
-            product_id: item.product.id,
-            quantity: item.quantity,
-            price_per_unit: item.product.price,
         }));
 
-        const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
+        const { error: itemsError } = await supabase.from('order_items').insert(itemsWithOrderId);
         if (itemsError) throw itemsError;
 
         return { orderId: order.id };

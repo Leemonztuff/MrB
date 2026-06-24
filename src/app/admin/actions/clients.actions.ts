@@ -100,9 +100,20 @@ export async function upsertClient(
     if (!id) {
       finalPayload.status = clientData.agreement_id ? 'active' : 'pending_agreement';
       finalPayload.onboarding_token = crypto.randomUUID();
+
+      if (finalPayload.email) {
+        const supabase = await getSupabaseClientWithAuth();
+        const { data: existing } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('email', finalPayload.email)
+          .maybeSingle();
+        if (existing) {
+          throw new Error(`Ya existe un cliente con el email ${finalPayload.email}`);
+        }
+      }
     }
 
-    // Validation
     const validated = clientSchema.parse(finalPayload);
 
     const result = await upsertEntity('clients', validated, [

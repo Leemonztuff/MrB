@@ -115,8 +115,11 @@ CREATE TABLE public.orders (
     status public.order_status NOT NULL DEFAULT 'armado',
     client_name_cache text NOT NULL,
     notes text,
+    confirmation_token uuid DEFAULT gen_random_uuid(),
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_orders_confirmation_token ON public.orders(confirmation_token);
 
 CREATE TABLE public.order_items (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

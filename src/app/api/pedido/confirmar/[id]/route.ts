@@ -8,16 +8,21 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id } = await params;
+    const token = request.nextUrl.searchParams.get('token');
 
-    try {
-        // Ejecutar la confirmación (esto llamará a revalidatePath de forma segura)
-        await publicConfirmOrder(id);
-    } catch (error) {
-        console.error("Error en auto-confirmación vía API:", error);
-        // Continuamos a la página de todos modos para que el portal maneje el estado de error o ya confirmado
+    if (!token) {
+        const origin = new URL(request.url).origin;
+        return NextResponse.redirect(`${origin}/pedido/confirmar/${id}?error=missing_token`);
     }
 
-    // Redirigir al portal de confirmación (que ahora solo mostrará el mensaje de éxito)
+    try {
+        await publicConfirmOrder(id, token);
+    } catch (error) {
+        console.error("Error en auto-confirmación vía API:", error);
+        const origin = new URL(request.url).origin;
+        return NextResponse.redirect(`${origin}/pedido/confirmar/${id}?error=confirmation_failed`);
+    }
+
     const origin = new URL(request.url).origin;
     return NextResponse.redirect(`${origin}/pedido/confirmar/${id}`);
 }

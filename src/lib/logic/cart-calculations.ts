@@ -10,9 +10,8 @@ export type BonusInfo = {
 
 export const VOLUME_THRESHOLD = 150;
 
-/**
- * Calculates applied promotions and bonus items based on current cart items and subtotal.
- */
+const roundCurrency = (value: number): number => Math.round(value * 100) / 100;
+
 export const calculatePromotions = (items: CartItemType[], subtotal: number, promotions: Promotion[]) => {
     const totalItems = items.reduce((total, item) => total + item.quantity, 0);
     const appliedPromotions: Promotion[] = [];
@@ -25,6 +24,12 @@ export const calculatePromotions = (items: CartItemType[], subtotal: number, pro
         switch (promo.rules.type) {
             case 'buy_x_get_y_free':
                 items.forEach(item => {
+                    const hasNoScope = !promo.rules.product_ids && !promo.rules.category_names;
+                    const appliesToProduct = promo.rules.product_ids?.includes(item.product.id);
+                    const appliesToCategory = promo.rules.category_names?.includes(item.product.category);
+                    
+                    if (!hasNoScope && !appliesToProduct && !appliesToCategory) return;
+                    
                     if (item.quantity >= promo.rules.buy) {
                         const times = Math.floor(item.quantity / promo.rules.buy);
                         const bonusQuantity = times * promo.rules.get;
@@ -62,9 +67,6 @@ export const calculatePromotions = (items: CartItemType[], subtotal: number, pro
     return { appliedPromotions, bonusInfo, discountPercentage };
 }
 
-/**
- * Single source of truth for all cart-related calculations (Subtotal, VAT, Discounts, Promos).
- */
 export const calculateCartTotals = (
     items: CartItemType[],
     pricesIncludeVat: boolean,
@@ -78,31 +80,52 @@ export const calculateCartTotals = (
     let subtotal = 0;
 
     items.forEach(item => {
-        const basePrice = (isVolumePricingActive && item.product.volume_price != null && item.product.volume_price < item.product.price)
+        const basePrice = (
+            isVolumePricingActive && 
+            item.product.volume_price != null && 
+            item.product.volume_price > 0 &&
+            item.product.volume_price < item.product.price
+        )
             ? item.product.volume_price
             : item.product.price;
 
         if (pricesIncludeVat) {
-            const singleItemSubtotal = basePrice / (1 + vatRate);
-            subtotal += singleItemSubtotal * item.quantity;
+            const singleItemSubtotal = roundCurrency(basePrice / (1 + vatRate));
+            subtotal += roundCurrency(singleItemSubtotal * item.quantity);
         } else {
-            const singleItemSubtotal = basePrice;
-            subtotal += singleItemSubtotal * item.quantity;
+            subtotal += roundCurrency(basePrice * item.quantity);
         }
     });
 
+    subtotal = roundCurrency(subtotal);
+
     const { appliedPromotions, bonusInfo, discountPercentage } = calculatePromotions(items, subtotal, promotions);
 
-    const discountApplied = subtotal * (discountPercentage / 100);
-    const subtotalWithDiscount = subtotal - discountApplied;
-    const vatAmount = subtotalWithDiscount * vatRate;
-    const totalPrice = subtotalWithDiscount + vatAmount;
+    let bonusDiscount = 0;
+    Object.entries(bonusInfo).forEach(([productId, info]) => {
+        const item = items.find(i => i.product.id === productId);
+        if (item) {
+            const unitPrice = isVolumePricingActive && item.product.volume_price != null && item.product.volume_price > 0 && item.product.volume_price < item.product.price
+                ? item.product.volume_price
+                : item.product.price;
+            const priceWithoutVat = pricesIncludeVat ? roundCurrency(unitPrice / (1 + vatRate)) : unitPrice;
+            bonusDiscount += roundCurrency(priceWithoutVat * info.bonusQuantity);
+        }
+    });
+
+    const percentageDiscount = roundCurrency(subtotal * (discountPercentage / 100));
+    const totalDiscount = roundCurrency(percentageDiscount + bonusDiscount);
+    const subtotalWithDiscount = roundCurrency(subtotal - totalDiscount);
+    const vatAmount = roundCurrency(subtotalWithDiscount * vatRate);
+    const totalPrice = roundCurrency(subtotalWithDiscount + vatAmount);
 
     return {
         totalItems,
         subtotal,
         subtotalWithDiscount,
-        discountApplied,
+        discountApplied: totalDiscount,
+        bonusDiscount,
+        percentageDiscount,
         vatAmount,
         totalPrice,
         isVolumePricingActive,

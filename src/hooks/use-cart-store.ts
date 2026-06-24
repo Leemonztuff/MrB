@@ -81,6 +81,7 @@ export const useCartStore = create<CartState>()(
       },
 
       addItem: (product: ProductWithPrice, quantity: number = 1) => {
+        if (quantity < 1) return;
         const { items, pricesIncludeVat, promotions, vatPercentage } = get();
         const existingItem = items.find(
           (item) => item.product.id === product.id
@@ -142,7 +143,12 @@ export const useCartStore = create<CartState>()(
       },
 
       clearCart: () => {
-        set({ items: [], totalItems: 0, subtotal: 0, subtotalWithDiscount: 0, discountApplied: 0, vatAmount: 0, totalPrice: 0, isVolumePricingActive: false, appliedPromotions: [], bonusInfo: {} });
+        set({ 
+          items: [], totalItems: 0, subtotal: 0, subtotalWithDiscount: 0, 
+          discountApplied: 0, vatAmount: 0, totalPrice: 0, 
+          isVolumePricingActive: false, appliedPromotions: [], bonusInfo: {},
+          promotions: [], clientId: null
+        });
       },
     }),
     {
@@ -150,11 +156,11 @@ export const useCartStore = create<CartState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) =>
         Object.fromEntries(
-          Object.entries(state).filter(([key]) => !['promotions', 'appliedPromotions', 'bonusInfo'].includes(key))
+          Object.entries(state).filter(([key]) => !['appliedPromotions', 'bonusInfo'].includes(key))
         ),
       onRehydrateStorage: () => (state, error) => {
         if (state) {
-          const { totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, isVolumePricingActive } = calculateCartTotals(state.items, state.pricesIncludeVat, [], state.vatPercentage);
+          const { totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, isVolumePricingActive, appliedPromotions, bonusInfo } = calculateCartTotals(state.items, state.pricesIncludeVat, state.promotions || [], state.vatPercentage);
           state.totalItems = totalItems;
           state.subtotal = subtotal;
           state.subtotalWithDiscount = subtotalWithDiscount;
@@ -162,9 +168,8 @@ export const useCartStore = create<CartState>()(
           state.vatAmount = vatAmount;
           state.totalPrice = totalPrice;
           state.isVolumePricingActive = isVolumePricingActive;
-          state.promotions = [];
-          state.appliedPromotions = [];
-          state.bonusInfo = {};
+          state.appliedPromotions = appliedPromotions;
+          state.bonusInfo = bonusInfo;
         }
       }
     }

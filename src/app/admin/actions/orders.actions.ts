@@ -23,7 +23,7 @@ export async function getOrders(filters?: { status?: string; query?: string }): 
     });
 }
 
-export async function getOrderWithDetails(orderId: string): Promise<ActionResponse<OrderWithItems>> {
+export async function getOrderWithDetails(orderId: string): Promise<ActionResponse<OrderWithItems & { hasDiscrepancy?: boolean; calculatedTotal?: number }>> {
     return handleAction(async () => {
         const supabase = await getSupabaseClientWithAuth();
         const { data, error } = await supabase
@@ -33,7 +33,16 @@ export async function getOrderWithDetails(orderId: string): Promise<ActionRespon
             .single();
 
         if (error) throw error;
-        return data;
+
+        const calculatedTotal = data.order_items?.reduce(
+            (sum: number, item: any) => sum + (item.quantity * item.price_per_unit), 0
+        ) ?? 0;
+
+        return {
+            ...data,
+            hasDiscrepancy: Math.abs(data.total_amount - calculatedTotal) > 0.01,
+            calculatedTotal,
+        };
     });
 }
 
@@ -85,10 +94,32 @@ export async function getLabelData(ids: string[]): Promise<ActionResponse<OrderW
     });
 }
 
-export async function publicConfirmOrder(orderId: string): Promise<ActionResponse<null>> {
+export async function publicConfirmOrder(orderId: string, token?: string): Promise<ActionResponse<null>> {
     return handleAction(async () => {
         const supabase = await createClient();
-        const { error } = await supabase.from('orders').update({ status: 'entregado' }).eq('id', orderId);
+
+        const { data: order, error: fetchError } = await supabase
+            .from('orders')
+            .select('id, status, confirmation_token')
+            .eq('id', orderId)
+            .maybeSingle();
+
+        if (fetchError || !order) {
+            throw new Error("Pedido no encontrado.");
+        }
+
+        if (token && order.confirmation_token && order.confirmation_token !== token) {
+            throw new Error("Token de confirmación inválido.");
+        }
+
+        if (order.status !== 'transito') {
+            throw new Error("Este pedido no puede ser confirmado en su estado actual.");
+        }
+
+        const { error } = await supabase
+            .from('orders')
+            .update({ status: 'entregado' })
+            .eq('id', orderId);
         if (error) throw error;
         return null;
     }, ['/admin', '/admin/orders']);

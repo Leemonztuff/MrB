@@ -48,7 +48,7 @@ export async function getPriceListById(id: string): Promise<{ data: DetailedPric
     return { data: detailedPriceList, error: null };
 }
 
-type UpsertPriceListPayload = { name: string, prices_include_vat: boolean, id?: string, base_price_list_id?: string, discount_percentage?: number };
+type UpsertPriceListPayload = { name: string, prices_include_vat: boolean, id?: string };
 export async function upsertPriceList(payload: UpsertPriceListPayload) {
   const result = await upsertEntity("price_lists", payload, ["/admin/commercial-settings"]);
    if (result.error && result.error.code === '23505') { // Unique constraint violation
@@ -76,7 +76,7 @@ export async function getUnassignedProductsForPriceList(priceListId: string) {
     const assignedIds = assignedProductIds.map(p => p.product_id);
     const query = supabase.from('products').select('*').order('name');
     if (assignedIds.length > 0) {
-      query.not('id', 'in', `(${assignedIds.join(',')})`)
+      query.not('id', 'in', assignedIds)
     }
     const { data, error } = await query;
     
