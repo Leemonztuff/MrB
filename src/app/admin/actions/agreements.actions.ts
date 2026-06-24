@@ -98,7 +98,7 @@ export async function getUnassignedPromotions(agreementId: string): Promise<Acti
         const query = supabase.from('promotions').select('*').order('name');
 
         if (assignedIds.length > 0) {
-            query.not('id', 'in', assignedIds);
+            query.not('id', 'in', `(${assignedIds.join(',')})`);
         }
 
         const { data, error } = await query;
@@ -151,7 +151,7 @@ export async function getUnassignedSalesConditions(agreementId: string): Promise
         const query = supabase.from('sales_conditions').select('*').order('name');
 
         if (assignedIds.length > 0) {
-            query.not('id', 'in', assignedIds);
+            query.not('id', 'in', `(${assignedIds.join(',')})`);
         }
 
         const { data, error } = await query;
