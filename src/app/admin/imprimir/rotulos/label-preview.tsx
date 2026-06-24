@@ -75,29 +75,19 @@ export function LabelPreview({
               )}
             </PDFDownloadLink>
 
-            <PDFDownloadLink
-              document={<LabelDocument labels={labels} format={format} logoUrl={logoUrl} />}
-              fileName={`rotulos-${new Date().toISOString().slice(0, 10)}.pdf`}
+            <Button
+              size="sm"
+              className="gap-2 bg-gray-900 hover:bg-gray-800"
+              onClick={() => window.print()}
             >
-              {({ loading }) => (
-                <Button
-                  size="sm"
-                  disabled={loading}
-                  className="gap-2 bg-gray-900 hover:bg-gray-800"
-                  onClick={() => {
-                    setTimeout(() => window.print(), 500);
-                  }}
-                >
-                  <Printer className="h-4 w-4" />
-                  {loading ? 'Generando...' : 'Imprimir'}
-                </Button>
-              )}
-            </PDFDownloadLink>
+              <Printer className="h-4 w-4" />
+              Imprimir
+            </Button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-6 print-area">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <PDFViewer width="100%" height={800} showToolbar={false}>
             <LabelDocument labels={labels} format={format} logoUrl={logoUrl} />
