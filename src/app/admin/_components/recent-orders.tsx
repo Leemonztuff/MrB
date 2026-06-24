@@ -15,10 +15,7 @@ import { ShippingLabelButton } from "./shipping-label-button";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Printer } from "lucide-react";
-
-const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
-}
+import { formatCurrency } from "@/lib/formatters";
 
 type NoteInfo = {
     clientName: string;

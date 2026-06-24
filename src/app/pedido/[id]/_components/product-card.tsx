@@ -14,6 +14,7 @@ import { getImageUrl } from "@/lib/placeholder-images";
 import { useCartStore } from "@/hooks/use-cart-store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/formatters";
 
 const PromoButton = ({ promo, onClick }: { promo: Promotion, onClick: (quantity: number) => void }) => {
   const buyQuantity = promo.rules.buy;
@@ -51,10 +52,6 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
 
   const isVolumePriceApplicable = isVolumePricingActive && product.volume_price && product.volume_price < product.price;
   const displayPrice = isVolumePriceApplicable ? product.volume_price : product.price;
-
-  const formatCurrency = (num: number) => {
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(num);
-  }
 
   return (
     <Card className="flex flex-col sm:flex-row w-full overflow-hidden glass border-white/5 hover:bg-white/5 transition-all duration-300 group">

@@ -40,6 +40,7 @@ import { unassignProductFromPriceList } from "@/app/admin/actions/pricelists.act
 import { useToast } from "@/hooks/use-toast";
 import { PriceListItemEditDialog } from "./edit-price-dialog";
 import { getImageUrl } from "@/lib/placeholder-images";
+import { formatCurrency } from "@/lib/formatters";
 
 export function PriceListProductsTable({ items, priceListId }: { items: PriceListItem[], priceListId: string }) {
   const [isPending, startTransition] = useTransition();
@@ -65,9 +66,9 @@ export function PriceListProductsTable({ items, priceListId }: { items: PriceLis
     });
   }
   
-  const formatCurrency = (value: number | null | undefined) => {
+  const formatCurrencySafe = (value: number | null | undefined) => {
     if (value === null || value === undefined) return "N/A";
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
+    return formatCurrency(value);
   }
 
   return (
@@ -105,7 +106,7 @@ export function PriceListProductsTable({ items, priceListId }: { items: PriceLis
                   priceListId={priceListId}
                   item={item}
                 >
-                  <Badge variant="secondary" className="text-base cursor-pointer hover:bg-secondary/80">{formatCurrency(item.price)}</Badge>
+                   <Badge variant="secondary" className="text-base cursor-pointer hover:bg-secondary/80">{formatCurrencySafe(item.price)}</Badge>
                 </PriceListItemEditDialog>
               </TableCell>
                <TableCell>
@@ -113,7 +114,7 @@ export function PriceListProductsTable({ items, priceListId }: { items: PriceLis
                   priceListId={priceListId}
                   item={item}
                 >
-                  <Badge variant="outline" className="text-base cursor-pointer hover:bg-muted">{formatCurrency(item.volume_price)}</Badge>
+                   <Badge variant="outline" className="text-base cursor-pointer hover:bg-muted">{formatCurrencySafe(item.volume_price)}</Badge>
                 </PriceListItemEditDialog>
               </TableCell>
               <TableCell>

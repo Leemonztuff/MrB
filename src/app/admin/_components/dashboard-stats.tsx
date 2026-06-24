@@ -5,10 +5,7 @@ import type { DashboardStats as StatsType } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Users, Package, TrendingUp, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
-}
+import { formatCurrency } from "@/lib/formatters";
 
 export function DashboardStats({ stats }: { stats: StatsType }) {
     return (

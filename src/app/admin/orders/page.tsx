@@ -3,7 +3,7 @@ import { getOrders } from "@/app/admin/actions/orders.actions";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/formatters";
 import { ShippingLabelButton } from "../_components/shipping-label-button";
 import { OrderStatusBadge } from "../_components/order-status-badge";
 

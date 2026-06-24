@@ -42,11 +42,10 @@ import {
 import { Promotion } from "@/types";
 import { deletePromotion } from "@/app/admin/actions/promotions.actions";
 import { useToast } from "@/hooks/use-toast";
-import { formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/formatters";
 import { EntityDialog } from "../../_components/entity-dialog";
 import { promotionFormConfig } from "./form-config";
-
-const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
+import { formatCurrency } from "@/lib/formatters";
 
 const formatRule = (rules: any): string => {
   if (!rules || typeof rules !== 'object') {

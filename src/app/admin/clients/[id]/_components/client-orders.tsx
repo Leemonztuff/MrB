@@ -19,13 +19,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/formatters";
 import { OrderStatusBadge } from "@/app/admin/_components/order-status-badge";
 import { ReprintLabelButton } from "@/app/admin/_components/reprint-label-button";
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
-}
+import { formatCurrency } from "@/lib/formatters";
 
 export function ClientOrders({ orders }: { orders: Order[] }) {
   return (

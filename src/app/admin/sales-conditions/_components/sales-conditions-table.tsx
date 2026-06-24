@@ -42,7 +42,7 @@ import {
 import { SalesCondition } from "@/types";
 import { deleteSalesCondition } from "@/app/admin/actions/sales-conditions.actions";
 import { useToast } from "@/hooks/use-toast";
-import { formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/formatters";
 import { EntityDialog } from "../../_components/entity-dialog";
 import { salesConditionFormConfig } from "./form-config";
 

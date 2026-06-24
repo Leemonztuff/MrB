@@ -4,10 +4,7 @@
 import type { ClientStats as StatsType } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Hash, ShoppingCart } from "lucide-react";
-
-const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
-}
+import { formatCurrency } from "@/lib/formatters";
 
 export function ClientStats({ stats }: { stats: StatsType }) {
     return (

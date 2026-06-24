@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { formatCurrency } from "@/lib/formatters";
 
 export function MobileCartIndicator() {
     const { totalItems, totalPrice } = useCartStore();
@@ -15,9 +16,6 @@ export function MobileCartIndicator() {
         // Solo mostrar si hay items en el carrito
         setIsVisible(totalItems > 0);
     }, [totalItems]);
-
-    const formatCurrency = (value: number) =>
-        new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
 
     const scrollToSummary = () => {
         const summaryElement = document.getElementById('order-summary-container');

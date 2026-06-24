@@ -16,6 +16,7 @@ import { getPublicWhatsappNumber } from "@/app/admin/actions/settings.actions";
 import type { Promotion } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { formatCurrency } from "@/lib/formatters";
 
 function formatWhatsAppMessage(
   clientName: string,
@@ -35,7 +36,7 @@ function formatWhatsAppMessage(
     .map((item) => `- ${item.quantity}x ${item.product.name}`)
     .join("\n");
 
-  const formatCurrency = (value: number) => `$${new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`;
+  const formatCurrencyWhatsApp = (value: number) => `$${new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`;
 
   const messageParts = [
     `✨ NUEVO PEDIDO #${orderId.slice(-4)} ✨\n`,
@@ -56,7 +57,7 @@ function formatWhatsAppMessage(
 
     const discountPromo = appliedPromotions.find(p => p.rules.type === 'min_amount_discount');
     if (discountPromo) {
-      promotionsText += `💸 *Descuento Aplicado (${discountPromo.rules.percentage}%):*\n-${formatCurrency(discountApplied)}\n`;
+      promotionsText += `💸 *Descuento Aplicado (${discountPromo.rules.percentage}%):*\n-${formatCurrencyWhatsApp(discountApplied)}\n`;
     }
 
     if (bonusText) {
@@ -75,17 +76,17 @@ function formatWhatsAppMessage(
 
   messageParts.push(
     `*Resumen de Pago:*\n` +
-    `Subtotal: ${formatCurrency(subtotal)}\n`
+    `Subtotal: ${formatCurrencyWhatsApp(subtotal)}\n`
   );
 
   if (discountApplied > 0) {
-    messageParts.push(`Descuento: -${formatCurrency(discountApplied)}\n`);
-    messageParts.push(`Subtotal c/ Descuento: ${formatCurrency(subtotalWithDiscount)}\n`);
+    messageParts.push(`Descuento: -${formatCurrencyWhatsApp(discountApplied)}\n`);
+    messageParts.push(`Subtotal c/ Descuento: ${formatCurrencyWhatsApp(subtotalWithDiscount)}\n`);
   }
 
   messageParts.push(
-    `IVA: ${formatCurrency(vatAmount)}\n` +
-    `*Total a Pagar: ${formatCurrency(totalPrice)}*`
+    `IVA: ${formatCurrencyWhatsApp(vatAmount)}\n` +
+    `*Total a Pagar: ${formatCurrencyWhatsApp(totalPrice)}*`
   );
 
   const message = messageParts.join("\n").trim();
@@ -99,7 +100,6 @@ function AppliedPromotions() {
   if (appliedPromotions.length === 0) {
     return null;
   }
-  const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
   const bonusEntries = Object.values(bonusInfo);
 
   return (
@@ -256,7 +256,6 @@ export function OrderSummary({
   };
 
   const hasItems = items.length > 0;
-  const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
 
   return (
     <Card className="glass border-white/5 overflow-hidden">
