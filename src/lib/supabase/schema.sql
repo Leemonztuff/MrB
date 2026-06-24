@@ -121,6 +121,7 @@ CREATE TABLE public.orders (
 );
 
 CREATE INDEX IF NOT EXISTS idx_orders_confirmation_token ON public.orders(confirmation_token);
+CREATE INDEX IF NOT EXISTS idx_orders_printed_at ON public.orders(printed_at);
 
 CREATE TABLE public.order_items (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
