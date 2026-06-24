@@ -2,13 +2,8 @@
 
 import { getDashboardData } from "@/app/admin/actions/dashboard.actions";
 import { PageHeader } from "@/components/shared/page-header";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardDescription, GlassCardContent } from "@/components/shared/glass-card";
+import { PageContainer } from "@/components/shared/page-container";
 import { DashboardStats } from "./_components/dashboard-stats";
 import { RecentOrders } from "./_components/recent-orders";
 import { PendingClients } from "./_components/pending-clients";
@@ -18,7 +13,7 @@ export default async function AdminDashboardPage() {
     const { stats, pendingOrders, pendingClients } = await getDashboardData();
 
     return (
-        <div className="grid flex-1 items-start gap-6 md:gap-10 pb-10">
+        <PageContainer gap="lg">
             <PageHeader
                 title="Dashboard"
                 description="Un resumen de la actividad de tu negocio."
@@ -28,32 +23,32 @@ export default async function AdminDashboardPage() {
 
             <div className="grid gap-6 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 items-start">
                 <div className="xl:col-span-2 space-y-6">
-                    <Card className="glass border-white/5 border-t-primary/20">
-                        <CardHeader className="pb-4">
-                            <CardTitle className="text-xl font-black italic tracking-tighter">Pedidos Recientes</CardTitle>
-                            <CardDescription className="text-xs uppercase font-bold tracking-widest opacity-60">
+                    <GlassCard className="border-t-primary/20">
+                        <GlassCardHeader className="pb-4">
+                            <GlassCardTitle>Pedidos Recientes</GlassCardTitle>
+                            <GlassCardDescription>
                                 Pendientes de despacho y carga
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="px-3 sm:px-6 pb-6">
+                            </GlassCardDescription>
+                        </GlassCardHeader>
+                        <GlassCardContent className="px-3 sm:px-6 pb-6">
                             <RecentOrders orders={pendingOrders} />
-                        </CardContent>
-                    </Card>
+                        </GlassCardContent>
+                    </GlassCard>
                 </div>
                 <div className="space-y-6">
-                    <Card className="glass border-white/5 border-t-primary/20">
-                        <CardHeader className="pb-4">
-                            <CardTitle className="text-xl font-black italic tracking-tighter">Clientes Pendientes</CardTitle>
-                            <CardDescription className="text-xs uppercase font-bold tracking-widest opacity-60">
+                    <GlassCard className="border-t-primary/20">
+                        <GlassCardHeader className="pb-4">
+                            <GlassCardTitle>Clientes Pendientes</GlassCardTitle>
+                            <GlassCardDescription>
                                 Esperando asignación de convenio
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="px-3 sm:px-6 pb-6">
+                            </GlassCardDescription>
+                        </GlassCardHeader>
+                        <GlassCardContent className="px-3 sm:px-6 pb-6">
                             <PendingClients clients={pendingClients} />
-                        </CardContent>
-                    </Card>
+                        </GlassCardContent>
+                    </GlassCard>
                 </div>
             </div>
-        </div>
+        </PageContainer>
     );
 }

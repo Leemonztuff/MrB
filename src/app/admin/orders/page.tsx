@@ -1,9 +1,11 @@
 
 import { getOrders } from "@/app/admin/actions/orders.actions";
 import { PageHeader } from "@/components/shared/page-header";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatDate } from "@/lib/formatters";
+import { PageContainer } from "@/components/shared/page-container";
+import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardDescription, GlassCardContent } from "@/components/shared/glass-card";
+import { DataTableHeader } from "@/components/shared/data-table-header";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
+import { formatDate, formatCurrency } from "@/lib/formatters";
 import { ShippingLabelButton } from "../_components/shipping-label-button";
 import { OrderStatusBadge } from "../_components/order-status-badge";
 
@@ -19,28 +21,28 @@ export default async function OrdersHistoryPage({
   });
 
   return (
-    <div className="grid gap-4 md:gap-8">
+    <PageContainer>
       <PageHeader
         title="Historial"
         description="Filtro de gestión y control total."
       />
 
-      <Card className="glass border-white/5 overflow-hidden">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-xl font-black italic tracking-tighter">Todos los Pedidos</CardTitle>
-          <CardDescription className="text-xs uppercase font-bold tracking-widest opacity-60">Control histórico de transacciones.</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
+      <GlassCard>
+        <GlassCardHeader className="pb-4">
+          <GlassCardTitle>Todos los Pedidos</GlassCardTitle>
+          <GlassCardDescription>Control histórico de transacciones.</GlassCardDescription>
+        </GlassCardHeader>
+        <GlassCardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow className="border-white/5 hover:bg-transparent">
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 pl-6">Fecha</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Cliente</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Monto</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Estado</TableHead>
-                <TableHead className="text-right pr-6">
+                <DataTableHeader>Fecha</DataTableHeader>
+                <DataTableHeader>Cliente</DataTableHeader>
+                <DataTableHeader>Monto</DataTableHeader>
+                <DataTableHeader>Estado</DataTableHeader>
+                <DataTableHeader align="right">
                   <span className="sr-only">Acciones</span>
-                </TableHead>
+                </DataTableHeader>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -60,7 +62,7 @@ export default async function OrdersHistoryPage({
                       {order.client_name_cache}
                     </TableCell>
                     <TableCell className="font-headline font-black text-primary/80">
-                      ${order.total_amount.toLocaleString()}
+                      {formatCurrency(order.total_amount)}
                     </TableCell>
                     <TableCell><OrderStatusBadge status={order.status} /></TableCell>
                     <TableCell className="text-right pr-6">
@@ -73,8 +75,8 @@ export default async function OrdersHistoryPage({
               )}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
-    </div>
+        </GlassCardContent>
+      </GlassCard>
+    </PageContainer>
   );
 }
