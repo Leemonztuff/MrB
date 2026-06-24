@@ -47,7 +47,8 @@ function LabelsPrintContent() {
         const order = orders.find(o => o.id === sel.id);
         if (order) {
           for (let i = 1; i <= sel.bundles; i++) {
-            const qrUrl = `${origin}/api/pedido/confirmar/${order.id}`;
+            const token = (order as any).confirmation_token || '';
+            const qrUrl = `${origin}/api/pedido/confirmar/${order.id}?token=${token}`;
             const qrDataUrl = await generateQRBase64(qrUrl, 150);
             allLabels.push({
               ...order,

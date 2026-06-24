@@ -183,6 +183,7 @@ export type LabelData = {
     created_at: string;
     total_amount: number;
     notes?: string | null;
+    confirmation_token?: string | null;
     clients?: {
         address?: string | null;
         cuit?: string | null;

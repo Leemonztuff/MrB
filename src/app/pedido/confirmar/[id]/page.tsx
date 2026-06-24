@@ -1,21 +1,47 @@
 
-import { getPublicOrderDetails, publicConfirmOrder } from "@/app/admin/actions/orders.actions";
+import { getPublicOrderDetails } from "@/app/admin/actions/orders.actions";
 import { Logo } from "@/app/logo";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { CheckCircle2, PackageCheck, AlertTriangle } from "lucide-react";
-import { redirect } from "next/navigation";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle2, AlertTriangle } from "lucide-react";
+
+const errorMessages: Record<string, string> = {
+  missing_token: "Falta el token de confirmación.",
+  confirmation_failed: "Error al confirmar el pedido. Intenta nuevamente.",
+  invalid_token: "Token de confirmación inválido.",
+  not_found: "Pedido no encontrado.",
+  invalid_status: "Este pedido no puede ser confirmado en su estado actual.",
+};
 
 export default async function OrderConfirmationPortal({
   params,
   searchParams
 }: {
   params: Promise<{ id: string }>,
-  searchParams: Promise<{ success?: string }>
+  searchParams: Promise<{ error?: string; success?: string }>
 }) {
   const { id } = await params;
+  const { error: errorParam } = await searchParams;
 
   const { data: order, error } = await getPublicOrderDetails(id);
+
+  if (errorParam) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-muted/20">
+        <Logo showText={true} className="mb-8" />
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <div className="flex justify-center mb-4 text-destructive">
+              <AlertTriangle className="h-12 w-12" />
+            </div>
+            <CardTitle>Error de Confirmación</CardTitle>
+            <CardDescription>
+              {errorMessages[errorParam] || "Ocurrió un error inesperado."}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   if (error || !order) {
     return (
@@ -33,9 +59,6 @@ export default async function OrderConfirmationPortal({
       </div>
     );
   }
-
-  // The confirmation is now handled by /api/pedido/confirmar/[id] 
-  // which redirects here once finished or if already processed.
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-muted/20">

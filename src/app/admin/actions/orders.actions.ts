@@ -112,7 +112,7 @@ export async function publicConfirmOrder(orderId: string, token?: string): Promi
             throw new Error("Token de confirmación inválido.");
         }
 
-        if (order.status !== 'transito') {
+        if (order.status !== 'armado' && order.status !== 'transito') {
             throw new Error("Este pedido no puede ser confirmado en su estado actual.");
         }
 
