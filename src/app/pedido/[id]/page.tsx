@@ -2,7 +2,7 @@
 import { getOrderPageData } from "@/app/actions/user.actions";
 import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/app/logo";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardDescription, GlassCardContent } from "@/components/shared/glass-card";
 import { AlertTriangle, Package2 } from "lucide-react";
 import {
   Accordion,
@@ -92,12 +92,12 @@ export default async function OrderPage({
             <Accordion type="multiple" defaultValue={categories} className="w-full space-y-6">
               {categories.map((category) => (
                 <AccordionItem key={category} value={category} className="border-none">
-                  <Card className="glass border-white/5 overflow-hidden shadow-2xl">
-                    <CardHeader className="p-0">
+                  <GlassCard className="shadow-2xl">
+                    <GlassCardHeader className="p-0">
                       <AccordionTrigger className="px-6 py-5 text-lg font-black italic tracking-tighter hover:no-underline hover:bg-white/5 transition-colors uppercase">
                         {formatCategoryTitle(category)}
                       </AccordionTrigger>
-                    </CardHeader>
+                    </GlassCardHeader>
                     <AccordionContent className="px-6 pb-6 pt-2">
                       <div className="flex flex-col gap-4">
                         {productsByCategory[category].map((product: ProductWithPrice) => (
@@ -105,22 +105,22 @@ export default async function OrderPage({
                         ))}
                       </div>
                     </AccordionContent>
-                  </Card>
+                  </GlassCard>
                 </AccordionItem>
               ))}
             </Accordion>
           ) : (
-            <Card className="mt-6 flex flex-col items-center justify-center py-24 glass border-white/5 border-dashed">
-              <CardHeader className="text-center">
+            <GlassCard className="mt-6 flex flex-col items-center justify-center py-24 border-dashed">
+              <GlassCardHeader className="text-center">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 mb-6 border border-white/10 shadow-xl">
                   <Package2 className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-2xl font-black italic tracking-tighter uppercase">Catálogo Vacío</CardTitle>
-                <CardDescription className="text-[10px] uppercase font-bold tracking-widest opacity-60">
+                <GlassCardTitle className="text-2xl uppercase">Catálogo Vacío</GlassCardTitle>
+                <GlassCardDescription>
                   Aún no se han asignado productos a este portal.
-                </CardDescription>
-              </CardHeader>
-            </Card>
+                </GlassCardDescription>
+              </GlassCardHeader>
+            </GlassCard>
           )}
         </div>
 

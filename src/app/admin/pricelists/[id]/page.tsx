@@ -3,13 +3,8 @@ import Link from "next/link";
 import { ArrowLeft, Edit, FileWarning, Package, PlusCircle } from "lucide-react";
 import { getPriceListById } from "@/app/admin/actions/pricelists.actions";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { PageContainer } from "@/components/shared/page-container";
+import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardDescription, GlassCardContent } from "@/components/shared/glass-card";
 import { PriceListProductsTable } from "./_components/pricelist-products-table";
 import { AssignProductToPriceListDialog } from "./_components/assign-product-dialog";
 import { EntityDialog } from "../../_components/entity-dialog";
@@ -43,7 +38,7 @@ export default async function PriceListDetailPage({
   }
 
   return (
-    <div className="grid flex-1 items-start gap-4 md:gap-8">
+    <PageContainer>
       <div className="flex items-center gap-4">
         <Button variant="outline" size="icon" className="h-7 w-7" asChild>
           <Link href="/admin/commercial-settings?tab=pricelists">
@@ -63,13 +58,13 @@ export default async function PriceListDetailPage({
           </EntityDialog>
         </div>
       </div>
-      <Card>
-        <CardHeader className="flex flex-row items-center">
+      <GlassCard>
+        <GlassCardHeader className="flex flex-row items-center">
           <div className="flex-grow">
-            <CardTitle>Productos en la Lista</CardTitle>
-            <CardDescription>
+            <GlassCardTitle>Productos en la Lista</GlassCardTitle>
+            <GlassCardDescription>
               Gestiona los productos y sus precios para esta lista.
-            </CardDescription>
+            </GlassCardDescription>
           </div>
           <AssignProductToPriceListDialog priceListId={priceList.id}>
             <Button size="sm" className="h-8 gap-1">
@@ -77,11 +72,11 @@ export default async function PriceListDetailPage({
               <span>Asignar Productos</span>
             </Button>
           </AssignProductToPriceListDialog>
-        </CardHeader>
-        <CardContent>
+        </GlassCardHeader>
+        <GlassCardContent>
           <PriceListProductsTable items={priceList.price_list_items} priceListId={priceList.id} />
-        </CardContent>
-      </Card>
-    </div>
+        </GlassCardContent>
+      </GlassCard>
+    </PageContainer>
   );
 }

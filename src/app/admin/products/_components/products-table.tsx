@@ -5,27 +5,12 @@
 import { MoreHorizontal, Trash2, Edit } from "lucide-react";
 import { useTransition } from "react";
 import Image from "next/image";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
+import { DataTableHeader, DataTableHeaderActions } from "@/components/shared/data-table-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { CardFooter } from "@/components/ui/card";
+import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent } from "@/components/shared/glass-card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,7 +23,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
@@ -86,8 +70,8 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
       {/* Mobile View */}
       <div className="grid gap-3 sm:hidden">
         {products.map((product) => (
-          <Card key={product.id} className="glass border-white/5 hover:bg-white/5 transition-all duration-300 overflow-hidden">
-            <CardHeader className="flex flex-row items-start gap-4 pb-3">
+          <GlassCard key={product.id} className="hover:bg-white/5 transition-all duration-300">
+            <GlassCardHeader className="flex flex-row items-start gap-4 pb-3">
               <div className="relative shrink-0">
                 <Image
                   src={getImageUrl("product", { seed: product.id }, product.image_url)}
@@ -99,7 +83,7 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
                 />
               </div>
               <div className="flex-grow min-w-0">
-                <CardTitle className="text-lg font-black italic tracking-tighter truncate leading-tight">{product.name}</CardTitle>
+                <GlassCardTitle className="text-lg truncate leading-tight">{product.name}</GlassCardTitle>
                 {product.category && (
                   <div className="mt-1">
                     <Badge variant="outline" className="text-[8px] uppercase font-black tracking-widest py-0 px-2 bg-primary/5 border-primary/20 text-primary">
@@ -108,63 +92,47 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
                   </div>
                 )}
               </div>
-            </CardHeader>
-            <CardContent className="pb-4">
+            </GlassCardHeader>
+            <GlassCardContent className="pb-4">
               <p className="text-[10px] text-muted-foreground/80 font-medium line-clamp-2 leading-relaxed italic">
                 {product.description || "Sin descripción disponible."}
               </p>
-            </CardContent>
+            </GlassCardContent>
             <CardFooter className="flex gap-2 p-4 pt-0">
               <EntityDialog formConfig={productFormConfig} entity={product}>
                 <Button variant="secondary" size="sm" className="flex-1 h-10 text-[10px] font-black uppercase tracking-widest rounded-xl bg-white/5 border-white/5 hover:bg-white/10">
                   <Edit className="mr-2 h-3.5 w-3.5" /> Editar
                 </Button>
               </EntityDialog>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex-1 h-10 text-[10px] font-black uppercase tracking-widest text-destructive/70 hover:text-destructive hover:bg-destructive/5 rounded-xl">
-                    <Trash2 className="mr-2 h-3.5 w-3.5" /> Eliminar
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="glass border-white/5">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="font-black italic">¿Estás seguro?</AlertDialogTitle>
-                    <AlertDialogDescription className="text-sm">
-                      Esta acción no se puede deshacer. Esto eliminará permanentemente el producto.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel className="rounded-xl border-white/5">Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => handleDelete(product.id)}
-                      disabled={isPending}
-                      className="bg-destructive hover:bg-destructive/90 rounded-xl"
-                    >
-                      {isPending ? "Eliminando..." : "Eliminar"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <ConfirmActionDialog
+                title="¿Estás seguro?"
+                description="Esta acción no se puede deshacer. Esto eliminará permanentemente el producto."
+                confirmLabel="Eliminar"
+                pendingLabel="Eliminando..."
+                onConfirm={() => handleDelete(product.id)}
+              >
+                <Button variant="ghost" size="sm" className="flex-1 h-10 text-[10px] font-black uppercase tracking-widest text-destructive/70 hover:text-destructive hover:bg-destructive/5 rounded-xl">
+                  <Trash2 className="mr-2 h-3.5 w-3.5" /> Eliminar
+                </Button>
+              </ConfirmActionDialog>
             </CardFooter>
-          </Card>
+          </GlassCard>
         ))}
       </div>
 
       {/* Desktop View */}
-      <div className="hidden sm:block glass border-white/5 rounded-xl overflow-hidden">
-        <CardContent className="p-0">
+      <GlassCard className="hidden sm:block">
+        <GlassCardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow className="border-none hover:bg-transparent">
-                <TableHead className="w-[80px] pl-6 py-4">
+                <DataTableHeader className="w-[80px]">
                   <span className="sr-only">Imagen</span>
-                </TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Nombre</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Descripción</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Creado el</TableHead>
-                <TableHead className="text-right pr-6">
-                  <span className="sr-only">Acciones</span>
-                </TableHead>
+                </DataTableHeader>
+                <DataTableHeader>Nombre</DataTableHeader>
+                <DataTableHeader>Descripción</DataTableHeader>
+                <DataTableHeader>Creado el</DataTableHeader>
+                <DataTableHeaderActions />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -205,37 +173,21 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
                           </DropdownMenuItem>
                         </EntityDialog>
                         <DropdownMenuSeparator className="bg-white/5" />
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem
-                              className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer font-bold py-2"
-                              onSelect={(e) => e.preventDefault()}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Eliminar
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="glass border-white/5">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="font-black italic">
-                                ¿Estás seguro?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription className="text-sm">
-                                Esta acción no se puede deshacer. Esto eliminará permanentemente el producto.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="rounded-xl border-white/5">Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(product.id)}
-                                disabled={isPending}
-                                className="bg-destructive hover:bg-destructive/90 rounded-xl"
-                              >
-                                {isPending ? "Eliminando..." : "Eliminar"}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <ConfirmActionDialog
+                          title="¿Estás seguro?"
+                          description="Esta acción no se puede deshacer. Esto eliminará permanentemente el producto."
+                          confirmLabel="Eliminar"
+                          pendingLabel="Eliminando..."
+                          onConfirm={() => handleDelete(product.id)}
+                        >
+                          <DropdownMenuItem
+                            className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer font-bold py-2"
+                            onSelect={(e) => e.preventDefault()}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </ConfirmActionDialog>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -243,14 +195,14 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
               ))}
             </TableBody>
           </Table>
-        </CardContent>
+        </GlassCardContent>
         <CardFooter className="px-6 py-4 border-t border-white/5">
           <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
             Mostrando <strong className="text-foreground">{products.length}</strong> de{" "}
             <strong className="text-foreground">{products.length}</strong> productos
           </div>
         </CardFooter>
-      </div>
+      </GlassCard>
     </>
   );
 }

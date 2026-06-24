@@ -3,26 +3,11 @@
 
 import { MoreHorizontal, Trash2, Edit } from "lucide-react";
 import { useTransition } from "react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
+import { DataTableHeader, DataTableHeaderActions } from "@/components/shared/data-table-header";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { CardFooter } from "@/components/ui/card";
+import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardDescription, GlassCardContent } from "@/components/shared/glass-card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +20,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
@@ -100,66 +84,51 @@ export default function PromotionsTable({ promotions, emptyState }: PromotionsTa
       {/* Mobile View */}
       <div className="grid gap-3 sm:hidden">
         {promotions.map((promotion) => (
-          <Card key={promotion.id} className="glass border-white/5 hover:bg-white/5 transition-all duration-300">
-            <CardHeader className="pb-3 text-center">
-              <CardTitle className="text-xl font-black italic tracking-tighter leading-none">{promotion.name}</CardTitle>
-              <CardDescription className="text-[10px] uppercase font-bold tracking-widest opacity-60">{promotion.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="pb-4">
+          <GlassCard key={promotion.id} className="hover:bg-white/5 transition-all duration-300">
+            <GlassCardHeader className="pb-3 text-center">
+              <GlassCardTitle className="leading-none">{promotion.name}</GlassCardTitle>
+              <GlassCardDescription>{promotion.description}</GlassCardDescription>
+            </GlassCardHeader>
+            <GlassCardContent className="pb-4">
               <div className="text-[10px] bg-white/5 p-4 rounded-xl border border-white/10 text-center">
                 <p className="font-black uppercase tracking-widest text-primary mb-1">Regla Aplicada</p>
                 <p className="text-muted-foreground font-medium italic">{formatRule(promotion.rules)}</p>
               </div>
-            </CardContent>
+            </GlassCardContent>
             <CardFooter className="flex justify-center gap-3 p-4 pt-0">
               <EntityDialog formConfig={promotionFormConfig} entity={promotion}>
                 <Button variant="secondary" size="sm" className="h-10 px-6 text-[10px] font-black uppercase tracking-widest rounded-xl bg-white/5 border-white/5 hover:bg-white/10">
                   <Edit className="mr-2 h-3.5 w-3.5" /> Editar
                 </Button>
               </EntityDialog>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-10 px-6 text-[10px] font-black uppercase tracking-widest text-destructive/70 hover:text-destructive hover:bg-destructive/5 rounded-xl">
-                    <Trash2 className="mr-2 h-3.5 w-3.5" /> Eliminar
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="glass border-white/5">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="font-black italic">¿Estás seguro?</AlertDialogTitle>
-                    <AlertDialogDescription className="text-sm">
-                      Esta acción no se puede deshacer. Esto eliminará permanentemente la promoción.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel className="rounded-xl border-white/5">Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => handleDelete(promotion.id)}
-                      disabled={isPending}
-                      className="bg-destructive hover:bg-destructive/90 rounded-xl"
-                    >
-                      {isPending ? "Eliminando..." : "Eliminar"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <ConfirmActionDialog
+                title="¿Estás seguro?"
+                description="Esta acción no se puede deshacer. Esto eliminará permanentemente la promoción."
+                confirmLabel="Eliminar"
+                pendingLabel="Eliminando..."
+                onConfirm={() => handleDelete(promotion.id)}
+              >
+                <Button variant="ghost" size="sm" className="h-10 px-6 text-[10px] font-black uppercase tracking-widest text-destructive/70 hover:text-destructive hover:bg-destructive/5 rounded-xl">
+                  <Trash2 className="mr-2 h-3.5 w-3.5" /> Eliminar
+                </Button>
+              </ConfirmActionDialog>
             </CardFooter>
-          </Card>
+          </GlassCard>
         ))}
       </div>
 
       {/* Desktop View */}
       <div className="hidden sm:block">
-        <div className="p-0 glass border-white/5 rounded-xl overflow-hidden">
+        <GlassCard>
+          <GlassCardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow className="border-white/5 hover:bg-transparent">
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 pl-6">Nombre</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Descripción</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Regla</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Creada el</TableHead>
-                <TableHead className="text-right pr-6">
-                  <span className="sr-only">Acciones</span>
-                </TableHead>
+                <DataTableHeader>Nombre</DataTableHeader>
+                <DataTableHeader>Descripción</DataTableHeader>
+                <DataTableHeader>Regla</DataTableHeader>
+                <DataTableHeader>Creada el</DataTableHeader>
+                <DataTableHeaderActions />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -192,37 +161,21 @@ export default function PromotionsTable({ promotions, emptyState }: PromotionsTa
                           </DropdownMenuItem>
                         </EntityDialog>
                         <DropdownMenuSeparator className="bg-white/5" />
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem
-                              className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer font-bold py-2"
-                              onSelect={(e) => e.preventDefault()}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Eliminar
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="glass border-white/5">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="font-black italic">
-                                ¿Estás seguro?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription className="text-sm">
-                                Esta acción no se puede deshacer. Esto eliminará permanentemente la promoción.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="rounded-xl border-white/5">Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(promotion.id)}
-                                disabled={isPending}
-                                className="bg-destructive hover:bg-destructive/90 rounded-xl"
-                              >
-                                {isPending ? "Eliminando..." : "Eliminar"}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <ConfirmActionDialog
+                          title="¿Estás seguro?"
+                          description="Esta acción no se puede deshacer. Esto eliminará permanentemente la promoción."
+                          confirmLabel="Eliminar"
+                          pendingLabel="Eliminando..."
+                          onConfirm={() => handleDelete(promotion.id)}
+                        >
+                          <DropdownMenuItem
+                            className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer font-bold py-2"
+                            onSelect={(e) => e.preventDefault()}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </ConfirmActionDialog>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -230,7 +183,8 @@ export default function PromotionsTable({ promotions, emptyState }: PromotionsTa
               ))}
             </TableBody>
           </Table>
-        </div>
+        </GlassCardContent>
+        </GlassCard>
         <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 px-6 py-4">
           Mostrando <strong className="text-foreground">{promotions.length}</strong> de{" "}
           <strong className="text-foreground">{promotions.length}</strong> promociones

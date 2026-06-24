@@ -3,17 +3,8 @@
 import { useTransition, useCallback } from "react";
 import Link from 'next/link';
 import { MoreHorizontal, Trash2, FileText, Copy, Edit } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
+import { DataTableHeader, DataTableHeaderActions } from "@/components/shared/data-table-header";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,18 +17,11 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { CardFooter } from "@/components/ui/card";
+import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardContent } from "@/components/shared/glass-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -82,16 +66,16 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
       {/* Mobile View: Cards */}
       <div className="grid gap-3 sm:hidden">
         {agreements.map((agreement) => (
-          <Card key={agreement.id} className="glass border-white/5 hover:bg-white/5 transition-all duration-300">
-            <CardHeader className="pb-3 text-center">
+          <GlassCard key={agreement.id} className="hover:bg-white/5 transition-all duration-300">
+            <GlassCardHeader className="pb-3 text-center">
               <div className="flex flex-col gap-1 items-center">
                 <Badge variant="outline" className="w-fit text-[8px] uppercase font-black tracking-widest py-0 px-2 bg-primary/5 border-primary/20 text-primary mb-1">
                   {agreement.client_type}
                 </Badge>
-                <CardTitle className="text-xl font-black italic tracking-tighter leading-none">{agreement.agreement_name}</CardTitle>
+                <GlassCardTitle className="leading-none">{agreement.agreement_name}</GlassCardTitle>
               </div>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4 pb-4">
+            </GlassCardHeader>
+            <GlassCardContent className="grid grid-cols-2 gap-4 pb-4">
               <div className="text-center">
                 <p className="text-[8px] uppercase font-black tracking-widest text-muted-foreground/60 mb-1">Lista de Precios</p>
                 <p className="font-headline font-black text-primary text-sm truncate">{agreement.price_lists?.name ?? "Base"}</p>
@@ -104,7 +88,7 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
                 <p className="text-[8px] uppercase font-black tracking-widest text-muted-foreground/60 mb-1">Condiciones de Venta</p>
                 <p className="font-headline font-black text-foreground text-sm">{agreement.sales_condition_count ?? 0}</p>
               </div>
-            </CardContent>
+            </GlassCardContent>
             <CardFooter className="flex flex-col items-stretch gap-3 p-4 pt-0">
               <Button asChild variant="default" size="sm" className="h-10 text-[10px] font-black uppercase tracking-widest bg-primary hover:bg-primary/90 rounded-xl shadow-lg shadow-primary/10">
                 <Link href={`/admin/agreements/${agreement.id}`}>
@@ -118,51 +102,35 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
                     <Edit className="mr-2 h-3.5 w-3.5" /> Editar
                   </Button>
                 </EntityDialog>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-10 text-[9px] font-black uppercase tracking-widest text-destructive/70 hover:text-destructive hover:bg-destructive/5 rounded-xl">
-                      <Trash2 className="mr-2 h-3.5 w-3.5" /> Eliminar
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="glass border-white/5">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="font-black italic">¿Estás seguro?</AlertDialogTitle>
-                      <AlertDialogDescription className="text-sm">
-                        Esta acción no se puede deshacer. Eliminará permanentemente el convenio y sus reglas.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel className="rounded-xl border-white/5">Cancelar</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => handleDelete(agreement.id)}
-                        disabled={isPending}
-                        className="bg-destructive hover:bg-destructive/90 rounded-xl"
-                      >
-                        {isPending ? "Eliminando..." : "Eliminar"}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <ConfirmActionDialog
+                  title="¿Estás seguro?"
+                  description="Esta acción no se puede deshacer. Eliminará permanentemente el convenio y sus reglas."
+                  confirmLabel="Eliminar"
+                  pendingLabel="Eliminando..."
+                  onConfirm={() => handleDelete(agreement.id)}
+                >
+                  <Button variant="ghost" size="sm" className="h-10 text-[9px] font-black uppercase tracking-widest text-destructive/70 hover:text-destructive hover:bg-destructive/5 rounded-xl">
+                    <Trash2 className="mr-2 h-3.5 w-3.5" /> Eliminar
+                  </Button>
+                </ConfirmActionDialog>
               </div>
             </CardFooter>
-          </Card>
+          </GlassCard>
         ))}
       </div>
 
       {/* Desktop View: Table */}
-      <Card className="hidden sm:block glass border-white/5 overflow-hidden">
-        <CardContent className="p-0">
+      <GlassCard className="hidden sm:block">
+        <GlassCardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow className="border-white/5 hover:bg-transparent">
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 pl-6">Nombre del Convenio</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 text-center">Tipo Cliente</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 text-center">Lista Precios</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 text-center">Promos</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 text-center">Condiciones</TableHead>
-                <TableHead className="text-right pr-6">
-                  <span className="sr-only">Acciones</span>
-                </TableHead>
+                <DataTableHeader>Nombre del Convenio</DataTableHeader>
+                <DataTableHeader className="text-center">Tipo Cliente</DataTableHeader>
+                <DataTableHeader className="text-center">Lista Precios</DataTableHeader>
+                <DataTableHeader className="text-center">Promos</DataTableHeader>
+                <DataTableHeader className="text-center">Condiciones</DataTableHeader>
+                <DataTableHeaderActions />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -208,37 +176,21 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
                           </EntityDialog>
 
                           <DropdownMenuSeparator className="bg-white/5" />
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem
-                                className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer font-bold py-2"
-                                onSelect={(e) => e.preventDefault()}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Eliminar
-                              </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="glass border-white/5">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle className="font-black italic">
-                                  ¿Estás seguro?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription className="text-sm">
-                                  Esta acción no se puede deshacer. Eliminará permanentemente el convenio y sus asignaciones.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel className="rounded-xl border-white/5">Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(agreement.id)}
-                                  disabled={isPending}
-                                  className="bg-destructive hover:bg-destructive/90 rounded-xl"
-                                >
-                                  {isPending ? "Eliminando..." : "Eliminar"}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          <ConfirmActionDialog
+                            title="¿Estás seguro?"
+                            description="Esta acción no se puede deshacer. Eliminará permanentemente el convenio y sus asignaciones."
+                            confirmLabel="Eliminar"
+                            pendingLabel="Eliminando..."
+                            onConfirm={() => handleDelete(agreement.id)}
+                          >
+                            <DropdownMenuItem
+                              className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer font-bold py-2"
+                              onSelect={(e) => e.preventDefault()}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Eliminar
+                            </DropdownMenuItem>
+                          </ConfirmActionDialog>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -247,14 +199,14 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
               ))}
             </TableBody>
           </Table>
-        </CardContent>
+        </GlassCardContent>
         <CardFooter className="px-6 py-4 border-t border-white/5">
           <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
             Mostrando <strong className="text-foreground">{agreements.length}</strong> de{" "}
             <strong className="text-foreground">{agreements.length}</strong> convenios.
           </div>
         </CardFooter>
-      </Card>
+      </GlassCard>
     </>
   );
 }

@@ -5,17 +5,8 @@
 import { useTransition, useCallback, useEffect, useState } from "react";
 import { MoreHorizontal, Archive, Link as LinkIcon, Copy, FilePen } from "lucide-react";
 import Link from "next/link";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
+import { DataTableHeader, DataTableHeaderActions } from "@/components/shared/data-table-header";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,11 +19,11 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { CardFooter } from "@/components/ui/card";
+import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardDescription, GlassCardContent } from "@/components/shared/glass-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -106,18 +97,18 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
         {clients.map((client) => {
           const onboardingLink = isClient ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
           return (
-            <Card key={client.id} className="glass border-white/5 hover:bg-white/5 transition-all duration-300">
+            <GlassCard key={client.id} className="hover:bg-white/5 transition-all duration-300">
               <Link href={`/admin/clients/${client.id}`}>
-                <CardHeader className="pb-3">
+                <GlassCardHeader className="pb-3">
                   <div className="flex justify-between items-start gap-4">
                     <div className="min-w-0">
-                      <CardTitle className="text-lg font-black italic tracking-tighter truncate">
+                      <GlassCardTitle className="text-lg truncate">
                         {client.contact_name || "Cliente pendiente"}
-                      </CardTitle>
+                      </GlassCardTitle>
                       {client.email && (
-                        <CardDescription className="text-[10px] truncate uppercase font-bold tracking-widest opacity-60">
+                        <GlassCardDescription className="text-[10px] truncate">
                           {client.email}
-                        </CardDescription>
+                        </GlassCardDescription>
                       )}
                     </div>
                     <Badge
@@ -130,11 +121,11 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                       {statusMap[client.status].label}
                     </Badge>
                   </div>
-                </CardHeader>
-                <CardContent className="pb-4">
+                </GlassCardHeader>
+                <GlassCardContent className="pb-4">
                   <p className="text-[8px] uppercase font-black tracking-widest text-muted-foreground/60">Convenio</p>
                   <p className="font-headline font-black text-primary truncate">{client.agreements?.agreement_name || "Sin asignar"}</p>
-                </CardContent>
+                </GlassCardContent>
               </Link>
               <CardFooter className="flex flex-col gap-3 items-stretch p-4 pt-0">
                 <AssignAgreementDialog client={client}>
@@ -154,51 +145,35 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                     <Copy className="mr-2 h-3.5 w-3.5" />
                     Alta
                   </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-10 text-[9px] font-black uppercase tracking-widest text-destructive/70 hover:text-destructive hover:bg-destructive/5 rounded-xl">
-                        <Archive className="mr-2 h-3.5 w-3.5" /> Archivar
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="glass border-white/5">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="font-black italic">¿Archivar Cliente?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-sm">
-                          Esta acción ocultará al cliente de la lista principal. Podrás verlo en un futuro desde la sección de archivados.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="rounded-xl border-white/5">Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleArchive(client.id)}
-                          disabled={isPending}
-                          className="bg-destructive hover:bg-destructive/90 rounded-xl"
-                        >
-                          {isPending ? "Archivando..." : "Confirmar Archivo"}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <ConfirmActionDialog
+                    title="¿Archivar Cliente?"
+                    description="Esta acción ocultará al cliente de la lista principal. Podrás verlo en un futuro desde la sección de archivados."
+                    confirmLabel="Confirmar Archivo"
+                    pendingLabel="Archivando..."
+                    onConfirm={() => handleArchive(client.id)}
+                  >
+                    <Button variant="ghost" size="sm" className="h-10 text-[9px] font-black uppercase tracking-widest text-destructive/70 hover:text-destructive hover:bg-destructive/5 rounded-xl">
+                      <Archive className="mr-2 h-3.5 w-3.5" /> Archivar
+                    </Button>
+                  </ConfirmActionDialog>
                 </div>
               </CardFooter>
-            </Card>
+            </GlassCard>
           )
         })}
       </div>
 
       {/* Desktop View: Table */}
-      <Card className="hidden sm:block glass border-white/5 overflow-hidden">
-        <CardContent className="p-0">
+      <GlassCard className="hidden sm:block">
+        <GlassCardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow className="border-white/5 hover:bg-transparent">
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 pl-6">Nombre</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Email</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Convenio</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Estado</TableHead>
-                <TableHead className="text-right pr-6">
-                  <span className="sr-only">Acciones</span>
-                </TableHead>
+                <DataTableHeader>Nombre</DataTableHeader>
+                <DataTableHeader>Email</DataTableHeader>
+                <DataTableHeader>Convenio</DataTableHeader>
+                <DataTableHeader>Estado</DataTableHeader>
+                <DataTableHeaderActions />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -268,35 +243,21 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                             Copiar Link de Alta
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-white/5" />
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem
-                                className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer font-bold py-2"
-                                onSelect={(e) => e.preventDefault()}
-                              >
-                                <Archive className="mr-2 h-4 w-4" />
-                                Archivar
-                              </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="glass border-white/5">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle className="font-black italic">¿Archivar Cliente?</AlertDialogTitle>
-                                <AlertDialogDescription className="text-sm">
-                                  Esta acción ocultará al cliente de la lista principal. Podrás verlo en un futuro desde la sección de archivados.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel className="rounded-xl border-white/5">Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleArchive(client.id)}
-                                  disabled={isPending}
-                                  className="bg-destructive hover:bg-destructive/90 rounded-xl"
-                                >
-                                  {isPending ? "Archivando..." : "Confirmar Archivo"}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          <ConfirmActionDialog
+                            title="¿Archivar Cliente?"
+                            description="Esta acción ocultará al cliente de la lista principal. Podrás verlo en un futuro desde la sección de archivados."
+                            confirmLabel="Confirmar Archivo"
+                            pendingLabel="Archivando..."
+                            onConfirm={() => handleArchive(client.id)}
+                          >
+                            <DropdownMenuItem
+                              className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer font-bold py-2"
+                              onSelect={(e) => e.preventDefault()}
+                            >
+                              <Archive className="mr-2 h-4 w-4" />
+                              Archivar
+                            </DropdownMenuItem>
+                          </ConfirmActionDialog>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -305,13 +266,13 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
               })}
             </TableBody>
           </Table>
-        </CardContent>
+        </GlassCardContent>
         <CardFooter className="px-6 py-4 border-t border-white/5">
           <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
             Mostrando <strong className="text-foreground">{clients.length}</strong> de <strong className="text-foreground">{clients.length}</strong> clientes.
           </div>
         </CardFooter>
-      </Card>
+      </GlassCard>
     </>
   );
 }

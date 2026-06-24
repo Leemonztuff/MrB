@@ -6,6 +6,8 @@ import { getClientById, getClientStats } from "@/app/admin/actions/clients.actio
 import { getClientOrders } from "@/app/admin/actions/dashboard.actions";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageContainer } from "@/components/shared/page-container";
+import { ErrorDisplay } from "@/components/shared/error-display";
 import dynamic from "next/dynamic";
 
 const ClientDetailsLoader = dynamic(
@@ -17,7 +19,7 @@ const ClientDetailsLoader = dynamic(
 
 function ClientDetailsSkeleton() {
   return (
-    <div className="grid flex-1 items-start gap-4 md:gap-8">
+    <PageContainer>
       <div className="flex items-center gap-4">
         <Skeleton className="h-7 w-7 rounded-full" />
         <Skeleton className="h-7 w-48" />
@@ -32,7 +34,7 @@ function ClientDetailsSkeleton() {
         <Skeleton className="h-96 md:col-span-2" />
         <Skeleton className="h-96 md:col-span-1" />
       </div>
-    </div>
+    </PageContainer>
   );
 }
 
@@ -72,7 +74,7 @@ export default async function ClientDetailPage({
   const orders = ordersResult;
 
   return (
-    <div className="grid flex-1 items-start gap-4 md:gap-8">
+    <PageContainer>
       <Suspense fallback={<ClientDetailsSkeleton />}>
         <ClientDetailsLoader
           client={client}
@@ -80,6 +82,6 @@ export default async function ClientDetailPage({
           orders={orders}
         />
       </Suspense>
-    </div>
+    </PageContainer>
   );
 }
