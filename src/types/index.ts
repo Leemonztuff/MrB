@@ -51,6 +51,7 @@ export type Order = {
     status: 'armado' | 'transito' | 'entregado';
     client_name_cache: string;
     notes?: string | null;
+    printed_at?: string | null;
 }
 
 export type OrderWithItems = Order & {

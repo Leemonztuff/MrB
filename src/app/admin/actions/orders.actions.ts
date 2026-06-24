@@ -137,3 +137,17 @@ export async function bulkUpdateOrderStatus(orderIds: string[], status: 'armado'
         return null;
     }, ['/admin', '/admin/orders']);
 }
+
+export async function markOrdersAsPrinted(orderIds: string[]): Promise<ActionResponse<null>> {
+    return handleAction(async () => {
+        const supabase = await getSupabaseClientWithAuth();
+        const { error } = await supabase
+            .from('orders')
+            .update({ printed_at: new Date().toISOString() })
+            .in('id', orderIds)
+            .is('printed_at', null);
+
+        if (error) throw error;
+        return null;
+    }, ['/admin', '/admin/orders']);
+}

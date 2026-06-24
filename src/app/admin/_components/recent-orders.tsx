@@ -5,7 +5,7 @@ import { useTransition, useState } from "react";
 import type { Order } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { StickyNote, ChevronRight, Package, Truck, Clock } from "lucide-react";
+import { StickyNote, ChevronRight, Package, Truck, Clock, AlertTriangle } from "lucide-react";
 import { updateOrderStatus, bulkUpdateOrderStatus } from "@/app/admin/actions/orders.actions";
 import { useToast } from "@/hooks/use-toast";
 import { OrderNoteWidget } from "./order-note-widget";
@@ -13,9 +13,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ShippingLabelButton } from "./shipping-label-button";
 import { formatDistanceToNow } from "date-fns";
+import { openPrintPage } from "@/lib/print-helpers";
 import { es } from "date-fns/locale";
 import { Printer } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type NoteInfo = {
     clientName: string;
@@ -28,10 +37,21 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
     const [orders, setOrders] = useState(initialOrders);
 
     const [activeNote, setActiveNote] = useState<NoteInfo | null>(null);
-    const [selectedOrders, setSelectedOrders] = useState<Record<string, boolean>>({});
+    const [selectedOrders, setSelectedOrders] = useState<Record<string, boolean>>({})
     const [orderBundles, setOrderBundles] = useState<Record<string, number>>({});
+    const [showUnprintedWarning, setShowUnprintedWarning] = useState(false);
+    const [pendingDispatchIds, setPendingDispatchIds] = useState<string[]>([]);
 
     const handleUpdateStatus = (orderId: string, nextStatus: 'transito' | 'entregado') => {
+        if (nextStatus === 'transito') {
+            const order = orders.find(o => o.id === orderId);
+            if (order && !order.printed_at) {
+                setPendingDispatchIds([orderId]);
+                setShowUnprintedWarning(true);
+                return;
+            }
+        }
+
         startTransition(async () => {
             const { error } = await updateOrderStatus(orderId, nextStatus);
             if (error) {
@@ -45,6 +65,18 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
 
     const confirmBatchDispatch = () => {
         const orderIds = selectedOrderList.map(o => o.id);
+        const unprintedOrders = orders.filter(o => orderIds.includes(o.id) && !o.printed_at);
+
+        if (unprintedOrders.length > 0) {
+            setPendingDispatchIds(orderIds);
+            setShowUnprintedWarning(true);
+            return;
+        }
+
+        executeDispatch(orderIds);
+    }
+
+    const executeDispatch = (orderIds: string[]) => {
         startTransition(async () => {
             const { error } = await bulkUpdateOrderStatus(orderIds, 'transito');
             if (error) {
@@ -58,6 +90,7 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
                 });
             }
         });
+        setShowUnprintedWarning(false);
     }
 
     const selectedOrderList = Object.entries(selectedOrders)
@@ -173,8 +206,7 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
                                     className="h-9 w-9 sm:h-10 sm:w-10 glass border-white/10 hover:bg-white/5 rounded-xl transition-all"
                                     title="Generar Rótulo"
                                     onClick={() => {
-                                        const data = JSON.stringify([{ id: order.id, bundles: orderBundles[order.id] || 1 }]);
-                                        window.open(`/admin/imprimir/rotulos?data=${encodeURIComponent(data)}`, '_blank');
+                                        openPrintPage([{ id: order.id, bundles: orderBundles[order.id] || 1 }]);
                                     }}
                                 >
                                     <Printer className="h-4 w-4" />
@@ -206,6 +238,44 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
                     />
                 </div>
             )}
+
+            <Dialog open={showUnprintedWarning} onOpenChange={setShowUnprintedWarning}>
+                <DialogContent className="glass border-white/10">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-amber-500">
+                            <AlertTriangle className="h-5 w-5" />
+                            Pedidos sin imprimir
+                        </DialogTitle>
+                        <DialogDescription>
+                            Algunos pedidos seleccionados no tienen rótulo impreso. 
+                            ¿Deseas imprimir los rótulos antes de despachar?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                const unprintedOrders = selectedOrderList.filter(o => {
+                                    const order = orders.find(ord => ord.id === o.id);
+                                    return order && !order.printed_at;
+                                });
+                                openPrintPage(unprintedOrders);
+                                setShowUnprintedWarning(false);
+                            }}
+                            className="gap-2"
+                        >
+                            <Printer className="h-4 w-4" />
+                            Imprimir primero
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => executeDispatch(pendingDispatchIds)}
+                        >
+                            Despachar de todas formas
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

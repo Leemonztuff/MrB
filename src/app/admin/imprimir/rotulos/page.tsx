@@ -1,77 +1,99 @@
 'use client';
 
-import { useEffect, useState, Suspense, useCallback } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import { getLabelData } from '@/app/admin/actions/orders.actions';
 import { getPublicLogoUrl } from '@/app/admin/actions/settings.actions';
+import { markOrdersAsPrinted } from '@/app/admin/actions/orders.actions';
 import { generateQRBase64 } from '@/lib/qr-generator';
+import { getPrintSelections, clearPrintSelections } from '@/lib/print-helpers';
 import { LabelPreview } from './label-preview';
 import { Loader2, AlertTriangle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { LabelData } from '@/types';
 
 function LabelsPrintContent() {
-  const searchParams = useSearchParams();
   const router = useRouter();
   const [labels, setLabels] = useState<LabelData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
-    const dataParam = searchParams.get('data');
-    if (!dataParam) {
-      setError('No se proporcionaron datos de pedidos.');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const selections: { id: string; bundles: number }[] = JSON.parse(dataParam);
-      const [labelResult, logo] = await Promise.all([
-        getLabelData(selections.map(o => o.id)),
-        getPublicLogoUrl(),
-      ]);
-
-      setLogoUrl(logo);
-
-      if (labelResult.error || !labelResult.data) {
-        throw new Error(labelResult.error?.message || 'Error al cargar pedidos');
+  useEffect(() => {
+    const loadData = async () => {
+      const selections = getPrintSelections();
+      if (!selections || selections.length === 0) {
+        setError('No se proporcionaron datos de pedidos. Abre esta pagina desde el panel de administracion.');
+        setLoading(false);
+        return;
       }
 
-      const orders = labelResult.data;
-      const origin = window.location.origin;
-      const allLabels: LabelData[] = [];
+      try {
+        const [labelResult, logo] = await Promise.all([
+          getLabelData(selections.map(o => o.id)),
+          getPublicLogoUrl(),
+        ]);
 
-      for (const sel of selections) {
-        const order = orders.find(o => o.id === sel.id);
-        if (order) {
-          for (let i = 1; i <= sel.bundles; i++) {
+        setLogoUrl(logo);
+
+        if (labelResult.error || !labelResult.data) {
+          throw new Error(labelResult.error?.message || 'Error al cargar pedidos');
+        }
+
+        const orders = labelResult.data;
+        const origin = window.location.origin;
+
+        // Build all label data entries
+        const labelEntries: { order: typeof orders[0]; bundleIdx: number; totalBundles: number; qrUrl: string }[] = [];
+        for (const sel of selections) {
+          const order = orders.find(o => o.id === sel.id);
+          if (order) {
             const token = (order as any).confirmation_token || '';
             const qrUrl = `${origin}/api/pedido/confirmar/${order.id}?token=${token}`;
-            const qrDataUrl = await generateQRBase64(qrUrl, 150);
-            allLabels.push({
-              ...order,
-              bundleIdx: i,
-              totalBundles: sel.bundles,
-              _qrDataUrl: qrDataUrl,
-            });
+            for (let i = 1; i <= sel.bundles; i++) {
+              labelEntries.push({ order, bundleIdx: i, totalBundles: sel.bundles, qrUrl });
+            }
           }
         }
+
+        // Generate all QR codes in parallel
+        const qrDataUrls = await Promise.all(
+          labelEntries.map(entry => generateQRBase64(entry.qrUrl, 150))
+        );
+
+        const allLabels: LabelData[] = labelEntries.map((entry, idx) => ({
+          ...entry.order,
+          bundleIdx: entry.bundleIdx,
+          totalBundles: entry.totalBundles,
+          _qrDataUrl: qrDataUrls[idx],
+        }));
+
+        setLabels(allLabels);
+        clearPrintSelections();
+
+        // Mark orders as printed
+        const orderIds = [...new Set(selections.map(s => s.id))];
+        await markOrdersAsPrinted(orderIds);
+      } catch (err: any) {
+        console.error('Print Error:', err);
+        let message = 'Error al procesar los datos. Verifica que los pedidos sean validos.';
+
+        if (err?.message?.includes('No tienes permisos')) {
+          message = 'Tu sesion ha expirado. Por favor, inicia sesion nuevamente.';
+        } else if (err?.message?.includes('Pedido no encontrado')) {
+          message = 'Uno o mas pedidos no fueron encontrados. Pueden haber sido eliminados.';
+        } else if (err?.message?.includes('Failed to fetch')) {
+          message = 'Error de conexion. Verifica tu conexion a internet e intenta nuevamente.';
+        }
+
+        setError(message);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      setLabels(allLabels);
-    } catch (err) {
-      console.error('Print Error:', err);
-      setError('Error al procesar los datos. Verifica que los pedidos sean validos.');
-    } finally {
-      setLoading(false);
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, []);
 
   if (loading) {
     return (

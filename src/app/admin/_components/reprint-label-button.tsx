@@ -4,11 +4,11 @@
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { openPrintPage } from "@/lib/print-helpers";
 
-export function ReprintLabelButton({ orderId }: { orderId: string }) {
+export function ReprintLabelButton({ orderId, bundles = 1 }: { orderId: string; bundles?: number }) {
     const handleReprint = () => {
-        const data = JSON.stringify([{ id: orderId, bundles: 1 }]);
-        window.open(`/admin/imprimir/rotulos?data=${encodeURIComponent(data)}`, '_blank');
+        openPrintPage([{ id: orderId, bundles }]);
     };
 
     return (

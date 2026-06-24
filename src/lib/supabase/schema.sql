@@ -116,6 +116,7 @@ CREATE TABLE public.orders (
     client_name_cache text NOT NULL,
     notes text,
     confirmation_token uuid DEFAULT gen_random_uuid(),
+    printed_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

@@ -4,8 +4,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer, Loader2 } from "lucide-react";
-import { bulkUpdateOrderStatus } from "@/app/admin/actions/orders.actions";
 import { useToast } from "@/hooks/use-toast";
+import { openPrintPage } from "@/lib/print-helpers";
 
 export function ShippingLabelButton({ orders }: { orders: { id: string, bundles: number }[] }) {
   const [loading, setLoading] = useState(false);
@@ -14,13 +14,10 @@ export function ShippingLabelButton({ orders }: { orders: { id: string, bundles:
   const handlePrint = async () => {
     setLoading(true);
     try {
-      const data = JSON.stringify(orders);
-      // Abrir la página de impresión en una nueva pestaña
-      window.open(`/admin/imprimir/rotulos?data=${encodeURIComponent(data)}`, '_blank');
-
+      openPrintPage(orders);
       toast({
         title: "Rótulos Generados",
-        description: `Se han preparado ${orders.length} rótulos para impresión.`,
+        description: `Se han preparado ${orders.reduce((acc, o) => acc + o.bundles, 0)} rótulos para impresión.`,
       });
     } catch (err) {
       console.error("Error triggering print flow:", err);
