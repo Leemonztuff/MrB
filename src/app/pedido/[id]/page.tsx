@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/accordion";
 import { OrderSummary } from "./_components/order-summary";
 import { MobileCartIndicator } from "./_components/mobile-cart-indicator";
+import { CartDrawerWrapper } from "./_components/cart-drawer-wrapper";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { AgreementPromotion, ProductWithPrice } from "@/types";
@@ -37,7 +38,7 @@ export default async function OrderPage({
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
         <h1 className="mb-4 text-2xl font-bold">Error al cargar el portal</h1>
         <p className="mb-8 text-muted-foreground">
-          {error?.message || "No se pudo encontrar la información necesaria para este pedido."}
+          {error?.message || "No se pudo encontrar la informacion necesaria para este pedido."}
         </p>
         <Button asChild>
           <a href="/">Volver al inicio</a>
@@ -56,7 +57,6 @@ export default async function OrderPage({
       return category;
     }
 
-    // Explicitly handle the special formats
     if (category === 'Hairstyle') {
       return `Hairstyle / ${translation}`;
     }
@@ -64,42 +64,41 @@ export default async function OrderPage({
       return `Facial & Beard / ${translation}`;
     }
 
-    // Fallback for other translations
     return translation;
   }
 
   return (
     <div className="min-h-screen bg-transparent">
       <header className="sticky top-0 z-40 glass border-b border-white/5 backdrop-blur-md">
-        <div className="container mx-auto flex h-20 items-center justify-between px-6">
+        <div className="container mx-auto flex h-16 sm:h-20 items-center justify-between px-4 sm:px-6">
           <Logo showText={true} logoUrl={logoUrl} />
           <div className="text-right">
-            <p className="text-sm font-black italic tracking-tighter text-foreground">{client?.contact_name ?? "Cliente"}</p>
-            <p className="text-[10px] uppercase font-black tracking-widest text-primary/70">{agreement.agreement_name}</p>
+            <p className="text-xs sm:text-sm font-black italic tracking-tighter text-foreground">{client?.contact_name ?? "Cliente"}</p>
+            <p className="text-[9px] sm:text-[10px] uppercase font-black tracking-widest text-primary/70">{agreement.agreement_name}</p>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 items-start p-4 lg:p-12">
+      <main className="container mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start p-4 lg:p-12">
         {/* Columna Izquierda: Productos */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-6">
           <div>
-            <h2 className="text-4xl font-black italic tracking-tighter text-foreground">Selección de Productos</h2>
-            <p className="mt-2 text-xs uppercase font-bold tracking-widest text-muted-foreground/60 italic">Personaliza tu pedido con nuestra selección exclusiva.</p>
+            <h2 className="text-2xl sm:text-4xl font-black italic tracking-tighter text-foreground">Seleccion de Productos</h2>
+            <p className="mt-1 sm:mt-2 text-[11px] sm:text-xs uppercase font-bold tracking-widest text-muted-foreground/60 italic">Personaliza tu pedido con nuestra seleccion exclusiva.</p>
           </div>
 
           {categories.length > 0 ? (
-            <Accordion type="multiple" defaultValue={categories} className="w-full space-y-6">
+            <Accordion type="multiple" className="w-full space-y-4 sm:space-y-6">
               {categories.map((category) => (
                 <AccordionItem key={category} value={category} className="border-none">
                   <GlassCard className="shadow-2xl">
                     <GlassCardHeader className="p-0">
-                      <AccordionTrigger className="px-6 py-5 text-lg font-black italic tracking-tighter hover:no-underline hover:bg-white/5 transition-colors uppercase">
+                      <AccordionTrigger className="px-4 sm:px-6 py-4 sm:py-5 text-base sm:text-lg font-black italic tracking-tighter hover:no-underline hover:bg-white/5 transition-colors uppercase">
                         {formatCategoryTitle(category)}
                       </AccordionTrigger>
                     </GlassCardHeader>
-                    <AccordionContent className="px-6 pb-6 pt-2">
-                      <div className="flex flex-col gap-4">
+                    <AccordionContent className="px-4 sm:px-6 pb-4 sm:pb-6 pt-2">
+                      <div className="flex flex-col gap-2 sm:gap-4">
                         {productsByCategory[category].map((product: ProductWithPrice) => (
                           <ProductCard key={product.id} product={product} promotions={promotions} />
                         ))}
@@ -115,9 +114,9 @@ export default async function OrderPage({
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 mb-6 border border-white/10 shadow-xl">
                   <Package2 className="h-8 w-8 text-primary" />
                 </div>
-                <GlassCardTitle className="text-2xl uppercase">Catálogo Vacío</GlassCardTitle>
+                <GlassCardTitle className="text-2xl uppercase">Catalogo Vacio</GlassCardTitle>
                 <GlassCardDescription>
-                  Aún no se han asignado productos a este portal.
+                  An no se han asignado productos a este portal.
                 </GlassCardDescription>
               </GlassCardHeader>
             </GlassCard>
@@ -141,7 +140,13 @@ export default async function OrderPage({
           </Suspense>
         </div>
       </main>
-      <MobileCartIndicator />
+      <CartDrawerWrapper
+        clientId={client?.id ?? "generic"}
+        clientName={client?.contact_name ?? "Cliente"}
+        pricesIncludeVat={agreement.price_lists?.prices_include_vat ?? true}
+        promotions={promotions}
+        vatPercentage={vatPercentage}
+      />
     </div>
   );
 }

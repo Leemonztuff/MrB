@@ -4,32 +4,27 @@
 import { useCartStore } from "@/hooks/use-cart-store";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { formatCurrency } from "@/lib/formatters";
 
-export function MobileCartIndicator() {
+interface MobileCartIndicatorProps {
+  onOpenCart: () => void;
+}
+
+export function MobileCartIndicator({ onOpenCart }: MobileCartIndicatorProps) {
     const { totalItems, totalPrice } = useCartStore();
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
-        // Solo mostrar si hay items en el carrito
         setIsVisible(totalItems > 0);
     }, [totalItems]);
-
-    const scrollToSummary = () => {
-        const summaryElement = document.getElementById('order-summary-container');
-        if (summaryElement) {
-            summaryElement.scrollIntoView({ behavior: 'smooth' });
-        }
-    };
 
     if (!isVisible) return null;
 
     return (
         <div className="fixed bottom-6 left-4 right-4 z-50 lg:hidden animate-in fade-in slide-in-from-bottom-10 duration-300">
             <Button
-                onClick={scrollToSummary}
+                onClick={onOpenCart}
                 className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/20 flex items-center justify-between px-6 rounded-2xl group"
             >
                 <div className="flex items-center gap-3">
@@ -46,7 +41,7 @@ export function MobileCartIndicator() {
                 </div>
 
                 <div className="flex items-center gap-2 font-bold text-sm">
-                    Ver Resumen
+                    Ver
                     <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </div>
             </Button>

@@ -10,13 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Gift, Truck, Percent } from "lucide-react";
+import { ArrowRight, Gift, Truck, Percent, Trash2 } from "lucide-react";
 import { submitOrder } from "@/app/actions/user.actions";
 import { getPublicWhatsappNumber } from "@/app/admin/actions/settings.actions";
 import type { Promotion } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/formatters";
+import { ConfirmSendDialog } from "./confirm-send-dialog";
 
 function formatWhatsAppMessage(
   clientName: string,
@@ -129,7 +130,7 @@ function AppliedPromotions() {
                 </div>
                 <div>
                   <p className="font-black italic tracking-tighter text-primary uppercase text-sm">{promo.name}</p>
-                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">Bonificación aplicada:</p>
+                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">Bonificacion aplicada:</p>
                   <ul className="mt-2 text-[11px] space-y-1 font-medium italic">
                     {bonusEntries.map(info => (
                       <li key={info.productName} className="flex items-center gap-2">
@@ -171,18 +172,21 @@ export function OrderSummary({
   pricesIncludeVat,
   promotions,
   vatPercentage,
+  isEmbedded = false,
 }: {
   clientId: string;
   clientName: string;
   pricesIncludeVat: boolean;
   promotions: Promotion[];
   vatPercentage: number;
+  isEmbedded?: boolean;
 }) {
-  const { items, totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, clearCart, setAgreement, clientId: storeClientId, appliedPromotions, bonusInfo } = useCartStore();
+  const { items, totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, clearCart, setAgreement, clientId: storeClientId, appliedPromotions, bonusInfo, removeItem, getItemQuantity, addItem } = useCartStore();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [notes, setNotes] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     getPublicWhatsappNumber().then(setWhatsappNumber);
@@ -196,7 +200,7 @@ export function OrderSummary({
   const handleSend = () => {
     if (items.length === 0) {
       toast({
-        title: "Carrito vacío",
+        title: "Carrito vacio",
         description: "Agrega productos antes de enviar el pedido.",
         variant: "destructive",
       });
@@ -204,13 +208,18 @@ export function OrderSummary({
     }
     if (!whatsappNumber) {
       toast({
-        title: "Error de configuración",
-        description: "El número de WhatsApp no está configurado. Contacta al administrador.",
+        title: "Error de configuracion",
+        description: "El numero de WhatsApp no esta configurado. Contacta al administrador.",
         variant: "destructive",
       });
       return;
     }
 
+    setShowConfirm(true);
+  };
+
+  const confirmSend = () => {
+    setShowConfirm(false);
     startTransition(async () => {
       const result = await submitOrder({
         cart: items,
@@ -223,7 +232,7 @@ export function OrderSummary({
       if (result.error || !result.data) {
         toast({
           title: "Error al guardar el pedido",
-          description: result.error?.message || "Ocurrió un error inesperado.",
+          description: result.error?.message || "Ocurrio un error inesperado.",
           variant: "destructive",
         });
         return;
@@ -258,79 +267,126 @@ export function OrderSummary({
   const hasItems = items.length > 0;
 
   return (
-    <Card className="glass border-white/5 overflow-hidden">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-xl font-black italic tracking-tighter">Resumen de Pedido</CardTitle>
-        {hasItems && <CardDescription className="text-xs uppercase font-bold tracking-widest opacity-60">Revisa tu orden antes de confirmar.</CardDescription>}
-      </CardHeader>
-      <CardContent>
-        {hasItems ? (
-          <div className="flex flex-col gap-6">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Subtotal</span>
-                <span className="font-bold">{formatCurrency(subtotal)}</span>
+    <>
+      <ConfirmSendDialog
+        open={showConfirm}
+        onOpenChange={setShowConfirm}
+        onConfirm={confirmSend}
+        totalItems={totalItems}
+        totalPrice={totalPrice}
+        isPending={isPending}
+      />
+      <Card className="glass border-white/5 overflow-hidden">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl font-black italic tracking-tighter">Resumen de Pedido</CardTitle>
+          {hasItems && <CardDescription className="text-xs uppercase font-bold tracking-widest opacity-60">Revisa tu orden antes de confirmar.</CardDescription>}
+        </CardHeader>
+        <CardContent>
+          {hasItems ? (
+            <div className="flex flex-col gap-6">
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {items.map((item) => (
+                  <div key={item.product.id} className="flex items-center gap-2 py-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold truncate">{item.product.name}</p>
+                      <p className="text-[11px] text-muted-foreground">{formatCurrency(item.product.price)} c/u</p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7 shrink-0"
+                        onClick={() => removeItem(item.product.id)}
+                      >
+                        {getItemQuantity(item.product.id) === 1 ? (
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        ) : (
+                          <span className="text-xs font-bold">-</span>
+                        )}
+                      </Button>
+                      <span className="w-6 text-center text-sm font-bold tabular-nums">{getItemQuantity(item.product.id)}</span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7 shrink-0"
+                        onClick={() => addItem(item.product, 1)}
+                      >
+                        <span className="text-xs font-bold">+</span>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-              {discountApplied > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-destructive/70">Descuento aplicado</span>
-                  <span className="font-black text-destructive">-{formatCurrency(discountApplied)}</span>
-                </div>
-              )}
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">IVA ({vatPercentage}%)</span>
-                <span className="font-bold">{formatCurrency(vatAmount)}</span>
-              </div>
+
               <Separator className="bg-white/5" />
-              <div className="flex justify-between items-center py-2">
-                <span className="text-sm font-black uppercase tracking-widest">Total Neto</span>
-                <span className="font-headline font-black text-2xl text-primary">{formatCurrency(totalPrice)}</span>
-              </div>
-              <div className="flex justify-between items-center py-1 bg-white/5 rounded-lg px-3">
-                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Unidades totales</span>
-                <span className="font-black italic text-sm">{totalItems}</span>
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="notes" className="text-[10px] font-black uppercase tracking-widest opacity-60 pl-1">Notas del Pedido (Opcional)</Label>
-              <Textarea
-                id="notes"
-                placeholder="Ej: Instrucciones de entrega o facturación..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="glass border-white/10 focus:border-primary/50 min-h-[100px] text-sm italic font-medium placeholder:text-muted-foreground/30 rounded-xl"
-              />
-            </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Subtotal</span>
+                  <span className="font-bold">{formatCurrency(subtotal)}</span>
+                </div>
+                {discountApplied > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-destructive/70">Descuento aplicado</span>
+                    <span className="font-black text-destructive">-{formatCurrency(discountApplied)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">IVA ({vatPercentage}%)</span>
+                  <span className="font-bold">{formatCurrency(vatAmount)}</span>
+                </div>
+                <Separator className="bg-white/5" />
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm font-black uppercase tracking-widest">Total Neto</span>
+                  <span className="font-headline font-black text-2xl text-primary">{formatCurrency(totalPrice)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 bg-white/5 rounded-lg px-3">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Unidades totales</span>
+                  <span className="font-black italic text-sm">{totalItems}</span>
+                </div>
+              </div>
 
-            <Separator className="bg-white/5" />
-            <Button
-              onClick={handleSend}
-              size="lg"
-              className="w-full h-14 gap-3 font-black uppercase tracking-widest rounded-xl shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground group"
-              disabled={isPending}
-            >
-              {isPending ? "Procesando..." : "Enviar por WhatsApp"}
-              <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </div>
-        ) : (
-          <div className="py-12 text-center">
-            <p className="text-muted-foreground font-black italic tracking-tighter text-lg opacity-40 uppercase">Tu carrito está vacío.</p>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="notes" className="text-[10px] font-black uppercase tracking-widest opacity-60 pl-1">Notas del Pedido (Opcional)</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Ej: Instrucciones de entrega o facturacion..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  maxLength={500}
+                  className="glass border-white/10 focus:border-primary/50 min-h-[80px] text-sm italic font-medium placeholder:text-muted-foreground/30 rounded-xl"
+                />
+              </div>
+
+              <Separator className="bg-white/5" />
+              <Button
+                onClick={handleSend}
+                size="lg"
+                className="w-full h-14 gap-3 font-black uppercase tracking-widest rounded-xl shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground group"
+                disabled={isPending || items.length === 0}
+              >
+                {isPending ? "Procesando..." : "Enviar por WhatsApp"}
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </div>
+          ) : (
+            <div className="py-12 text-center">
+              <p className="text-muted-foreground font-black italic tracking-tighter text-lg opacity-40 uppercase">Tu carrito esta vacio.</p>
+            </div>
+          )}
+        </CardContent>
+        {hasItems && appliedPromotions.length > 0 && (
+          <>
+            <div className="px-6 pb-2">
+              <Separator className="bg-white/5" />
+            </div>
+            <CardFooter className="flex-col items-start gap-4 p-6 pt-2">
+              <h3 className="text-xs font-black uppercase tracking-widest opacity-60">Beneficios Aplicados</h3>
+              <AppliedPromotions />
+            </CardFooter>
+          </>
         )}
-      </CardContent>
-      {hasItems && appliedPromotions.length > 0 && (
-        <>
-          <div className="px-6 pb-2">
-            <Separator className="bg-white/5" />
-          </div>
-          <CardFooter className="flex-col items-start gap-4 p-6 pt-2">
-            <h3 className="text-xs font-black uppercase tracking-widest opacity-60">Beneficios Aplicados</h3>
-            <AppliedPromotions />
-          </CardFooter>
-        </>
-      )}
-    </Card>
+      </Card>
+    </>
   );
 }
