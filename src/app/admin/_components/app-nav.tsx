@@ -10,7 +10,6 @@ import {
   FileText,
   Briefcase,
   History,
-  Database,
 } from "lucide-react";
 import {
   Tooltip,
@@ -36,7 +35,6 @@ const navItems: NavItem[] = [
   { href: "/admin/clients", icon: Users, label: "Clientes" },
   { href: "/admin/agreements", icon: FileText, label: "Convenios" },
   { href: "/admin/commercial-settings", icon: Briefcase, label: "Comercial" },
-  { href: "/admin/backup", icon: Database, label: "Backup" },
 ];
 
 export function AppNav({ isMobile, stats }: { isMobile: boolean, stats: DashboardStats }) {

@@ -114,7 +114,7 @@ export async function exportImages(): Promise<{
   for (const bucket of STORAGE_BUCKETS) {
     const { data: files, error: listError } = await admin.storage
       .from(bucket)
-      .list("", { recursive: true });
+      .list("");
 
     if (listError) {
       console.error(`Error listando bucket '${bucket}':`, listError.message);

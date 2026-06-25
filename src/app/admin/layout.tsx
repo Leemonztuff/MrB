@@ -4,7 +4,6 @@ import {
   LogOut,
   Settings,
   Menu,
-  Database,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -109,21 +108,7 @@ export default async function AdminLayout({
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link
-                  href="/admin/backup"
-                  className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-all hover:text-primary hover:bg-primary/5 active:scale-95"
-                  )}
-                >
-                  <Database className="h-5 w-5" />
-                  <span className="sr-only">Backup</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Backup</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <form action={logout}>
+                                  <form action={logout}>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -174,13 +159,6 @@ export default async function AdminLayout({
                   >
                     <Settings className="h-5 w-5" />
                     Configuración
-                  </Link>
-                  <Link
-                    href="/admin/backup"
-                    className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
-                  >
-                    <Database className="h-5 w-5" />
-                    Backup
                   </Link>
                   <form action={logout}>
                     <button className="w-full flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground">
