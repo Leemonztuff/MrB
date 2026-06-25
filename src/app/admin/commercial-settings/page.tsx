@@ -12,7 +12,6 @@ import PromotionsTab from './_components/promotions-tab';
 import SalesConditionsTab from './_components/sales-conditions-tab';
 import Link from "next/link";
 import { ClipboardList, Percent, Landmark } from "lucide-react";
-import { CommandParser } from "./_components/command-parser";
 
 const tabsConfig = [
   { value: "pricelists", label: "Listas de Precios", icon: ClipboardList },
@@ -33,9 +32,7 @@ export default async function CommercialSettingsPage({
       <PageHeader
         title="Gestión Comercial"
         description="Estructura de precios, promociones y reglas."
-      >
-        <CommandParser />
-      </PageHeader>
+      />
 
       <Tabs value={currentTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3 h-12 glass border-white/5 p-1 rounded-xl mb-6">

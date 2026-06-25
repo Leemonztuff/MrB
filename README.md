@@ -13,7 +13,6 @@ Sistema moderno de gestión de pedidos B2B diseñado para proveedores de product
 - **Framework**: Next.js 15 (App Router)
 - **Base de Datos & Auth**: Supabase
 - **Estilos**: Tailwind CSS + shadcn/ui
-- **IA**: Google Genkit (Gemini 2.0)
 - **Estado**: Zustand (Carrito de compras)
 
 ## 📦 Configuración Local

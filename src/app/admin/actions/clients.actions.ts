@@ -7,10 +7,8 @@ import type {
   Client,
   ClientStats,
   OrderWithItems,
-  AnalyzeClientOutput,
   ActionResponse,
 } from '@/types';
-import { analyzeClientFlow } from '@/ai/flows/analyze-client-flow';
 import { clientSchema } from '@/lib/validations/client.schema';
 import { formatAddress, formatDeliveryWindow } from '@/lib/formatters';
 import { supabaseAdmin } from '@/lib/supabase/admin';
@@ -199,25 +197,6 @@ export async function getClientStats(
 
     if (error) throw error;
     return data as ClientStats;
-  });
-}
-
-export async function analyzeClient(
-  clientId: string
-): Promise<ActionResponse<AnalyzeClientOutput>> {
-  return handleAction(async () => {
-    const [clientRes, ordersRes] = await Promise.all([
-      getClientById(clientId),
-      getClientOrdersWithDetails(clientId),
-    ]);
-
-    if (!clientRes.success || !clientRes.data) throw new Error('No se pudo encontrar al cliente.');
-    if (!ordersRes.success) throw new Error('No se pudieron obtener los pedidos del cliente.');
-
-    const client = clientRes.data;
-    const orders = ordersRes.data ?? [];
-
-    return await analyzeClientFlow({ client, orders });
   });
 }
 

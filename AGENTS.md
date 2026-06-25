@@ -41,7 +41,6 @@ After setting env vars, run `src/lib/supabase/schema.sql` in Supabase SQL Editor
 - **DB & Auth**: Supabase (4 clients: `client.ts`, `server.ts`, `admin.ts`, `middleware.ts` in `src/lib/supabase/`)
 - **UI**: Tailwind CSS + shadcn/ui (components in `src/components/ui/`), dark-mode only (class-based, always applied)
 - **State**: Zustand (`src/hooks/use-cart-store.ts` — shopping cart)
-- **AI**: Google Genkit with Gemini 2.0 Flash (`src/ai/`)
 - **Forms**: React Hook Form + Zod
 - **PDF**: `@react-pdf/renderer` for shipping labels
 
@@ -66,7 +65,6 @@ After setting env vars, run `src/lib/supabase/schema.sql` in Supabase SQL Editor
 - `src/app/(admin)/admin/` — Admin pages, sub-routes for clients, products, agreements, orders, promotions, price lists
 - `src/app/actions/` — Server Actions (user auth, settings)
 - `src/app/admin/actions/` — Admin-specific Server Actions (per entity)
-- `src/ai/flows/` — Genkit AI flows
 - `src/components/shared/` — Reusable UI components
 - `src/types/index.ts` — Main TypeScript type definitions
 
@@ -74,4 +72,3 @@ After setting env vars, run `src/lib/supabase/schema.sql` in Supabase SQL Editor
 
 - shadcn/ui components: use `npx shadcn@latest add <component>` to add new ones
 - Custom font: Century Gothic (loaded via `next/font/local` in root layout)
-- Genkit version is pinned to `1.28.0` via `overrides` in package.json — do not update without checking compatibility

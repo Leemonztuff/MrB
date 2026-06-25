@@ -10,17 +10,13 @@ Este documento sirve como guía de referencia para la estructura, lógica y fluj
 - **UI**: Tailwind CSS, shadcn/ui, Radix UI
 - **Gestión de Estado (Cliente)**: Zustand
 - **Validación de Formularios**: React Hook Form, Zod
-- **Funcionalidad IA**: Genkit (Google AI)
+
 
 ## 2. Mapa de Directorios Clave
 
 ```
 /
 ├── src/
-│   ├── ai/                 # Lógica de Inteligencia Artificial (Genkit)
-│   │   ├── flows/          # Flujos de Genkit (e.g., análisis de clientes, parser de comandos)
-│   │   └── genkit.ts       # Configuración e inicialización de Genkit
-│   │
 │   ├── app/                # Rutas y lógica principal (Next.js App Router)
 │   │   ├── (admin)/        # Rutas protegidas del panel de administración
 │   │   │   ├── admin/

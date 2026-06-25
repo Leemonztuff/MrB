@@ -3,14 +3,13 @@
 
 import Link from 'next/link';
 import { useTransition, useCallback, useEffect, useState } from "react";
-import { Info, Landmark, ArrowLeft, Edit, FilePen, Sparkles, MapPin, Calendar, Instagram, Mail, Fingerprint } from "lucide-react";
+import { Info, Landmark, ArrowLeft, Edit, FilePen, MapPin, Calendar, Instagram, Mail, Fingerprint } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ClientHeader } from "./client-header";
 import { ClientInfo } from "./client-info";
 import { ClientStats } from "./client-stats";
 import { ClientOrders } from "./client-orders";
-import { ClientAnalysis } from './client-analysis';
 import type { Client, ClientStats as StatsType, Order, AgreementSalesCondition } from "@/types";
 import { Skeleton } from '@/components/ui/skeleton';
 import { getAgreementSalesConditions } from "@/app/admin/actions/agreements.actions";
@@ -112,7 +111,6 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
       <div className="grid gap-6 md:grid-cols-3">
           <div className="md:col-span-2 space-y-6">
               {stats && <ClientStats stats={stats} />}
-              <ClientAnalysis clientId={client.id} />
               <ClientOrders orders={orders} />
           </div>
 

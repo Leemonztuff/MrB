@@ -115,13 +115,6 @@ export type AppSettingsRow = {
     value: any;
 };
 
-export type AnalyzeClientOutput = {
-    summary: string;
-    observations: string[];
-    opportunities: string[];
-    risks: string[];
-};
-
 export type Agreement = {
     id: string;
     agreement_name: string;
