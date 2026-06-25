@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useTransition, useEffect, useState } from "react";
+import { useTransition, useEffect, useState, useCallback } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,7 +25,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { provinces, getLocalitiesByProvince } from "@/lib/geo-data";
 import { DialogFooter } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
+import { lookupCuit } from "@/app/admin/actions/cuit.actions";
 
 // CUIT Validation Logic
 const validateCuit = (cuit: string): boolean | number => {
@@ -136,6 +137,7 @@ const getDeliveryParts = (deliveryWindow: string | null) => {
 export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Client, onSuccess: () => void, onCancel: () => void }) {
   const [isPending, startTransition] = useTransition();
   const [agreements, setAgreements] = useState<Agreement[]>([]);
+  const [cuitLoading, setCuitLoading] = useState(false);
   const { toast } = useToast();
 
   const addressParts = getAddressParts(client?.address || null);
@@ -173,6 +175,28 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Cli
       form.setValue('locality', '');
     }
   }, [watchedProvince, availableLocalities, form]);
+
+  const handleCuitLookup = useCallback(async () => {
+    const cuit = form.getValues("cuit")?.replace(/-/g, "");
+    if (!cuit || cuit.length !== 11) return;
+
+    setCuitLoading(true);
+    const result = await lookupCuit(cuit);
+    setCuitLoading(false);
+
+    if (result.data) {
+      const d = result.data;
+      if (d.contact_name) form.setValue("contact_name", d.contact_name);
+      if (d.fiscal_status) form.setValue("fiscal_status", d.fiscal_status);
+      if (d.province) form.setValue("province", d.province);
+      if (d.locality) form.setValue("locality", d.locality);
+      if (d.street_address) form.setValue("street_address", d.street_address);
+      if (d.street_number) form.setValue("street_number", d.street_number);
+      toast({ title: "Datos cargados", description: "Información fiscal y dirección autocompletada desde ARCA." });
+    } else if (result.error) {
+      toast({ title: "CUIT no encontrado", description: result.error, variant: "destructive" });
+    }
+  }, [form, toast]);
 
   const onSubmit = (values: UpsertClientFormValues) => {
     startTransition(async () => {
@@ -235,7 +259,10 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Cli
                   <FormField control={form.control} name="cuit" render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">CUIT</FormLabel>
-                      <FormControl><Input placeholder="11 dígitos sin guiones" className="h-12 glass border-white/10 rounded-xl font-medium" {...field} /></FormControl>
+                      <div className="relative">
+                        <FormControl><Input placeholder="11 dígitos sin guiones" className="h-12 glass border-white/10 rounded-xl font-medium pr-10" {...field} onBlur={(e) => { field.onBlur(e); if (!client) handleCuitLookup(); }} onKeyDown={(e) => { if (e.key === "Enter" && !client) { e.preventDefault(); handleCuitLookup(); } }} /></FormControl>
+                        {cuitLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin opacity-50" />}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )} />
