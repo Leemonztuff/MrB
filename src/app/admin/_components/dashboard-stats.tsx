@@ -103,7 +103,7 @@ export function DashboardStats({ stats }: { stats: StatsType | null }) {
                 <CardContent>
                     <div className={cn(
                         "text-3xl font-black font-headline tracking-tighter",
-                        stats?.overdue_orders_count > 0 && "text-destructive"
+                        (stats?.overdue_orders_count ?? 0) > 0 && "text-destructive"
                     )}>
                         {(stats?.overdue_orders_count ?? 0)}
                     </div>
