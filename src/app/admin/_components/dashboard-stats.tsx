@@ -7,7 +7,7 @@ import { DollarSign, Users, Package, TrendingUp, AlertCircle } from "lucide-reac
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/formatters";
 
-export function DashboardStats({ stats }: { stats: StatsType }) {
+export function DashboardStats({ stats }: { stats: StatsType | null }) {
     return (
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
             {/* Total Revenue */}
@@ -25,7 +25,7 @@ export function DashboardStats({ stats }: { stats: StatsType }) {
                 </CardHeader>
                 <CardContent>
                     <div className="text-3xl font-black font-headline tracking-tighter bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">
-                        {formatCurrency(stats.total_revenue)}
+                        {formatCurrency(stats?.total_revenue ?? 0)}
                     </div>
                     <div className="flex items-center gap-1.5 mt-2 text-[10px] text-primary font-black uppercase tracking-widest">
                         <div className="h-1 w-1 rounded-full bg-primary animate-pulse" />
@@ -49,7 +49,7 @@ export function DashboardStats({ stats }: { stats: StatsType }) {
                 </CardHeader>
                 <CardContent>
                     <div className="text-3xl font-black font-headline tracking-tighter">
-                        {formatCurrency(stats.month_revenue)}
+                        {formatCurrency(stats?.month_revenue ?? 0)}
                     </div>
                     <p className="text-[10px] text-muted-foreground uppercase mt-2 font-bold tracking-widest">Mes en curso</p>
                 </CardContent>
@@ -70,7 +70,7 @@ export function DashboardStats({ stats }: { stats: StatsType }) {
                 </CardHeader>
                 <CardContent>
                     <div className="text-3xl font-black font-headline tracking-tighter">
-                        +{stats.active_clients}
+                        +{stats?.active_clients ?? 0}
                     </div>
                     <p className="text-[10px] text-muted-foreground uppercase mt-2 font-bold tracking-widest">Activos con convenio</p>
                 </CardContent>
@@ -79,7 +79,7 @@ export function DashboardStats({ stats }: { stats: StatsType }) {
             {/* Overdue Orders */}
             <Card className={cn(
                 "glass overflow-hidden border-white/5 group transition-all duration-500",
-                stats.overdue_orders_count > 0
+                (stats?.overdue_orders_count ?? 0) > 0
                     ? "border-destructive/30 bg-destructive/5 hover:border-destructive/50"
                     : "hover:border-primary/20"
             )}>
@@ -92,20 +92,20 @@ export function DashboardStats({ stats }: { stats: StatsType }) {
                     </CardTitle>
                     <div className={cn(
                         "p-2 rounded-lg group-hover:scale-110 transition-transform",
-                        stats.overdue_orders_count > 0 ? "bg-destructive/10" : "bg-secondary"
+                        ((stats?.overdue_orders_count ?? 0) > 0 ? "bg-destructive/10" : "bg-secondary")
                     )}>
                         <AlertCircle className={cn(
                             "h-4 w-4",
-                            stats.overdue_orders_count > 0 ? "text-destructive" : "text-primary"
+                            (stats?.overdue_orders_count ?? 0) > 0 ? "text-destructive" : "text-primary"
                         )} />
                     </div>
                 </CardHeader>
                 <CardContent>
                     <div className={cn(
                         "text-3xl font-black font-headline tracking-tighter",
-                        stats.overdue_orders_count > 0 && "text-destructive"
+                        stats?.overdue_orders_count > 0 && "text-destructive"
                     )}>
-                        {stats.overdue_orders_count}
+                        {(stats?.overdue_orders_count ?? 0)}
                     </div>
                     <p className="text-[10px] text-muted-foreground uppercase mt-2 font-bold tracking-widest">Pedidos &gt;48hs</p>
                 </CardContent>
