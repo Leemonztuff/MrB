@@ -285,7 +285,7 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Cli
                   <FormField control={form.control} name="fiscal_status" render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">Condición Fiscal</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger className="h-12 glass border-white/10 rounded-xl">
                             <SelectValue placeholder="Seleccione..." />
