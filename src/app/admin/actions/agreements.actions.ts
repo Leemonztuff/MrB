@@ -98,7 +98,7 @@ export async function getUnassignedPromotions(agreementId: string): Promise<Acti
         const query = supabase.from('promotions').select('*').order('name');
 
         if (assignedIds.length > 0) {
-            query.not('id', 'in', `(${assignedIds.join(',')})`);
+            query.not('id', 'in', assignedIds);
         }
 
         const { data, error } = await query;
@@ -151,7 +151,7 @@ export async function getUnassignedSalesConditions(agreementId: string): Promise
         const query = supabase.from('sales_conditions').select('*').order('name');
 
         if (assignedIds.length > 0) {
-            query.not('id', 'in', `(${assignedIds.join(',')})`);
+            query.not('id', 'in', assignedIds);
         }
 
         const { data, error } = await query;
@@ -184,6 +184,90 @@ export async function unassignSalesConditionFromAgreement(payload: { agreement_i
             .delete()
             .eq('agreement_id', payload.agreement_id)
             .eq('sales_condition_id', payload.sales_condition_id);
+
+        if (error) throw error;
+        return null;
+    }, [`/admin/agreements/${payload.agreement_id}`]);
+}
+
+// --- Agreement Product Management ---
+
+export async function getUnassignedProducts(agreementId: string): Promise<ActionResponse<any[]>> {
+    return handleAction(async () => {
+        const supabase = await getSupabaseClientWithAuth();
+        const { data: agreement, error: agreementError } = await supabase
+            .from('agreements')
+            .select('price_list_id')
+            .eq('id', agreementId)
+            .maybeSingle();
+
+        if (agreementError || !agreement) throw new Error("Convenio no encontrado.");
+        if (!agreement.price_list_id) return { data: [], error: null };
+
+        const { data: assignedProducts, error: assignedError } = await supabase
+            .from('price_list_items')
+            .select('product_id')
+            .eq('price_list_id', agreement.price_list_id);
+
+        if (assignedError) throw assignedError;
+
+        const assignedIds = assignedProducts.map(p => p.product_id);
+        const query = supabase.from('products').select('*').order('name');
+
+        if (assignedIds.length > 0) {
+            query.not('id', 'in', assignedIds);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return data || [];
+    });
+}
+
+export async function assignMultipleProductsToAgreement(payload: {
+    agreement_id: string;
+    product_ids: string[];
+}): Promise<ActionResponse<null>> {
+    return handleAction(async () => {
+        const supabase = await getSupabaseClientWithAuth();
+        const { data: agreement, error: agreementError } = await supabase
+            .from('agreements')
+            .select('price_list_id')
+            .eq('id', payload.agreement_id)
+            .maybeSingle();
+
+        if (agreementError || !agreement) throw new Error("Convenio no encontrado.");
+        if (!agreement.price_list_id) throw new Error("El convenio no tiene una lista de precios asignada.");
+
+        const productsToInsert = payload.product_ids.map(productId => ({
+            price_list_id: agreement.price_list_id,
+            product_id: productId,
+            price: 0,
+            volume_price: null,
+        }));
+
+        const { error } = await supabase.from('price_list_items').insert(productsToInsert);
+        if (error) throw error;
+        return null;
+    }, [`/admin/agreements/${payload.agreement_id}`]);
+}
+
+export async function unassignProductFromAgreement(payload: { agreement_id: string; product_id: string; }): Promise<ActionResponse<null>> {
+    return handleAction(async () => {
+        const supabase = await getSupabaseClientWithAuth();
+        const { data: agreement, error: agreementError } = await supabase
+            .from('agreements')
+            .select('price_list_id')
+            .eq('id', payload.agreement_id)
+            .maybeSingle();
+
+        if (agreementError || !agreement) throw new Error("Convenio no encontrado.");
+        if (!agreement.price_list_id) throw new Error("El convenio no tiene una lista de precios asignada.");
+
+        const { error } = await supabase.from('price_list_items')
+            .delete()
+            .eq('price_list_id', agreement.price_list_id)
+            .eq('product_id', payload.product_id);
 
         if (error) throw error;
         return null;

@@ -48,7 +48,7 @@ function LabelsPrintContent() {
         for (const sel of selections) {
           const order = orders.find(o => o.id === sel.id);
           if (order) {
-            const token = (order as any).confirmation_token || '';
+            const token = order.confirmation_token || '';
             const qrUrl = `${origin}/api/pedido/confirmar/${order.id}?token=${token}`;
             for (let i = 1; i <= sel.bundles; i++) {
               labelEntries.push({ order, bundleIdx: i, totalBundles: sel.bundles, qrUrl });

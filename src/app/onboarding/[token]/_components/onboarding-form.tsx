@@ -25,7 +25,7 @@ import { provinces, getLocalitiesByProvince } from "@/lib/geo-data";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
-// --- CUIT Validation Logic ---
+// --- CUIT/DNI Validation Logic ---
 const validateCuit = (cuit: string): boolean | number => {
     if (!/^\d{11}$/.test(cuit)) return false;
 
@@ -49,9 +49,10 @@ const validateCuit = (cuit: string): boolean | number => {
     return digitoVerificador === digitoCalculado ? true : digitoCalculado;
 };
 
-const cuitSchema = z.string().superRefine((cuit, ctx) => {
+// CUIT schema paraResponsable Inscripto y Monotributista (requiere 11 dígitos)
+const cuitRequiredSchema = z.string().superRefine((cuit, ctx) => {
     if (!cuit) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "El CUIT es requerido."});
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "El CUIT es requerido para esta condición fiscal."});
         return;
     }
     const validationResult = validateCuit(cuit);
@@ -70,6 +71,39 @@ const cuitSchema = z.string().superRefine((cuit, ctx) => {
             message: "CUIT inválido. Debe tener 11 dígitos sin guiones y ser válido.",
         });
     }
+});
+
+// CUIT/DNI schema para Consumidor Final y Exento (acepta DNI de 7-8 dígitos)
+const cuitOrDniSchema = z.string().superRefine((value, ctx) => {
+    if (!value) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "El CUIT o DNI es requerido."});
+        return;
+    }
+    // Si tiene 11 dígitos, validar como CUIT
+    if (/^\d{11}$/.test(value)) {
+        const validationResult = validateCuit(value);
+        if (validationResult === true) return;
+        if (typeof validationResult === 'number') {
+            const CUITBase = value.slice(0, -1);
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: `CUIT inválido. El dígito verificador debería ser ${validationResult}. ¿Quisiste decir ${CUITBase}${validationResult}?`,
+            });
+        } else {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "CUIT inválido. Debe tener 11 dígitos sin guiones y ser válido.",
+            });
+        }
+        return;
+    }
+    // Si tiene 7-8 dígitos, aceptar como DNI
+    if (/^\d{7,8}$/.test(value)) return;
+    // Si no cumple ningún formato
+    ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Debe ingresar un CUIT (11 dígitos) o DNI (7-8 dígitos).",
+    });
 });
 
 
@@ -91,7 +125,7 @@ const timeOptions = generateTimeOptions();
 
 const formSchema = z.object({
   fiscal_status: z.string().min(1, "La condición fiscal es requerida"),
-  cuit: cuitSchema,
+  cuit: z.string(), // Validación condicional abajo
   contact_name: z.string().min(3, "El nombre es requerido."),
   contact_dni: z.string().min(7, "El DNI debe tener entre 7 y 8 dígitos.").max(8, "El DNI debe tener entre 7 y 8 dígitos."),
   
@@ -108,6 +142,74 @@ const formSchema = z.object({
   
   email: z.string().email("Debe ser un email válido."),
   instagram: z.string().optional(),
+}).superRefine((data, ctx) => {
+  const fiscalStatus = data.fiscal_status;
+  const cuitValue = data.cuit;
+  
+  // Para Responsable Inscripto y Monotributista: CUIT requerido (11 dígitos)
+  if (fiscalStatus === 'Responsable Inscripto' || fiscalStatus === 'Monotributista') {
+    if (!cuitValue) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "El CUIT es requerido para esta condición fiscal.",
+        path: ["cuit"],
+      });
+    } else {
+      const validationResult = validateCuit(cuitValue);
+      if (validationResult !== true) {
+        if (typeof validationResult === 'number') {
+          const CUITBase = cuitValue.slice(0, -1);
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `CUIT inválido. El dígito verificador debería ser ${validationResult}. ¿Quisiste decir ${CUITBase}${validationResult}?`,
+            path: ["cuit"],
+          });
+        } else {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "CUIT inválido. Debe tener 11 dígitos sin guiones y ser válido.",
+            path: ["cuit"],
+          });
+        }
+      }
+    }
+  }
+  // Para Consumidor Final y Exento: acepta CUIT (11) o DNI (7-8)
+  else if (fiscalStatus === 'Consumidor Final' || fiscalStatus === 'Exento') {
+    if (!cuitValue) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "El CUIT o DNI es requerido.",
+        path: ["cuit"],
+      });
+    } else if (/^\d{11}$/.test(cuitValue)) {
+      // Es CUIT, validar
+      const validationResult = validateCuit(cuitValue);
+      if (validationResult !== true) {
+        if (typeof validationResult === 'number') {
+          const CUITBase = cuitValue.slice(0, -1);
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `CUIT inválido. El dígito verificador debería ser ${validationResult}. ¿Quisiste decir ${CUITBase}${validationResult}?`,
+            path: ["cuit"],
+          });
+        } else {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "CUIT inválido. Debe tener 11 dígitos sin guiones y ser válido.",
+            path: ["cuit"],
+          });
+        }
+      }
+    } else if (!/^\d{7,8}$/.test(cuitValue)) {
+      // Ni CUIT ni DNI válido
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Debe ingresar un CUIT (11 dígitos) o DNI (7-8 dígitos).",
+        path: ["cuit"],
+      });
+    }
+  }
 });
 
 type OnboardingFormValues = z.infer<typeof formSchema>;
@@ -200,11 +302,15 @@ export function OnboardingForm({ client }: { client: Client }) {
           name="cuit"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>CUIT de la barbería/distribuidora</FormLabel>
+              <FormLabel>CUIT / DNI</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: 20123456789" {...field} />
+                <Input placeholder="Ej: 20123456789 o 12345678" {...field} />
               </FormControl>
-              <FormDescription>11 dígitos, sin guiones.</FormDescription>
+              <FormDescription>
+                {form.watch('fiscal_status') === 'Consumidor Final' || form.watch('fiscal_status') === 'Exento'
+                  ? "Para Consumidor Final/Exento: CUIT (11 dígitos) o DNI (7-8 dígitos)."
+                  : "CUIT: 11 dígitos, sin guiones."}
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

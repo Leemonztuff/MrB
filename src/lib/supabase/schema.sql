@@ -186,7 +186,48 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 6. RLS
+-- 6. ATOMIC ORDER CREATION
+CREATE OR REPLACE FUNCTION public.create_order_with_items(
+    p_client_id uuid,
+    p_agreement_id uuid,
+    p_total_amount numeric,
+    p_client_name_cache text,
+    p_notes text,
+    p_items jsonb
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_order_id uuid;
+    v_order jsonb;
+    v_item jsonb;
+BEGIN
+    INSERT INTO public.orders (client_id, agreement_id, total_amount, status, client_name_cache, notes)
+    VALUES (p_client_id, p_agreement_id, p_total_amount, 'armado', p_client_name_cache, p_notes)
+    RETURNING id INTO v_order_id;
+
+    FOR v_item IN SELECT * FROM jsonb_array_elements(p_items)
+    LOOP
+        INSERT INTO public.order_items (order_id, product_id, quantity, price_per_unit)
+        VALUES (
+            v_order_id,
+            (v_item->>'product_id')::uuid,
+            (v_item->>'quantity')::integer,
+            (v_item->>'price_per_unit')::numeric
+        );
+    END LOOP;
+
+    SELECT to_jsonb(o.*) INTO v_order
+    FROM public.orders o
+    WHERE o.id = v_order_id;
+
+    RETURN v_order;
+END;
+$$;
+
+-- 7. RLS (Row Level Security)
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.price_lists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.price_list_items ENABLE ROW LEVEL SECURITY;
@@ -238,6 +279,7 @@ CREATE POLICY "Allow read for anonymous" ON public.order_items FOR SELECT USING 
 CREATE POLICY "Allow all for authenticated" ON public.app_settings FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow read for anonymous" ON public.app_settings FOR SELECT USING (true);
 
--- 7. INITIAL SETTINGS
+-- 8. INITIAL SETTINGS
 INSERT INTO public.app_settings (key, value) VALUES ('vat_percentage', '21'::jsonb) ON CONFLICT (key) DO NOTHING;
 INSERT INTO public.app_settings (key, value) VALUES ('whatsapp_number', '"5491144276120"'::jsonb) ON CONFLICT (key) DO NOTHING;
+INSERT INTO public.app_settings (key, value) VALUES ('volume_threshold', '150'::jsonb) ON CONFLICT (key) DO NOTHING;

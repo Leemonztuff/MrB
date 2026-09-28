@@ -1,19 +1,19 @@
 
 "use server";
 
-import { getSupabaseClientWithAuth, upsertEntity, deleteEntity } from "./_helpers";
+import { handleAction, getSupabaseClientWithAuth, upsertEntity, deleteEntity } from "./_helpers";
 import type { Promotion } from "@/types";
+import type { ActionResponse } from "@/types";
 
 // --- Promotion Actions ---
 
-export async function getPromotions() {
-  const supabase = await getSupabaseClientWithAuth();
-  const { data, error } = await supabase.from("promotions").select("*").order("name", { ascending: true });
-  if (error) {
-    console.error("getPromotions error:", error.message);
-    throw error;
-  }
-  return { data, error };
+export async function getPromotions(): Promise<ActionResponse<Promotion[]>> {
+  return handleAction(async () => {
+    const supabase = await getSupabaseClientWithAuth();
+    const { data, error } = await supabase.from("promotions").select("*").order("name", { ascending: true });
+    if (error) throw error;
+    return data || [];
+  });
 }
 
 type UpsertPromotionPayload = Omit<Promotion, "id" | "created_at" | "rules"> & {

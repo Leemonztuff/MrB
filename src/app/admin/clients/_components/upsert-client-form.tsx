@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 import { Loader2, Search } from "lucide-react";
 import { lookupCuit } from "@/app/admin/actions/cuit.actions";
 
-// CUIT Validation Logic
+// CUIT/DNI Validation Logic
 const validateCuit = (cuit: string): boolean | number => {
   if (!/^\d{11}$/.test(cuit)) return false;
   const coeficientes = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
@@ -47,18 +47,6 @@ const validateCuit = (cuit: string): boolean | number => {
   }
   return digitoVerificador === digitoCalculado ? true : digitoCalculado;
 };
-
-const cuitSchema = z.string().superRefine((cuit, ctx) => {
-  if (!cuit) return;
-  const validationResult = validateCuit(cuit);
-  if (validationResult === true) return;
-  if (typeof validationResult === 'number') {
-    const CUITBase = cuit.slice(0, -1);
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: `CUIT inválido. El dígito verificador debería ser ${validationResult}.` });
-  } else {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "CUIT inválido. Debe tener 11 dígitos sin guiones y ser válido." });
-  }
-});
 
 const deliveryDays = [
   { id: 'lunes', label: 'L' },
@@ -83,7 +71,7 @@ const timeOptions = generateTimeOptions();
 const formSchema = z.object({
   contact_name: z.string().min(3, "El nombre es requerido."),
   email: z.string().email("Debe ser un email válido."),
-  cuit: cuitSchema.optional().or(z.literal('')),
+  cuit: z.string().optional().or(z.literal('')),
   contact_dni: z.string().optional(),
   fiscal_status: z.string().optional(),
   instagram: z.string().optional(),
@@ -97,6 +85,63 @@ const formSchema = z.object({
   delivery_days: z.array(z.string()).optional(),
   delivery_time_from: z.string().optional(),
   delivery_time_to: z.string().optional(),
+}).superRefine((data, ctx) => {
+  const fiscalStatus = data.fiscal_status;
+  const cuitValue = data.cuit;
+  
+  // Si no hay fiscal_status o cuit está vacío, no validar
+  if (!fiscalStatus || !cuitValue) return;
+  
+  // Para Responsable Inscripto y Monotributista: CUIT requerido (11 dígitos)
+  if (fiscalStatus === 'Responsable Inscripto' || fiscalStatus === 'Monotributista') {
+    const validationResult = validateCuit(cuitValue);
+    if (validationResult !== true) {
+      if (typeof validationResult === 'number') {
+        const CUITBase = cuitValue.slice(0, -1);
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `CUIT inválido. El dígito verificador debería ser ${validationResult}. ¿Quisiste decir ${CUITBase}${validationResult}?`,
+          path: ["cuit"],
+        });
+      } else {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "CUIT inválido. Debe tener 11 dígitos sin guiones y ser válido.",
+          path: ["cuit"],
+        });
+      }
+    }
+  }
+  // Para Consumidor Final y Exento: acepta CUIT (11) o DNI (7-8)
+  else if (fiscalStatus === 'Consumidor Final' || fiscalStatus === 'Exento') {
+    if (/^\d{11}$/.test(cuitValue)) {
+      // Es CUIT, validar
+      const validationResult = validateCuit(cuitValue);
+      if (validationResult !== true) {
+        if (typeof validationResult === 'number') {
+          const CUITBase = cuitValue.slice(0, -1);
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `CUIT inválido. El dígito verificador debería ser ${validationResult}. ¿Quisiste decir ${CUITBase}${validationResult}?`,
+            path: ["cuit"],
+          });
+        } else {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "CUIT inválido. Debe tener 11 dígitos sin guiones y ser válido.",
+            path: ["cuit"],
+          });
+        }
+      }
+    } else if (!/^\d{7,8}$/.test(cuitValue)) {
+      // Ni CUIT ni DNI válido
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Debe ingresar un CUIT (11 dígitos) o DNI (7-8 dígitos).",
+        path: ["cuit"],
+      });
+    }
+  }
 });
 
 type UpsertClientFormValues = z.infer<typeof formSchema>;

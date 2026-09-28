@@ -15,7 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-import type { AgreementProduct } from "@/types";
+import type { PriceListItem } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -35,6 +35,6 @@ import {
 } from "@/components/ui/table";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import { unassignProductFromAgreement } from "@/app/actions/admin.actions";
+import { unassignProductFromAgreement } from "@/app/admin/actions/agreements.actions";
 import { useToast } from "@/hooks/use-toast";
 import { getImageUrl } from "@/lib/placeholder-images";

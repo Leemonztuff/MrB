@@ -1,10 +1,11 @@
 
 "use server";
 
-import { getSupabaseClientWithAuth } from "@/app/admin/actions/_helpers";
+import { getSupabaseClientWithAuth, handleAction } from "@/app/admin/actions/_helpers";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { AppSettings } from "@/types";
+import type { ActionResponse } from "@/types";
 
 export async function getSettings(): Promise<AppSettings> {
     const supabase = await getSupabaseClientWithAuth();
@@ -31,47 +32,44 @@ export async function getSettings(): Promise<AppSettings> {
  * Gets the WhatsApp number. This action is public and can be called from client components
  * without authentication, as it uses an anonymous server client.
  */
-export async function getPublicWhatsappNumber(): Promise<string> {
-    const supabase = await createServerClient();
-    const { data, error } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'whatsapp_number')
-        .single();
-
-    if (error || !data) {
-        console.error("getPublicWhatsappNumber error:", error?.message);
-        return "";
-    }
-    return data.value;
+export async function getPublicWhatsappNumber(): Promise<ActionResponse<string>> {
+    return handleAction(async () => {
+        const supabase = await createServerClient();
+        const { data, error } = await supabase
+            .from('app_settings')
+            .select('value')
+            .eq('key', 'whatsapp_number')
+            .single();
+        if (error) throw error;
+        return data.value;
+    });
 }
 
 /**
  * Gets the Logo URL. This action is public and can be called from server components
  * without authentication, as it uses an anonymous server client.
  */
-export async function getPublicLogoUrl(): Promise<string | null> {
-    const supabase = await createServerClient();
-    const { data, error } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'logo_url')
-        .single();
-
-    if (error || !data) {
-        // This is not a critical error, so we don't log it.
-        // It's normal for the logo not to be configured.
-        return null;
-    }
-    return data.value as string | null;
+export async function getPublicLogoUrl(): Promise<ActionResponse<string | null>> {
+    return handleAction(async () => {
+        const supabase = await createServerClient();
+        const { data, error } = await supabase
+            .from('app_settings')
+            .select('value')
+            .eq('key', 'logo_url')
+            .single();
+        if (error) throw error;
+        return data.value as string | null;
+    });
 }
+
+
 
 
 export async function updateSettings(formData: FormData): Promise<{ error?: string }> {
     const supabase = await getSupabaseClientWithAuth();
 
     const whatsapp_number = formData.get('whatsapp_number') as string;
-    const vat_percentage = formData.get('vat_percentage') as string;
+    const vat_percentage = Number(formData.get('vat_percentage') as string);
 
     const settingsToUpsert = [
         { key: 'whatsapp_number', value: whatsapp_number },

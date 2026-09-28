@@ -6,7 +6,14 @@ export const clientSchema = z.object({
     contact_name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
     contact_dni: z.string().optional().nullable(),
     email: z.string().email("Email inválido").optional().nullable(),
-    cuit: z.string().optional().nullable(),
+    cuit: z.string().refine(
+        (val) => {
+            if (!val) return true; // Opcional
+            // Acepta CUIT (11 dígitos) o DNI (7-8 dígitos)
+            return /^\d{11}$/.test(val) || /^\d{7,8}$/.test(val);
+        },
+        { message: "CUIT debe tener 11 dígitos o DNI debe tener 7-8 dígitos" }
+    ).optional().nullable(),
     fiscal_status: z.string().optional().nullable(),
     address: z.string().optional().nullable(),
     delivery_window: z.string().optional().nullable(),
@@ -21,7 +28,14 @@ export const onboardingSchema = z.object({
     contact_name: z.string().min(2, "Nombre requerido"),
     contact_dni: z.string().min(7, "DNI inválido"),
     email: z.string().email("Email inválido"),
-    cuit: z.string().min(11, "CUIT debe tener 11 dígitos"),
+    cuit: z.string().refine(
+        (val) => {
+            if (!val) return false; // Requerido
+            // Acepta CUIT (11 dígitos) o DNI (7-8 dígitos)
+            return /^\d{11}$/.test(val) || /^\d{7,8}$/.test(val);
+        },
+        { message: "CUIT debe tener 11 dígitos o DNI debe tener 7-8 dígitos" }
+    ),
     fiscal_status: z.string().min(1, "Estado fiscal requerido"),
     street_address: z.string().min(1, "Dirección requerida"),
     street_number: z.string().min(1, "Número requerido"),

@@ -3,7 +3,7 @@ import { getOrderPageData } from "@/app/actions/user.actions";
 import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/app/logo";
 import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardDescription, GlassCardContent } from "@/components/shared/glass-card";
-import { AlertTriangle, Package2 } from "lucide-react";
+import { AlertTriangle, Package2, Clock, UserCheck, Ban } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -34,11 +34,34 @@ export default async function OrderPage({
   const { data, error } = await getOrderPageData(params.id);
 
   if (error || !data) {
+    const errorMessage = error?.message || "No se pudo encontrar la informacion necesaria para este pedido.";
+    
+    // Determinar icono y título según el tipo de error
+    let Icon = AlertTriangle;
+    let title = "Error al cargar el portal";
+    
+    if (errorMessage.includes('pendiente de completar')) {
+      Icon = Clock;
+      title = "Cuenta Pendiente";
+    } else if (errorMessage.includes('pendiente de asignación')) {
+      Icon = Clock;
+      title = "Convenio Pendiente";
+    } else if (errorMessage.includes('desactivada')) {
+      Icon = Ban;
+      title = "Cuenta Desactivada";
+    } else if (errorMessage.includes('no tiene un convenio')) {
+      Icon = UserCheck;
+      title = "Sin Convenio Asignado";
+    }
+
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
-        <h1 className="mb-4 text-2xl font-bold">Error al cargar el portal</h1>
-        <p className="mb-8 text-muted-foreground">
-          {error?.message || "No se pudo encontrar la informacion necesaria para este pedido."}
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 mb-6 border border-white/10 shadow-xl">
+          <Icon className="h-8 w-8 text-primary" />
+        </div>
+        <h1 className="mb-4 text-2xl font-bold">{title}</h1>
+        <p className="mb-8 text-muted-foreground max-w-md">
+          {errorMessage}
         </p>
         <Button asChild>
           <a href="/">Volver al inicio</a>

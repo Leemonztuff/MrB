@@ -68,7 +68,20 @@ export async function getOrderPageData(clientId: string): Promise<ActionResponse
             .maybeSingle();
 
         if (clientError || !client) throw new Error("Cliente inválido.");
-        if (!client.agreement_id) throw new Error("Este cliente no tiene un convenio asignado.");
+
+        // 2. Verificar estado del cliente
+        if (client.status === 'pending_onboarding') {
+            throw new Error("Tu cuenta está pendiente de completar el formulario de datos. Por favor, completá tu información para poder hacer pedidos.");
+        }
+        if (client.status === 'pending_agreement') {
+            throw new Error("Tu cuenta está pendiente de asignación de convenio. Un administrador está configurando tus precios y condiciones especiales. Pronto podrás hacer pedidos.");
+        }
+        if (client.status === 'archived') {
+            throw new Error("Tu cuenta ha sido desactivada. Contactá al administrador para más información.");
+        }
+        if (!client.agreement_id) {
+            throw new Error("Tu cuenta no tiene un convenio asignado. Contactá al administrador para que te asigne uno con tus precios especiales.");
+        }
 
         // 2. Obtener el convenio del cliente con sus promociones y lista de precios
         const [agreementResult, settingsResult] = await Promise.all([
@@ -180,28 +193,16 @@ export async function submitOrder(payload: {
             throw new Error("El total del pedido no coincide. Por favor, recarga la página e intenta de nuevo.");
         }
 
-        const { data: order, error: orderError } = await supabase
-            .from('orders')
-            .insert({
-                client_id: finalClientId,
-                agreement_id: agreementId,
-                total_amount: serverTotal,
-                status: 'armado',
-                client_name_cache: finalClientName,
-                notes: payload.notes || null,
-            })
-            .select()
-            .single();
+        const { data: order, error: orderError } = await supabase.rpc('create_order_with_items', {
+            p_client_id: finalClientId,
+            p_agreement_id: agreementId,
+            p_total_amount: serverTotal,
+            p_client_name_cache: finalClientName,
+            p_notes: payload.notes || null,
+            p_items: JSON.stringify(orderItems),
+        });
 
         if (orderError || !order) throw new Error("Error al guardar pedido.");
-
-        const itemsWithOrderId = orderItems.map(item => ({
-            ...item,
-            order_id: order.id,
-        }));
-
-        const { error: itemsError } = await supabase.from('order_items').insert(itemsWithOrderId);
-        if (itemsError) throw itemsError;
 
         return { orderId: order.id };
     }, ['/admin']);

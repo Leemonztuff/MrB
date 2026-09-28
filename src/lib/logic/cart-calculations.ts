@@ -8,7 +8,7 @@ export type BonusInfo = {
     }
 }
 
-export const VOLUME_THRESHOLD = 150;
+export const DEFAULT_VOLUME_THRESHOLD = 150;
 
 const roundCurrency = (value: number): number => Math.round(value * 100) / 100;
 
@@ -71,10 +71,11 @@ export const calculateCartTotals = (
     items: CartItemType[],
     pricesIncludeVat: boolean,
     promotions: Promotion[],
-    vatPercentage: number
+    vatPercentage: number,
+    volumeThreshold: number = DEFAULT_VOLUME_THRESHOLD
 ) => {
     const totalItems = items.reduce((total, item) => total + item.quantity, 0);
-    const isVolumePricingActive = totalItems >= VOLUME_THRESHOLD;
+    const isVolumePricingActive = totalItems >= volumeThreshold;
     const vatRate = vatPercentage / 100;
 
     let subtotal = 0;
@@ -105,6 +106,7 @@ export const calculateCartTotals = (
     const percentageDiscount = roundCurrency(subtotal * (discountPercentage / 100));
     const totalDiscount = percentageDiscount;
     const subtotalWithDiscount = roundCurrency(subtotal - totalDiscount);
+    // vatAmount is IVA calculated on the discounted subtotal (not the original)
     const vatAmount = roundCurrency(subtotalWithDiscount * vatRate);
     const totalPrice = roundCurrency(subtotalWithDiscount + vatAmount);
 

@@ -52,6 +52,7 @@ export type Order = {
     client_name_cache: string;
     notes?: string | null;
     printed_at?: string | null;
+    confirmation_token?: string | null;
 }
 
 export type OrderWithItems = Order & {
