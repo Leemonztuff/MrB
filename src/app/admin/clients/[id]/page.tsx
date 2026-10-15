@@ -71,7 +71,7 @@ export default async function ClientDetailPage({
 
   const client = clientResult.data;
   const stats = statsResult.data ?? null;
-  const orders = ordersResult;
+  const orders = ordersResult.data ?? [];
 
   return (
     <PageContainer>

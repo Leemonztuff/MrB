@@ -67,14 +67,15 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { pending_orders_count, pending_clients_count, overdue_orders_count } = await getNotificationData();
-  const { stats } = await getDashboardData();
+  const { data: notificationData } = await getNotificationData();
+  const { data: dashboardData } = await getDashboardData();
   const { logo_url } = await getSettings();
+  const stats = dashboardData?.stats ?? null;
 
   const notifications = createNotifications(
-    pending_orders_count,
-    pending_clients_count,
-    overdue_orders_count
+    notificationData?.pending_orders_count ?? 0,
+    notificationData?.pending_clients_count ?? 0,
+    notificationData?.overdue_orders_count ?? 0
   );
 
   return (

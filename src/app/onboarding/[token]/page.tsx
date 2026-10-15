@@ -10,7 +10,7 @@ import { getPublicLogoUrl } from "@/app/admin/actions/settings.actions";
 export default async function OnboardingPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const { data: client, error } = await getOnboardingClient(token);
-  const logo_url = await getPublicLogoUrl();
+  const { data: logo_url } = await getPublicLogoUrl();
 
   if (error || !client) {
     return (

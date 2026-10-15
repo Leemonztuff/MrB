@@ -30,11 +30,9 @@ export async function getDashboardData(): Promise<ActionResponse<{
         const pendingClients = pendingClientsResult.data ?? [];
 
         return {
-            data: {
-                stats,
-                pendingOrders,
-                pendingClients,
-            }
+            stats,
+            pendingOrders,
+            pendingClients,
         };
     }, ['/admin']);
 }

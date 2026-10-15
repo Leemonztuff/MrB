@@ -34,7 +34,7 @@ function LabelsPrintContent() {
           getPublicLogoUrl(),
         ]);
 
-        setLogoUrl(logo);
+        setLogoUrl(logo.data ?? null);
 
         if (labelResult.error || !labelResult.data) {
           throw new Error(labelResult.error?.message || 'Error al cargar pedidos');

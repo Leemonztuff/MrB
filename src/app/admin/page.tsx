@@ -4,13 +4,22 @@ import { getDashboardData } from "@/app/admin/actions/dashboard.actions";
 import { PageHeader } from "@/components/shared/page-header";
 import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardDescription, GlassCardContent } from "@/components/shared/glass-card";
 import { PageContainer } from "@/components/shared/page-container";
+import { ErrorDisplay } from "@/components/shared/error-display";
 import { DashboardStats } from "./_components/dashboard-stats";
 import { RecentOrders } from "./_components/recent-orders";
 import { PendingClients } from "./_components/pending-clients";
 import type { DashboardStats as Stats } from "@/types";
 
 export default async function AdminDashboardPage() {
-    const { stats, pendingOrders, pendingClients } = await getDashboardData();
+    const { data, error } = await getDashboardData();
+
+    if (error) {
+        return <ErrorDisplay message={error.message} />;
+    }
+
+    const stats = data?.stats ?? null;
+    const pendingOrders = data?.pendingOrders ?? [];
+    const pendingClients = data?.pendingClients ?? [];
 
     return (
         <PageContainer gap="lg">

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AssignAgreementDialog } from "../clients/_components/assign-agreement-dialog";
 import { Edit } from "lucide-react";
 
-export function PendingClients({ clients }: { clients: Client[] }) {
+export function PendingClients({ clients = [] }: { clients: Client[] }) {
 
     if (clients.length === 0) {
         return (

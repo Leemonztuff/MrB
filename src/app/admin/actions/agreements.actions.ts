@@ -202,7 +202,7 @@ export async function getUnassignedProducts(agreementId: string): Promise<Action
             .maybeSingle();
 
         if (agreementError || !agreement) throw new Error("Convenio no encontrado.");
-        if (!agreement.price_list_id) return { data: [], error: null };
+        if (!agreement.price_list_id) return [];
 
         const { data: assignedProducts, error: assignedError } = await supabase
             .from('price_list_items')

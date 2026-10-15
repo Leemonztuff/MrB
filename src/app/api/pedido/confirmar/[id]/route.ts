@@ -14,17 +14,18 @@ export async function GET(
         return NextResponse.redirect(`${origin}/pedido/confirmar/${id}?error=missing_token`);
     }
 
-    try {
-        await publicConfirmOrder(id, token);
-    } catch (error: any) {
-        console.error("Error en auto-confirmación vía API:", error.message);
-        if (error.message?.includes('inválido')) {
+    const result = await publicConfirmOrder(id, token);
+
+    if (!result.success) {
+        const message = result.error?.message ?? "";
+        console.error("Error en auto-confirmación vía API:", message);
+        if (message.includes('inválido')) {
             return NextResponse.redirect(`${origin}/pedido/confirmar/${id}?error=invalid_token`);
         }
-        if (error.message?.includes('no encontrado')) {
+        if (message.includes('no encontrado')) {
             return NextResponse.redirect(`${origin}/pedido/confirmar/${id}?error=not_found`);
         }
-        if (error.message?.includes('estado actual')) {
+        if (message.includes('estado actual')) {
             return NextResponse.redirect(`${origin}/pedido/confirmar/${id}?error=invalid_status`);
         }
         return NextResponse.redirect(`${origin}/pedido/confirmar/${id}?error=confirmation_failed`);

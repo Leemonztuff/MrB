@@ -189,7 +189,7 @@ export function OrderSummary({
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
-    getPublicWhatsappNumber().then(setWhatsappNumber);
+    getPublicWhatsappNumber().then((res) => setWhatsappNumber(res.data ?? ""));
   }, []);
 
   useEffect(() => {

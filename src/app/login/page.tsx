@@ -18,7 +18,7 @@ export default async function LoginPage() {
     redirect('/signup');
   }
 
-  const logo_url = await getPublicLogoUrl();
+  const { data: logo_url } = await getPublicLogoUrl();
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40">

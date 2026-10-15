@@ -31,7 +31,7 @@ type NoteInfo = {
     note: string;
 }
 
-export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
+export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }) {
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
     const [orders, setOrders] = useState(initialOrders);

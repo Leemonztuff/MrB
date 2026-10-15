@@ -47,7 +47,7 @@ type UpsertPriceListPayload = { name: string, prices_include_vat: boolean, id?: 
 export async function upsertPriceList(payload: UpsertPriceListPayload) {
   const result = await upsertEntity("price_lists", payload, ["/admin/commercial-settings"]);
    if (result.error && result.error.code === '23505') { // Unique constraint violation
-      return { data: null, error: { ...result.error, message: `El nombre '${payload.name}' ya existe.` } };
+      return { success: false, error: { ...result.error, message: `El nombre '${payload.name}' ya existe.` } };
   }
   return result;
 }
@@ -80,14 +80,15 @@ export async function getUnassignedProductsForPriceList(priceListId: string): Pr
 export async function assignProductsToPriceList(payload: {
     price_list_id: string;
     products: { product_id: string; price: number, volume_price: number | null }[];
-}) {
-    const validated = assignProductsSchema.parse(payload);
-    const supabase = await getSupabaseClientWithAuth();
-    const productsToInsert = validated.products.map(p => ({ ...p, price_list_id: validated.price_list_id }));
-    const { error } = await supabase.from('price_list_items').insert(productsToInsert);
-    if (error) throw error;
-    revalidatePath(`/admin/pricelists/${validated.price_list_id}`);
-    return null;
+}): Promise<ActionResponse<null>> {
+    return handleAction(async () => {
+        const validated = assignProductsSchema.parse(payload);
+        const supabase = await getSupabaseClientWithAuth();
+        const productsToInsert = validated.products.map(p => ({ ...p, price_list_id: validated.price_list_id }));
+        const { error } = await supabase.from('price_list_items').insert(productsToInsert);
+        if (error) throw error;
+        return null;
+    }, [`/admin/pricelists/${payload.price_list_id}`]);
 }
 
 export async function unassignProductFromPriceList(payload: { price_list_id: string; product_id: string; }): Promise<ActionResponse<null>> {
