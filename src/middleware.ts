@@ -1,31 +1,37 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/middleware';
+import { isSupabaseConfigured } from '@/lib/env';
 
 export const runtime = 'nodejs';
 
 const publicRoutes = ['/login', '/signup'];
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Fallback: si falta configuración de Supabase, mostrar la página de setup
+  // en lugar de crear un cliente que arrojaría un error (y en vez de entrar
+  // en bucles de redirección).
+  if (!isSupabaseConfigured()) {
+    if (pathname === '/setup') {
+      return NextResponse.next();
+    }
+    return NextResponse.redirect(new URL('/setup', request.url));
+  }
+
+  // Si ya está configurado, /setup no tiene utilidad: mandamos al inicio.
+  if (pathname === '/setup') {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
   const { supabase, response } = await createClient(request);
 
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
-  const { pathname } = request.nextUrl;
-
   if (pathname.startsWith('/onboarding') || pathname.startsWith('/pedido')) {
     return response;
-  }
-
-  if (!session) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user && pathname !== '/signup') {
-      return NextResponse.redirect(new URL('/signup', request.url));
-    }
-    if (user && pathname === '/signup') {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
   }
 
   const isPublicRoute = publicRoutes.includes(pathname);

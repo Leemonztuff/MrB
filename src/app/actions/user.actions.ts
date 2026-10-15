@@ -5,18 +5,23 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { isSupabaseConfigured } from '@/lib/env';
 import type { CartItem, AuthState, AppSettingsRow, ActionResponse } from '@/types';
 import { handleAction } from '@/app/admin/actions/_helpers';
 import { onboardingSchema } from '@/lib/validations/client.schema';
 import { formatAddress, formatDeliveryWindow } from '@/lib/formatters';
 
 export async function hasUsers(): Promise<boolean> {
-    if (process.env.VERCEL_ENV === 'production' && !process.env.SUPABASE_SERVICE_ROLE_KEY) return true;
-    if (!supabaseAdmin) return true;
+    // Fallback: si falta configuración o el cliente admin no está disponible,
+    // asumimos que no hay usuarios para que el flujo de creación sea alcanzable
+    // (el middleware ya redirige a /setup cuando falta configuración).
+    if (!isSupabaseConfigured() || !supabaseAdmin) return false;
     try {
         const { data } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1 });
         return (data?.users?.length ?? 0) > 0;
     } catch (err) {
+        // Ante un error real de consulta, mantenemos el comportamiento
+        // conservador: no exponer el registro si ya podría existir un admin.
         return true;
     }
 }

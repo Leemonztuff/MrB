@@ -16,13 +16,11 @@ function getSupabaseAdmin() {
     }
 
     if (!supabaseUrl || !serviceRoleKey) {
-        // En producción (Vercel), si las variables no están, la app no debe funcionar.
-        // En desarrollo, esto alerta al desarrollador de que falta configuración.
-        if (process.env.NODE_ENV === 'production') {
-             console.error('Supabase admin client not configured. Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.');
-             return null;
-        }
-        throw new Error('Supabase admin client not configured. Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in your .env.local file.');
+        // Fallback: no lanzamos error para no romper la app ni el build.
+        // El middleware redirige a /setup cuando falta configuración, y los
+        // llamadores ya manejan el caso `null`.
+        console.error('Supabase admin client not configured. Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.');
+        return null;
     }
 
     supabaseAdminSingleton = createClient(supabaseUrl, serviceRoleKey, {
