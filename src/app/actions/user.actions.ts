@@ -6,10 +6,11 @@ import { revalidatePath } from 'next/cache';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { isSupabaseConfigured } from '@/lib/env';
-import type { CartItem, AuthState, AppSettingsRow, ActionResponse } from '@/types';
+import type { CartItem, AuthState, AppSettingsRow, ActionResponse, Promotion } from '@/types';
 import { handleAction } from '@/app/admin/actions/_helpers';
 import { onboardingSchema } from '@/lib/validations/client.schema';
 import { formatAddress, formatDeliveryWindow } from '@/lib/formatters';
+import { calculateCartTotals, DEFAULT_VOLUME_THRESHOLD } from '@/lib/logic/cart-calculations';
 
 export async function hasUsers(): Promise<boolean> {
     // Fallback: si falta configuración o el cliente admin no está disponible,
@@ -150,21 +151,44 @@ export async function submitOrder(payload: {
         const finalClientId = (!payload.clientId || payload.clientId === 'generic') ? null : payload.clientId;
         const finalClientName = payload.clientName || "Cliente";
 
-        let agreementId = null;
-        let priceListId = null;
+        let agreementId: string | null = null;
+        let priceListId: string | null = null;
+        let pricesIncludeVat = true;
+        let promotions: Promotion[] = [];
+        let vatPercentage = 21;
+
+        const { data: settingsRows } = await supabase
+            .from('app_settings')
+            .select('key, value');
+        const vatRow = (settingsRows || []).find((s: AppSettingsRow) => s.key === 'vat_percentage');
+        if (vatRow && vatRow.value != null) {
+            vatPercentage = Number(vatRow.value) || 21;
+        }
+
         if (finalClientId) {
             const { data: client } = await supabase
                 .from('clients')
-                .select('agreement_id, price_lists(id, prices_include_vat)')
+                .select('agreement_id')
                 .eq('id', finalClientId)
                 .maybeSingle();
             agreementId = client?.agreement_id || null;
-            priceListId = (client as any)?.price_lists?.id || null;
         }
 
-        let serverTotal = 0;
-        const orderItems = [];
+        if (agreementId) {
+            const { data: agreement } = await supabase
+                .from('agreements')
+                .select('price_list_id, price_lists(id, prices_include_vat), agreement_promotions(promotions(*))')
+                .eq('id', agreementId)
+                .maybeSingle();
+            priceListId = (agreement as any)?.price_lists?.id ?? (agreement as any)?.price_list_id ?? null;
+            pricesIncludeVat = (agreement as any)?.price_lists?.prices_include_vat ?? true;
+            promotions = ((agreement as any)?.agreement_promotions || [])
+                .map((ap: any) => ap.promotions)
+                .filter(Boolean);
+        }
 
+        // Reconstruimos los items con precios autoritativos de la base de datos.
+        const items: CartItem[] = [];
         for (const item of payload.cart) {
             let pricePerUnit = item.product.price;
             let volumePrice = item.product.volume_price;
@@ -182,21 +206,37 @@ export async function submitOrder(payload: {
                 }
             }
 
-            const effectivePrice = volumePrice != null && volumePrice > 0 && volumePrice < pricePerUnit
-                ? volumePrice
-                : pricePerUnit;
-            serverTotal += effectivePrice * item.quantity;
-            orderItems.push({
-                product_id: item.product.id,
+            items.push({
+                product: { ...item.product, price: pricePerUnit, volume_price: volumePrice },
                 quantity: item.quantity,
-                price_per_unit: effectivePrice,
             });
         }
 
-        serverTotal = Math.round(serverTotal * 100) / 100;
+        // Usamos exactamente la misma lógica de cálculo que el cliente para que
+        // el total coincida (IVA, umbral de volumen y promociones incluidos).
+        const totals = calculateCartTotals(
+            items,
+            pricesIncludeVat,
+            promotions,
+            vatPercentage,
+            DEFAULT_VOLUME_THRESHOLD
+        );
+        const serverTotal = totals.totalPrice;
+
         if (Math.abs(serverTotal - payload.total) > 1) {
             throw new Error("El total del pedido no coincide. Por favor, recarga la página e intenta de nuevo.");
         }
+
+        const isVolumeActive = totals.isVolumePricingActive;
+        const orderItems = items.map((item) => {
+            const { price, volume_price } = item.product;
+            const useVolume = isVolumeActive && volume_price != null && volume_price > 0 && volume_price < price;
+            return {
+                product_id: item.product.id,
+                quantity: item.quantity,
+                price_per_unit: useVolume && volume_price != null ? volume_price : price,
+            };
+        });
 
         const { data: order, error: orderError } = await supabase.rpc('create_order_with_items', {
             p_client_id: finalClientId,

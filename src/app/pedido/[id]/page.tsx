@@ -11,7 +11,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { OrderSummary } from "./_components/order-summary";
-import { MobileCartIndicator } from "./_components/mobile-cart-indicator";
 import { CartDrawerWrapper } from "./_components/cart-drawer-wrapper";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
@@ -29,9 +28,10 @@ const categoryTranslations: Record<string, string> = {
 export default async function OrderPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const { data, error } = await getOrderPageData(params.id);
+  const { id } = await params;
+  const { data, error } = await getOrderPageData(id);
 
   if (error || !data) {
     const errorMessage = error?.message || "No se pudo encontrar la informacion necesaria para este pedido.";
