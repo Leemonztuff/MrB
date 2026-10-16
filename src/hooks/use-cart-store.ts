@@ -32,6 +32,7 @@ type CartState = {
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   getItemQuantity: (productId: string) => number;
+  pruneItems: (validProductIds: string[]) => void;
   clearCart: () => void;
 };
 
@@ -154,6 +155,16 @@ export const useCartStore = create<CartState>()(
         return item ? item.quantity : 0;
       },
 
+      // Elimina del carrito los productos que ya no pertenecen al catálogo actual
+      // (p. ej. un carrito viejo guardado en localStorage con ids inexistentes).
+      pruneItems: (validProductIds: string[]) => {
+        const { items, pricesIncludeVat, promotions, vatPercentage, volumeThreshold } = get();
+        const validSet = new Set(validProductIds);
+        const nextItems = items.filter(item => validSet.has(item.product.id));
+        if (nextItems.length === items.length) return;
+        set({ items: nextItems, ...calculateCartTotals(nextItems, pricesIncludeVat, promotions, vatPercentage, volumeThreshold) });
+      },
+
       clearCart: () => {
         set({ 
           items: [], totalItems: 0, subtotal: 0, subtotalWithDiscount: 0, 
@@ -168,7 +179,7 @@ export const useCartStore = create<CartState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) =>
         Object.fromEntries(
-          Object.entries(state).filter(([key]) => !['appliedPromotions', 'bonusInfo', 'setAgreement', 'setVolumeThreshold', 'addItem', 'removeItem', 'updateQuantity', 'getItemQuantity', 'clearCart'].includes(key))
+          Object.entries(state).filter(([key]) => !['appliedPromotions', 'bonusInfo', 'setAgreement', 'setVolumeThreshold', 'addItem', 'removeItem', 'updateQuantity', 'getItemQuantity', 'pruneItems', 'clearCart'].includes(key))
         ),
       onRehydrateStorage: () => (state, error) => {
         if (state) {

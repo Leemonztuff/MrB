@@ -2,6 +2,7 @@
 
 "use client"
 
+import { forwardRef } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,18 +30,22 @@ type ClientActionButtonsProps = {
     clientStatus: Client['status'];
 }
 
-const ActionButton = ({ children, className, ...props }: React.ComponentProps<typeof Button>) => (
-    <Button
-        variant="secondary"
-        className={cn(
-            "flex flex-col items-center justify-center h-20 w-full gap-1 p-2 text-center text-xs sm:text-sm",
-            className
-        )}
-        {...props}
-    >
-        {children}
-    </Button>
+const ActionButton = forwardRef<HTMLButtonElement, React.ComponentProps<typeof Button>>(
+    ({ children, className, ...props }, ref) => (
+        <Button
+            ref={ref}
+            variant="secondary"
+            className={cn(
+                "flex flex-col items-center justify-center h-20 w-full gap-1 p-2 text-center text-xs sm:text-sm",
+                className
+            )}
+            {...props}
+        >
+            {children}
+        </Button>
+    )
 );
+ActionButton.displayName = "ActionButton";
 
 export function ClientActionButtons({ 
     onArchive, 
@@ -97,10 +102,9 @@ export function ClientActionButtons({
     )
 }
 
-const ActionButtonWrapper = ({ children }: { children: React.ReactNode }) => (
-     <ActionButton>
-        {children}
-    </ActionButton>
+const ActionButtonWrapper = forwardRef<HTMLButtonElement, React.ComponentProps<typeof Button>>(
+    (props, ref) => <ActionButton ref={ref} {...props} />
 );
+ActionButtonWrapper.displayName = "ActionButtonWrapper";
 
 export { ActionButtonWrapper, ActionButton };

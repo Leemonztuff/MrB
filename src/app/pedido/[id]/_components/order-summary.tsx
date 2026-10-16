@@ -173,6 +173,7 @@ export function OrderSummary({
   promotions,
   vatPercentage,
   volumeThreshold,
+  validProductIds = [],
   isEmbedded = false,
 }: {
   clientId: string;
@@ -181,9 +182,10 @@ export function OrderSummary({
   promotions: Promotion[];
   vatPercentage: number;
   volumeThreshold?: number;
+  validProductIds?: string[];
   isEmbedded?: boolean;
 }) {
-  const { items, totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, clearCart, setAgreement, setVolumeThreshold, clientId: storeClientId, appliedPromotions, bonusInfo, removeItem, getItemQuantity, addItem } = useCartStore();
+  const { items, totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, clearCart, setAgreement, setVolumeThreshold, clientId: storeClientId, appliedPromotions, bonusInfo, removeItem, getItemQuantity, addItem, pruneItems } = useCartStore();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [notes, setNotes] = useState("");
@@ -197,6 +199,14 @@ export function OrderSummary({
   useEffect(() => {
     setAgreement(clientId, pricesIncludeVat, promotions, vatPercentage);
   }, [clientId, pricesIncludeVat, promotions, vatPercentage, setAgreement]);
+
+  // Sanea el carrito persistido: quita productos que ya no existen en el catálogo
+  // actual (evita fallos de clave foránea al guardar el pedido).
+  useEffect(() => {
+    if (validProductIds.length > 0) {
+      pruneItems(validProductIds);
+    }
+  }, [validProductIds, pruneItems]);
 
   useEffect(() => {
     if (typeof volumeThreshold === 'number' && volumeThreshold > 0) {

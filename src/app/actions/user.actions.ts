@@ -147,6 +147,7 @@ export async function getOrderPageData(clientId: string): Promise<ActionResponse
             agreement,
             client,
             productsByCategory,
+            validProductIds: products.map((p: any) => p.id),
             vatPercentage: settings.vat_percentage || 21,
             volumeThreshold: Number(settings.volume_threshold) || DEFAULT_VOLUME_THRESHOLD,
             logoUrl: settings.logo_url
@@ -253,6 +254,12 @@ export async function submitOrder(payload: {
         );
         const serverTotal = totals.totalPrice;
 
+        // Defensa contra NaN/Infinity: un total inválido pasaría el chequeo de
+        // tolerancia (NaN > 1 es false) y terminaría en un error críptico de la DB.
+        if (!Number.isFinite(serverTotal) || !Number.isFinite(payload.total)) {
+            throw new Error("No pudimos calcular el total del pedido. Recargá la página e intenta nuevamente.");
+        }
+
         if (Math.abs(serverTotal - payload.total) > 1) {
             throw new Error("El total del pedido no coincide. Por favor, recarga la página e intenta de nuevo.");
         }
@@ -268,6 +275,10 @@ export async function submitOrder(payload: {
             };
         });
 
+        if (orderItems.some(oi => !oi.product_id || !Number.isFinite(oi.quantity) || !Number.isFinite(oi.price_per_unit))) {
+            throw new Error("El pedido contiene productos con precios inválidos. Recargá la página e intenta nuevamente.");
+        }
+
         const { data: order, error: orderError } = await supabase.rpc('create_order_with_items', {
             p_client_id: finalClientId,
             p_agreement_id: agreementId,
@@ -277,9 +288,27 @@ export async function submitOrder(payload: {
             p_items: JSON.stringify(orderItems),
         });
 
-        if (orderError || !order) throw new Error("Error al guardar pedido.");
+        if (orderError) {
+            console.error('create_order_with_items error:', {
+                message: orderError.message,
+                code: (orderError as any).code,
+                details: (orderError as any).details,
+                hint: (orderError as any).hint,
+            });
 
-        return { orderId: order.id };
+            const raw = `${orderError.message || ''}`.toLowerCase();
+            if (raw.includes('foreign key')) {
+                throw new Error("Alguno de los productos o datos del pedido ya no está disponible. Recargá la página e intenta nuevamente.");
+            }
+            if (raw.includes('null value') || raw.includes('not-null')) {
+                throw new Error("El pedido quedó incompleto al guardarse. Recargá la página e intenta nuevamente.");
+            }
+            throw new Error("No se pudo guardar el pedido. Intentá nuevamente en unos instantes; si el problema persiste, contactá al administrador.");
+        }
+
+        if (!order) throw new Error("No se pudo guardar el pedido.");
+
+        return { orderId: (order as { id: string }).id };
     }, ['/admin']);
 }
 

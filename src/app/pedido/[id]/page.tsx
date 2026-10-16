@@ -70,7 +70,7 @@ export default async function OrderPage({
     );
   }
 
-  const { agreement, client, productsByCategory, vatPercentage, logoUrl, volumeThreshold } = data;
+  const { agreement, client, productsByCategory, vatPercentage, logoUrl, volumeThreshold, validProductIds } = data;
   const categories = Object.keys(productsByCategory);
   const promotions = (agreement.agreement_promotions || []).map((ap: AgreementPromotion) => ap.promotions);
 
@@ -160,6 +160,7 @@ export default async function OrderPage({
               promotions={promotions}
               vatPercentage={vatPercentage}
               volumeThreshold={volumeThreshold}
+              validProductIds={validProductIds ?? []}
             />
           </Suspense>
         </div>
