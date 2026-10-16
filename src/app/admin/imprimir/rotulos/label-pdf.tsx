@@ -2,8 +2,9 @@
 
 import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
 import type { LabelData, LabelFormat } from '@/types';
+import { formatDate } from '@/lib/formatters';
 
-// Registro de la tipografia de marca (Century Gothic) para el PDF.
+// Tipografia de marca (Century Gothic) para el PDF.
 // Los archivos se sirven desde /public/fonts para que react-pdf los pueda embeber.
 Font.register({
   family: 'CenturyGothic',
@@ -14,155 +15,173 @@ Font.register({
   ],
 });
 
-const GOLD = '#E6D5A7';
 const BRAND_GOLD = '#C5A45E';
 const DARK = '#111111';
-const GRAY = '#666666';
-const LIGHT_GRAY = '#999999';
+const GRAY = '#5F5F5F';
+const LIGHT = '#9A9A9A';
+const BADGE_TEXT = '#E6D5A7';
+
+const A4_HEIGHT = 842;
+
+// Escala el rotulo segun cuantos entran por hoja, para que cada formato se vea intencional.
+function sizes(perPage: number) {
+  if (perPage <= 1) {
+    return { qr: 190, right: 210, name: 30, wordmark: 34, address: 15, pill: 12, note: 13, id: 11, qrText: 10, badge: 15, badgePad: '8 18', gap: 26, pad: 40 };
+  }
+  if (perPage === 2) {
+    return { qr: 130, right: 160, name: 22, wordmark: 26, address: 12, pill: 10, note: 11, id: 9, qrText: 9, badge: 12, badgePad: '6 14', gap: 20, pad: 30 };
+  }
+  return { qr: 108, right: 140, name: 18, wordmark: 21, address: 10, pill: 9, note: 9.5, id: 8, qrText: 8, badge: 10.5, badgePad: '5 12', gap: 16, pad: 24 };
+}
 
 const styles = StyleSheet.create({
   page: {
-    padding: 10,
     size: 'A4',
     fontFamily: 'CenturyGothic',
   },
-  labelCompact: {
+  row: {
     width: '100%',
-    borderBottom: '1px dashed #ccc',
-    padding: '15 0',
     display: 'flex',
     flexDirection: 'row',
-    gap: 15,
+    alignItems: 'center',
+    borderLeft: `5px solid ${BRAND_GOLD}`,
   },
-  labelCompactLast: {
-    width: '100%',
-    padding: '15 0',
-    display: 'flex',
-    flexDirection: 'row',
-    gap: 15,
-  },
-  labelFull: {
-    width: '100%',
-    height: '100%',
-    border: '1px solid #ddd',
-    borderRadius: 4,
-    padding: 25,
-    display: 'flex',
-    flexDirection: 'row',
-    gap: 20,
+  rowBorder: {
+    borderBottom: '1px dashed #E3E3E3',
   },
   left: {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'center',
-    gap: 6,
+  },
+  logo: {
+    objectFit: 'contain',
+    alignSelf: 'flex-start',
+    marginBottom: 6,
+  },
+  wordmark: {
+    fontFamily: 'CenturyGothic',
+    fontWeight: 900,
+    color: DARK,
+    letterSpacing: 1,
+  },
+  rule: {
+    height: 3,
+    backgroundColor: BRAND_GOLD,
+    marginBottom: 5,
+  },
+  clientName: {
+    fontFamily: 'CenturyGothic',
+    fontWeight: 'bold',
+    color: DARK,
+  },
+  address: {
+    color: GRAY,
+    lineHeight: 1.35,
+  },
+  pill: {
+    fontFamily: 'CenturyGothic',
+    fontWeight: 'bold',
+    color: DARK,
+    backgroundColor: '#F2E9D0',
+    padding: '4px 8px',
+    alignSelf: 'flex-start',
+    marginTop: 3,
+  },
+  notes: {
+    color: GRAY,
+    fontStyle: 'italic',
+    padding: '4px 8px',
+    backgroundColor: '#FFF7E0',
+    borderLeft: `2px solid ${BRAND_GOLD}`,
+    marginTop: 3,
+  },
+  id: {
+    color: LIGHT,
+    letterSpacing: 0.5,
+    marginTop: 3,
   },
   right: {
-    width: 140,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    borderLeft: '1px solid #eee',
-    paddingLeft: 12,
-    gap: 8,
-  },
-  brand: {
-    fontSize: 22,
-    fontFamily: 'CenturyGothic',
-    fontWeight: 900,
-    color: DARK,
-    letterSpacing: -0.5,
-    marginBottom: 6,
-  },
-  clientName: {
-    fontSize: 18,
-    fontFamily: 'CenturyGothic',
-    fontWeight: 'bold',
-    color: DARK,
-    marginBottom: 4,
-  },
-  address: {
-    fontSize: 12,
-    color: GRAY,
-    marginBottom: 6,
-    lineHeight: 1.4,
-  },
-  deliveryWindow: {
-    fontSize: 10,
-    fontFamily: 'CenturyGothic',
-    fontWeight: 'bold',
-    color: DARK,
-    backgroundColor: '#f0f0f0',
-    padding: '4 8',
-    alignSelf: 'flex-start',
-    marginBottom: 4,
-  },
-  notes: {
-    fontSize: 10,
-    color: GRAY,
-    fontStyle: 'italic',
-    marginTop: 4,
-    padding: '4 8',
-    backgroundColor: '#fff8e1',
-    borderLeft: '2px solid #ffc107',
-  },
-  qrImage: {
-    width: 100,
-    height: 100,
+    borderLeft: '1px solid #ECECEC',
+    paddingLeft: 16,
   },
   qrText: {
-    fontSize: 8,
     fontFamily: 'CenturyGothic',
     fontWeight: 'bold',
     color: GRAY,
+    letterSpacing: 1,
+    marginTop: 6,
+    textAlign: 'center',
   },
   bundleBadge: {
     backgroundColor: DARK,
-    color: GOLD,
-    padding: '5 12',
-    fontSize: 11,
-    fontFamily: 'CenturyGothic',
-    fontWeight: 'bold',
-    width: '100%',
+    marginTop: 6,
     textAlign: 'center',
-  },
-  logoImage: {
-    width: 28,
-    height: 28,
-    marginBottom: 6,
   },
 });
 
-function SingleLabel({ label, logoUrl, isLast }: { label: LabelData; logoUrl?: string | null; isLast?: boolean }) {
+function SingleLabel({
+  label,
+  logoUrl,
+  perPage,
+  isLast,
+}: {
+  label: LabelData;
+  logoUrl?: string | null;
+  perPage: number;
+  isLast: boolean;
+}) {
+  const s = sizes(perPage);
   const shortId = label.id?.slice(-6).toUpperCase() ?? '';
+  const height = Math.floor(A4_HEIGHT / perPage);
 
   return (
-    <View style={isLast ? styles.labelCompactLast : styles.labelCompact} wrap={false}>
-      <View style={styles.left}>
+    <View
+      style={[
+        styles.row,
+        { height, paddingHorizontal: s.pad, gap: s.gap },
+        isLast ? {} : styles.rowBorder,
+      ]}
+    >
+      <View style={[styles.left, { gap: s.gap * 0.3 }]}>
         {logoUrl ? (
-          <Image src={logoUrl} style={styles.logoImage} />
+          <Image src={logoUrl} style={[styles.logo, { height: s.wordmark * 1.5 }]} />
         ) : (
-          <Text style={styles.brand}>MR. BLONDE</Text>
+          <Text style={[styles.wordmark, { fontSize: s.wordmark }]}>MR. BLONDE</Text>
         )}
-        <Text style={styles.clientName}>{label.client_name_cache || 'Cliente'}</Text>
-        <Text style={styles.address}>{label.clients?.address || 'Direccion no registrada'}</Text>
-        {label.clients?.delivery_window && (
-          <Text style={styles.deliveryWindow}>Horario: {label.clients.delivery_window}</Text>
-        )}
-        {label.notes && (
-          <Text style={styles.notes}>Nota: {label.notes}</Text>
-        )}
-        <Text style={{ fontSize: 8, color: LIGHT_GRAY, marginTop: 6 }}>#{shortId}</Text>
+        <View style={[styles.rule, { width: Math.round(s.wordmark * 1.7) }]} />
+        <Text style={[styles.clientName, { fontSize: s.name }]}>
+          {label.client_name_cache || 'Cliente'}
+        </Text>
+        <Text style={[styles.address, { fontSize: s.address }]}>
+          {label.clients?.address || 'Dirección no registrada'}
+        </Text>
+        {label.clients?.delivery_window ? (
+          <Text style={[styles.pill, { fontSize: s.pill }]}>
+            Entrega: {label.clients.delivery_window}
+          </Text>
+        ) : null}
+        {label.notes ? (
+          <Text style={[styles.notes, { fontSize: s.note }]}>Nota: {label.notes}</Text>
+        ) : null}
+        <Text style={[styles.id, { fontSize: s.id }]}>
+          PEDIDO #{shortId} · {formatDate(label.created_at)}
+        </Text>
       </View>
-      <View style={styles.right}>
-        {label._qrDataUrl && (
-          <Image src={label._qrDataUrl} style={styles.qrImage} />
-        )}
-        <Text style={styles.qrText}>SCAN PARA CONFORMAR</Text>
-        <View style={styles.bundleBadge}>
-          <Text style={{ color: GOLD }}>BULTO {label.bundleIdx} DE {label.totalBundles}</Text>
+
+      <View style={[styles.right, { width: s.right }]}>
+        {label._qrDataUrl ? (
+          <Image src={label._qrDataUrl} style={{ width: s.qr, height: s.qr }} />
+        ) : null}
+        <Text style={[styles.qrText, { fontSize: s.qrText }]}>SCAN PARA CONFORMAR</Text>
+        <View style={[styles.bundleBadge, { padding: s.badgePad }]}>
+          <Text style={{ color: BADGE_TEXT, fontSize: s.badge }}>
+            BULTO {label.bundleIdx} DE {label.totalBundles}
+          </Text>
         </View>
       </View>
     </View>
@@ -192,6 +211,7 @@ export function LabelDocument({
                 key={`${label.id}-${label.bundleIdx}`}
                 label={label}
                 logoUrl={logoUrl}
+                perPage={perPage}
                 isLast={idx === pageLabels.length - 1}
               />
             ))}
