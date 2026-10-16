@@ -297,16 +297,25 @@ export async function submitOrder(payload: {
             });
 
             const raw = `${orderError.message || ''}`.toLowerCase();
+            // TEMP (diagnóstico): se incluye el detalle crudo en el mensaje para poder
+            // identificar la causa en producción. Quitar una vez resuelto.
+            const detail = [
+                (orderError as any).code,
+                orderError.message,
+                (orderError as any).details,
+                (orderError as any).hint,
+            ].filter(Boolean).join(' | ');
+
             if (raw.includes('foreign key')) {
-                throw new Error("Alguno de los productos o datos del pedido ya no está disponible. Recargá la página e intenta nuevamente.");
+                throw new Error(`Alguno de los productos o datos del pedido ya no está disponible. Recargá la página e intenta nuevamente. [${detail}]`);
             }
             if (raw.includes('null value') || raw.includes('not-null')) {
-                throw new Error("El pedido quedó incompleto al guardarse. Recargá la página e intenta nuevamente.");
+                throw new Error(`El pedido quedó incompleto al guardarse. Recargá la página e intenta nuevamente. [${detail}]`);
             }
-            throw new Error("No se pudo guardar el pedido. Intentá nuevamente en unos instantes; si el problema persiste, contactá al administrador.");
+            throw new Error(`No se pudo guardar el pedido. Detalle técnico: ${detail || 'sin detalle'}`);
         }
 
-        if (!order) throw new Error("No se pudo guardar el pedido.");
+        if (!order) throw new Error("No se pudo guardar el pedido. Detalle técnico: sin datos de respuesta del servidor.");
 
         return { orderId: (order as { id: string }).id };
     }, ['/admin']);
