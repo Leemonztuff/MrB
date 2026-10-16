@@ -122,7 +122,7 @@ const processPromotionPayload = (values: z.infer<typeof promotionSchema>) => {
 
   return {
     name: values.name,
-    description: values.description,
+    description: values.description ?? null,
     rules: {
         type: values.type,
         ...ruleDetails

@@ -48,7 +48,11 @@ export async function getNotificationData(): Promise<ActionResponse<{
             .rpc('get_notification_counts')
             .single();
         if (error) throw error;
-        return data;
+        return data as {
+            pending_orders_count: number;
+            pending_clients_count: number;
+            overdue_orders_count: number;
+        };
     });
 }
 

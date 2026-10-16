@@ -172,6 +172,7 @@ export function OrderSummary({
   pricesIncludeVat,
   promotions,
   vatPercentage,
+  volumeThreshold,
   isEmbedded = false,
 }: {
   clientId: string;
@@ -179,9 +180,10 @@ export function OrderSummary({
   pricesIncludeVat: boolean;
   promotions: Promotion[];
   vatPercentage: number;
+  volumeThreshold?: number;
   isEmbedded?: boolean;
 }) {
-  const { items, totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, clearCart, setAgreement, clientId: storeClientId, appliedPromotions, bonusInfo, removeItem, getItemQuantity, addItem } = useCartStore();
+  const { items, totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, clearCart, setAgreement, setVolumeThreshold, clientId: storeClientId, appliedPromotions, bonusInfo, removeItem, getItemQuantity, addItem } = useCartStore();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [notes, setNotes] = useState("");
@@ -195,6 +197,12 @@ export function OrderSummary({
   useEffect(() => {
     setAgreement(clientId, pricesIncludeVat, promotions, vatPercentage);
   }, [clientId, pricesIncludeVat, promotions, vatPercentage, setAgreement]);
+
+  useEffect(() => {
+    if (typeof volumeThreshold === 'number' && volumeThreshold > 0) {
+      setVolumeThreshold(volumeThreshold);
+    }
+  }, [volumeThreshold, setVolumeThreshold]);
 
 
   const handleSend = () => {

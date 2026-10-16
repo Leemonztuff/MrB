@@ -81,7 +81,7 @@ export function ClientInfo({ client, onCopy }: { client: Client, onCopy: (text: 
 
         <CopyableInfoItem label="Dirección de Entrega" value={client.address} onCopy={onCopy} />
         <CopyableInfoItem label="Ventana de Entrega" value={client.delivery_window} onCopy={onCopy} />
-        <CopyableInfoItem label="Instagram" value={client.instagram} onCopy={onCopy} />
+        <CopyableInfoItem label="Instagram" value={client.instagram ?? null} onCopy={onCopy} />
 
       </CardContent>
     </Card>

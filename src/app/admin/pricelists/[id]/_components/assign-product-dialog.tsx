@@ -40,7 +40,7 @@ import { productFormConfig } from "../../../products/_components/form-config";
 import type { FormConfig } from "../../../_components/entity-dialog";
 
 const assignSchema = z.object({
-  product_ids: z.array(z.string()).nonempty("Debes seleccionar al menos un producto."),
+  product_ids: z.array(z.string()).min(1, "Debes seleccionar al menos un producto."),
 });
 
 type AssignFormValues = z.infer<typeof assignSchema>;

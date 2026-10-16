@@ -305,7 +305,7 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Cli
                     <FormItem>
                       <FormLabel className="text-[10px] font-black uppercase tracking-widest opacity-60">CUIT</FormLabel>
                       <div className="relative">
-                        <FormControl><Input placeholder="11 dígitos sin guiones" className="h-12 glass border-white/10 rounded-xl font-medium pr-10" {...field} onBlur={(e) => { field.onBlur(e); if (!client) handleCuitLookup(); }} onKeyDown={(e) => { if (e.key === "Enter" && !client) { e.preventDefault(); handleCuitLookup(); } }} /></FormControl>
+                        <FormControl><Input placeholder="11 dígitos sin guiones" className="h-12 glass border-white/10 rounded-xl font-medium pr-10" {...field} onBlur={() => { field.onBlur(); if (!client) handleCuitLookup(); }} onKeyDown={(e) => { if (e.key === "Enter" && !client) { e.preventDefault(); handleCuitLookup(); } }} /></FormControl>
                         {cuitLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin opacity-50" />}
                       </div>
                       <FormMessage />

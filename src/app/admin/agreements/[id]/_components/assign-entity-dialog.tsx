@@ -29,6 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EntityDialog, type FormConfig } from "../../../_components/entity-dialog";
+import type { ActionResponse } from "@/types";
 
 type Entity = { id: string; [key: string]: any };
 
@@ -37,8 +38,8 @@ type AssignEntityDialogProps<T extends Entity> = {
   agreementId: string;
   entityName: string;
   entityNamePlural: string;
-  getUnassignedEntitiesAction: (agreementId: string) => Promise<{ data: T[] | null, error: any }>;
-  assignAction: (payload: { agreement_id: string; [key: string]: string[] }) => Promise<{ error: any }>;
+  getUnassignedEntitiesAction: (agreementId: string) => Promise<ActionResponse<T[]>>;
+  assignAction: (payload: any) => Promise<ActionResponse<null>>;
   assignPayloadKey: string;
   renderItem: (item: T) => React.ReactNode;
   creationFormConfig: FormConfig<any>;

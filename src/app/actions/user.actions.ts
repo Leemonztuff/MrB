@@ -11,6 +11,9 @@ import { handleAction } from '@/app/admin/actions/_helpers';
 import { onboardingSchema } from '@/lib/validations/client.schema';
 import { formatAddress, formatDeliveryWindow } from '@/lib/formatters';
 import { calculateCartTotals, DEFAULT_VOLUME_THRESHOLD } from '@/lib/logic/cart-calculations';
+import { z } from 'zod';
+
+const cartQuantitySchema = z.number().int().positive().max(10000);
 
 export async function hasUsers(): Promise<boolean> {
     // Fallback: si falta configuración o el cliente admin no está disponible,
@@ -134,6 +137,7 @@ export async function getOrderPageData(clientId: string): Promise<ActionResponse
             client,
             productsByCategory,
             vatPercentage: settings.vat_percentage || 21,
+            volumeThreshold: Number(settings.volume_threshold) || DEFAULT_VOLUME_THRESHOLD,
             logoUrl: settings.logo_url
         };
     });
@@ -151,11 +155,22 @@ export async function submitOrder(payload: {
         const finalClientId = (!payload.clientId || payload.clientId === 'generic') ? null : payload.clientId;
         const finalClientName = payload.clientName || "Cliente";
 
+        // Validación defensiva: el carrito y las cantidades vienen del cliente.
+        if (!Array.isArray(payload.cart) || payload.cart.length === 0) {
+            throw new Error("El carrito está vacío.");
+        }
+        for (const item of payload.cart) {
+            if (!item?.product?.id || !cartQuantitySchema.safeParse(item.quantity).success) {
+                throw new Error("El pedido contiene productos o cantidades inválidas.");
+            }
+        }
+
         let agreementId: string | null = null;
         let priceListId: string | null = null;
         let pricesIncludeVat = true;
         let promotions: Promotion[] = [];
         let vatPercentage = 21;
+        let volumeThreshold = DEFAULT_VOLUME_THRESHOLD;
 
         const { data: settingsRows } = await supabase
             .from('app_settings')
@@ -163,6 +178,10 @@ export async function submitOrder(payload: {
         const vatRow = (settingsRows || []).find((s: AppSettingsRow) => s.key === 'vat_percentage');
         if (vatRow && vatRow.value != null) {
             vatPercentage = Number(vatRow.value) || 21;
+        }
+        const volumeRow = (settingsRows || []).find((s: AppSettingsRow) => s.key === 'volume_threshold');
+        if (volumeRow && volumeRow.value != null) {
+            volumeThreshold = Number(volumeRow.value) || DEFAULT_VOLUME_THRESHOLD;
         }
 
         if (finalClientId) {
@@ -219,7 +238,7 @@ export async function submitOrder(payload: {
             pricesIncludeVat,
             promotions,
             vatPercentage,
-            DEFAULT_VOLUME_THRESHOLD
+            volumeThreshold
         );
         const serverTotal = totals.totalPrice;
 

@@ -106,7 +106,7 @@ const processPayload = (values: z.infer<typeof salesConditionSchema>) => {
 
   return {
     name: values.name,
-    description: values.description,
+    description: values.description ?? null,
     rules: {
         type: values.type,
         ...ruleDetails

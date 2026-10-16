@@ -102,7 +102,7 @@ export const calculateCartTotals = (
 
     const { appliedPromotions, bonusInfo, discountPercentage } = calculatePromotions(items, subtotal, promotions);
 
-    // Only percentage discounts affect the total (buy_x_get_y_free are赠品, not discounts)
+    // Only percentage discounts affect the total (buy_x_get_y_free are bonus items, not discounts)
     const percentageDiscount = roundCurrency(subtotal * (discountPercentage / 100));
     const totalDiscount = percentageDiscount;
     const subtotalWithDiscount = roundCurrency(subtotal - totalDiscount);
