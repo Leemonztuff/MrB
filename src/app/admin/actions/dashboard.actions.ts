@@ -34,7 +34,7 @@ export async function getDashboardData(): Promise<ActionResponse<{
             pendingOrders,
             pendingClients,
         };
-    }, ['/admin']);
+    });
 }
 
 export async function getNotificationData(): Promise<ActionResponse<{
