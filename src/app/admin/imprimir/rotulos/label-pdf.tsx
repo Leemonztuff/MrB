@@ -26,12 +26,12 @@ const A4_HEIGHT = 842;
 // Escala el rotulo segun cuantos entran por hoja, para que cada formato se vea intencional.
 function sizes(perPage: number) {
   if (perPage <= 1) {
-    return { qr: 190, right: 210, name: 30, wordmark: 34, address: 15, pill: 12, note: 13, id: 11, qrText: 10, badge: 15, badgePad: '8 18', gap: 26, pad: 40 };
+    return { qr: 190, right: 210, name: 26, address: 22, addressLabel: 11, wordmark: 30, pill: 12, note: 13, id: 11, qrText: 10, badge: 15, badgePad: '8 18', gap: 26, pad: 40 };
   }
   if (perPage === 2) {
-    return { qr: 130, right: 160, name: 22, wordmark: 26, address: 12, pill: 10, note: 11, id: 9, qrText: 9, badge: 12, badgePad: '6 14', gap: 20, pad: 30 };
+    return { qr: 130, right: 160, name: 20, address: 17, addressLabel: 9.5, wordmark: 24, pill: 10, note: 11, id: 9, qrText: 9, badge: 12, badgePad: '6 14', gap: 20, pad: 30 };
   }
-  return { qr: 108, right: 140, name: 18, wordmark: 21, address: 10, pill: 9, note: 9.5, id: 8, qrText: 8, badge: 10.5, badgePad: '5 12', gap: 16, pad: 24 };
+  return { qr: 108, right: 140, name: 16, address: 13.5, addressLabel: 8.5, wordmark: 20, pill: 9, note: 9.5, id: 8, qrText: 8, badge: 10.5, badgePad: '5 12', gap: 16, pad: 24 };
 }
 
 const styles = StyleSheet.create({
@@ -75,9 +75,29 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: DARK,
   },
+  addressBlock: {
+    borderLeft: `3px solid ${BRAND_GOLD}`,
+    paddingLeft: 10,
+    marginTop: 2,
+  },
+  addressLabel: {
+    fontFamily: 'CenturyGothic',
+    fontWeight: 'bold',
+    color: BRAND_GOLD,
+    letterSpacing: 1.5,
+    marginBottom: 1,
+  },
   address: {
-    color: GRAY,
-    lineHeight: 1.35,
+    fontFamily: 'CenturyGothic',
+    fontWeight: 'bold',
+    color: DARK,
+    lineHeight: 1.25,
+  },
+  addressMissing: {
+    fontFamily: 'CenturyGothic',
+    fontWeight: 'bold',
+    color: '#B00020',
+    lineHeight: 1.25,
   },
   pill: {
     fontFamily: 'CenturyGothic',
@@ -157,9 +177,20 @@ function SingleLabel({
         <Text style={[styles.clientName, { fontSize: s.name }]}>
           {label.client_name_cache || 'Cliente'}
         </Text>
-        <Text style={[styles.address, { fontSize: s.address }]}>
-          {label.clients?.address || 'Dirección no registrada'}
-        </Text>
+        <View style={styles.addressBlock}>
+          <Text style={[styles.addressLabel, { fontSize: s.addressLabel }]}>
+            DIRECCIÓN DE ENTREGA
+          </Text>
+          {label.clients?.address ? (
+            <Text style={[styles.address, { fontSize: s.address }]}>
+              {label.clients.address}
+            </Text>
+          ) : (
+            <Text style={[styles.addressMissing, { fontSize: s.address }]}>
+              SIN DIRECCIÓN CARGADA
+            </Text>
+          )}
+        </View>
         {label.clients?.delivery_window ? (
           <Text style={[styles.pill, { fontSize: s.pill }]}>
             Entrega: {label.clients.delivery_window}
