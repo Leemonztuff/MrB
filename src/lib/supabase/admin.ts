@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 // Este cliente de Supabase utiliza la SERVICE_ROLE_KEY, que le otorga
 // acceso completo a tu base de datos, saltándose cualquier política de RLS.
@@ -8,9 +8,9 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-let supabaseAdminSingleton: ReturnType<typeof createClient> | null = null;
+let supabaseAdminSingleton: SupabaseClient | null = null;
 
-function getSupabaseAdmin() {
+function getSupabaseAdmin(): SupabaseClient | null {
     if (supabaseAdminSingleton) {
         return supabaseAdminSingleton;
     }

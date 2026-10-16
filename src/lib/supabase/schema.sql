@@ -241,43 +241,34 @@ ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 
+-- NOTE: no hay policies para `anon`. Los flujos públicos (/pedido, /onboarding,
+-- /pedido/confirmar) corren del lado del servidor con el cliente service_role,
+-- que bypassa RLS. El rol `anon` no tiene acceso a ninguna tabla.
+
 CREATE POLICY "Allow all for authenticated" ON public.products FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow read for anonymous" ON public.products FOR SELECT USING (true);
 
 CREATE POLICY "Allow all for authenticated" ON public.price_lists FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow read for anonymous" ON public.price_lists FOR SELECT USING (true);
 
 CREATE POLICY "Allow all for authenticated" ON public.price_list_items FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow read for anonymous" ON public.price_list_items FOR SELECT USING (true);
 
 CREATE POLICY "Allow all for authenticated" ON public.promotions FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow read for anonymous" ON public.promotions FOR SELECT USING (true);
 
 CREATE POLICY "Allow all for authenticated" ON public.sales_conditions FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow read for anonymous" ON public.sales_conditions FOR SELECT USING (true);
 
 CREATE POLICY "Allow all for authenticated" ON public.agreements FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow read for anonymous" ON public.agreements FOR SELECT USING (true);
 
 CREATE POLICY "Allow all for authenticated" ON public.agreement_promotions FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow read for anonymous" ON public.agreement_promotions FOR SELECT USING (true);
 
 CREATE POLICY "Allow all for authenticated" ON public.agreement_sales_conditions FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow read for anonymous" ON public.agreement_sales_conditions FOR SELECT USING (true);
 
 CREATE POLICY "Allow all for authenticated" ON public.clients FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow read/update for anonymous with token" ON public.clients FOR ALL USING (true);
 
 CREATE POLICY "Allow all for authenticated" ON public.orders FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow insert for anonymous" ON public.orders FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow read for anonymous" ON public.orders FOR SELECT USING (true);
 
 CREATE POLICY "Allow all for authenticated" ON public.order_items FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow insert for anonymous" ON public.order_items FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow read for anonymous" ON public.order_items FOR SELECT USING (true);
 
 CREATE POLICY "Allow all for authenticated" ON public.app_settings FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow read for anonymous" ON public.app_settings FOR SELECT USING (true);
+
 
 -- 8. INITIAL SETTINGS
 INSERT INTO public.app_settings (key, value) VALUES ('vat_percentage', '21'::jsonb) ON CONFLICT (key) DO NOTHING;

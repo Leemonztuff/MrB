@@ -15,6 +15,15 @@ import { z } from 'zod';
 
 const cartQuantitySchema = z.number().int().positive().max(10000);
 
+// Los flujos públicos corren del lado del servidor, por lo que usan el cliente
+// con service_role (bypassa RLS). El service_role NUNCA se expone al navegador.
+function requireAdmin() {
+    if (!supabaseAdmin) {
+        throw new Error("Configuración del servidor incompleta.");
+    }
+    return supabaseAdmin;
+}
+
 export async function hasUsers(): Promise<boolean> {
     // Fallback: si falta configuración o el cliente admin no está disponible,
     // asumimos que no hay usuarios para que el flujo de creación sea alcanzable
@@ -52,7 +61,9 @@ export async function signupSuperAdmin(prevState: AuthState, formData: FormData)
         email,
         password,
         email_confirm: true,
-        user_metadata: { role: 'super_admin' }
+        // El rol de autorización va en app_metadata (solo lo escribe el server).
+        // user_metadata es editable por el propio usuario, por eso no se usa para permisos.
+        app_metadata: { role: 'super_admin' }
     });
 
     if (error) return { error: { message: error.message } };
@@ -67,7 +78,7 @@ export async function logout() {
 
 export async function getOrderPageData(clientId: string): Promise<ActionResponse<any>> {
     return handleAction(async () => {
-        const supabase = await createServerClient();
+        const supabase = requireAdmin();
 
         // 1. Buscar el cliente por ID
         const { data: client, error: clientError } = await supabase
@@ -151,7 +162,7 @@ export async function submitOrder(payload: {
     notes?: string;
 }): Promise<ActionResponse<{ orderId: string }>> {
     return handleAction(async () => {
-        const supabase = await createServerClient();
+        const supabase = requireAdmin();
         const finalClientId = (!payload.clientId || payload.clientId === 'generic') ? null : payload.clientId;
         const finalClientName = payload.clientName || "Cliente";
 
@@ -274,7 +285,7 @@ export async function submitOrder(payload: {
 
 export async function submitOnboardingForm(payload: any): Promise<ActionResponse<null>> {
     return handleAction(async () => {
-        const supabase = await createServerClient();
+        const supabase = requireAdmin();
         const validated = onboardingSchema.parse(payload);
         const { onboarding_token, ...data } = validated;
 
@@ -305,7 +316,7 @@ export async function submitOnboardingForm(payload: any): Promise<ActionResponse
 
 export async function getOnboardingClient(token: string): Promise<ActionResponse<any>> {
     return handleAction(async () => {
-        const supabase = await createServerClient();
+        const supabase = requireAdmin();
         const { data, error } = await supabase
             .from('clients')
             .select('*')

@@ -30,97 +30,48 @@ Regla general a respetar:
 
 ---
 
-## 2. SEGURIDAD — pendiente (requiere SQL en Supabase)
+## 2. SEGURIDAD — RESUELTO (código + migración SQL)
 
-### 2.1 RLS de `clients` permite leer/editar todo sin token — CRÍTICO
-`schema.sql:269`
-```sql
-CREATE POLICY "Allow read/update for anonymous with token" ON public.clients FOR ALL USING (true);
-```
-El nombre dice "with token" pero la condición es `true`. Con la `anon key` (pública) cualquiera
-puede leer y **modificar** todos los clientes (nombre, CUIT, email, status, `agreement_id`…).
-El onboarding necesita acceso anónimo, pero debe filtrarse por `onboarding_token`.
+Se cerró el acceso anónimo y se arregló la autorización de admin:
 
-Sugerencia:
-- Separar en políticas: `SELECT`/`UPDATE` anónimo limitado por token, o mover el onboarding
-  a un Server Action con `service_role` y cerrar el acceso anónimo a `clients`.
-- Ejemplo orientativo (revisar antes de aplicar):
-```sql
-DROP POLICY "Allow read/update for anonymous with token" ON public.clients;
-CREATE POLICY "anon select by token" ON public.clients FOR SELECT TO anon USING (true);
-CREATE POLICY "anon update by token" ON public.clients FOR UPDATE TO anon USING (onboarding_token IS NOT NULL);
-```
-(Ajustar: `UPDATE` con `USING` por token concreto no es directo en RLS; evaluar usar
-`service_role` desde el server action `submitOnboardingForm` y bloquear `anon` por completo.)
+- **Flujos públicos server-side con `service_role`**: `getOrderPageData`, `submitOrder`,
+  `getOnboardingClient`, `submitOnboardingForm` (`user.actions.ts`), `getPublicOrderDetails`,
+  `publicConfirmOrder` (`orders.actions.ts`), `getPublicLogoUrl`, `getPublicWhatsappNumber`
+  (`settings.actions.ts`). El `service_role` nunca se expone al navegador.
+- **Guard de admin** (`_helpers.ts`): ahora exige `user.app_metadata.role === 'super_admin'`
+  (antes pasaba cualquier logueado, porque `user.role` es `'authenticated'` para todos).
+- **Signup** (`signupSuperAdmin`): el rol se guarda en `app_metadata` (antes `user_metadata`,
+  que el propio usuario puede editar).
+- **RLS** (`schema.sql`): eliminadas TODAS las policies para `anon` (products, price_lists,
+  price_list_items, promotions, sales_conditions, agreements, agreement_promotions,
+  agreement_sales_conditions, clients, orders, order_items, app_settings). Quedan solo las de
+  `authenticated`.
+- **Migración para bases existentes**: `src/lib/supabase/migrations/20261015_lockdown_anon.sql`
+  (idempotente: borra las policies de `anon` + backfill del rol de admin en `app_metadata`).
 
-### 2.2 `orders` / `order_items` legibles por cualquiera — ALTO
-`schema.sql:273,277`: `FOR SELECT USING (true)` para `anon` → cualquiera con la anon key lee
-todos los pedidos del negocio. `insert` anónimo con `WITH CHECK (true)` sin límites (spam).
+Orden de aplicación: **(1) correr la migración → (2) deploy del código.**
 
-Sugerencia: restringir `SELECT` anónimo a lo necesario para la página pública `/pedido/[id]`
-y `/pedido/confirmar/[id]` (por id/token), y/o usar `service_role` en los server actions.
+> OJO: NO re-ejecutar `schema.sql` en una base con datos: arranca con `DROP TABLE ... CASCADE`.
+> Es un script de reset, no idempotente (contrario a lo que dice el `AGENTS.md`).
 
-### 2.3 `getSupabaseClientWithAuth` no valida admin — ALTO
-`src/app/admin/actions/_helpers.ts:20`
-```ts
-if (!user || (user.app_metadata?.role !== 'super_admin' && user.role !== 'authenticated')) {
-    throw new Error("No tienes permisos de administrador para realizar esta acción.");
-}
-```
-`user.role` es `'authenticated'` para **cualquier** usuario logueado, así que el chequeo siempre
-pasa. Además el signup guarda el rol en `user_metadata` (`user.actions.ts:46`), no en
-`app_metadata`, por lo que ni siquiera coincidiría.
-
-Sugerencia: chequear `user.app_metadata?.role === 'super_admin'` (y setearlo con
-`supabaseAdmin.auth.admin.updateUserById(..., { app_metadata })`, no `user_metadata`).
-
-### 2.4 `app_settings` legible por anon — BAJO/MEDIO
-`schema.sql:280`: hoy expone `whatsapp_number`, `vat_percentage`, `logo_url` (aceptable), pero
-si se agregan secretos a esa tabla quedarían expuestos vía anon key.
+Mejora futura: RLS `authenticated` sigue dando acceso total a cualquier usuario logueado;
+endurecer por rol (por ejemplo `auth.jwt() -> 'app_metadata' ->> 'role' = 'super_admin'`).
 
 ---
 
-## 3. CALIDAD / ROBUSTEZ — pendiente (solo código)
+## 3. CALIDAD / ROBUSTEZ — RESUELTO (commit `e6c9106`)
 
-### 3.1 Validación de build apagada
-`next.config.ts`: `typescript.ignoreBuildErrors: true` y `eslint.ignoreDuringBuilds: true`.
-Oculta errores reales (varios de los bugs de `ActionResponse` eran detectables por tipos).
-Pendientes detectados por `tsc`:
-- `src/app/admin/pricelists/[id]/_components/assign-product-dialog.tsx:114,116` — schema Zod con
-  tupla `[string, ...string[]]` vs `string[]` en `setValue('product_ids', ...)`.
-- `src/app/admin/actions/dashboard.actions.ts:45` — `getNotificationData` infiere
-  `ActionResponse<unknown>` por `.rpc(...).single()`.
-- Varios errores de tipos en `ActionResponse` en `agreements.actions`/`dashboard.actions`
-  (`ActionResponse<X>` vs forma real).
-Sugerencia: apagar `ignoreBuildErrors` en una rama, medir y arreglar por tandas.
-
-### 3.2 `quantity` sin validar en `submitOrder` — `src/app/actions/user.actions.ts`
-La cantidad viene del cliente y no se valida (>0, entero, máximo). Los precios sí se
-sobreescriben desde la DB, pero no la cantidad. Validar con Zod antes de calcular/insertar.
-Considerar: si `finalClientId` es null (`'generic'`) se confían precios del cliente.
-
-### 3.3 `volume_threshold` configurable pero ignorado
-`schema.sql` guarda `app_settings.volume_threshold = 150`, pero el código usa la constante
-`DEFAULT_VOLUME_THRESHOLD = 150` hardcodeada en cliente y server. Cambiar la config no tiene
-efecto. Leer `volume_threshold` de `app_settings` y pasarlo al store (`setVolumeThreshold`) y a
-`calculateCartTotals` en el server.
-
-### 3.4 Código muerto / duplicado
-- `src/app/admin/agreements/[id]/_components/assign-product-dialog.tsx` — no se importa desde
-  ningún lado (revisar antes de borrar).
-- `getOrderPageData` (en `user.actions.ts`) duplica la lógica de carga de catálogo/agreement que
-  ya usa la página `/pedido/[id]`.
-
-### 3.5 Detalles menores
-- `src/lib/logic/cart-calculations.ts:105` — comentario con carácter chino "赠品" (cosmético).
-- `src/app/pedido/[id]/page.tsx` — ya se corrigió `params` a `Promise` (Next 15).
-- `getOrderPageData` matchea tipos de error por substring en español (frágil ante cambios de
-  texto).
+- `next.config.ts`: `typescript.ignoreBuildErrors` apagado (`npx tsc --noEmit` en 0 errores,
+  `npm run build` pasa con type-check). Quedó solo `eslint.ignoreDuringBuilds`.
+- `submitOrder`: valida carrito/cantidades con Zod (`cartQuantitySchema`, entero 1–10000).
+- `volume_threshold` se lee de `app_settings` y se aplica en cliente (`setVolumeThreshold`) y
+  server (`calculateCartTotals`).
+- Borrado código muerto `assign-product-dialog.tsx`; corregido comentario con carácter chino.
 
 ---
 
 ## 4. Notas de entorno
 - Deploy en Vercel; requiere `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
   `SUPABASE_SERVICE_ROLE_KEY`. Si falta algo ahora se muestra `/setup`.
-- Los cambios hasta `f3bd075` no requieren re-ejecutar SQL (solo código).
-- Las correcciones de la sección 2 SÍ requieren aplicar SQL nuevo en Supabase.
+- Los cambios de la sección 3 no requieren SQL. Los de la sección 2 SÍ: hay que correr
+  `src/lib/supabase/migrations/20261015_lockdown_anon.sql` antes del deploy.

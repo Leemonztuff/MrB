@@ -2,10 +2,17 @@
 "use server";
 
 import { getSupabaseClientWithAuth, handleAction } from "@/app/admin/actions/_helpers";
-import { createClient as createServerClient } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import type { AppSettings } from "@/types";
 import type { ActionResponse } from "@/types";
+
+// Los flujos públicos corren del lado del servidor, por lo que usan el cliente
+// con service_role (bypassa RLS). El service_role NUNCA se expone al navegador.
+function requireAdmin() {
+    if (!supabaseAdmin) throw new Error("Configuración del servidor incompleta.");
+    return supabaseAdmin;
+}
 
 export async function getSettings(): Promise<AppSettings> {
     const supabase = await getSupabaseClientWithAuth();
@@ -30,11 +37,11 @@ export async function getSettings(): Promise<AppSettings> {
 
 /**
  * Gets the WhatsApp number. This action is public and can be called from client components
- * without authentication, as it uses an anonymous server client.
+ * without authentication. Runs server-side with the service_role client.
  */
 export async function getPublicWhatsappNumber(): Promise<ActionResponse<string>> {
     return handleAction(async () => {
-        const supabase = await createServerClient();
+        const supabase = requireAdmin();
         const { data, error } = await supabase
             .from('app_settings')
             .select('value')
@@ -47,11 +54,11 @@ export async function getPublicWhatsappNumber(): Promise<ActionResponse<string>>
 
 /**
  * Gets the Logo URL. This action is public and can be called from server components
- * without authentication, as it uses an anonymous server client.
+ * without authentication. Runs server-side with the service_role client.
  */
 export async function getPublicLogoUrl(): Promise<ActionResponse<string | null>> {
     return handleAction(async () => {
-        const supabase = await createServerClient();
+        const supabase = requireAdmin();
         const { data, error } = await supabase
             .from('app_settings')
             .select('value')

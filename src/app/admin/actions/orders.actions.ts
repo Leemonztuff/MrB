@@ -3,7 +3,14 @@
 
 import { handleAction, getSupabaseClientWithAuth } from './_helpers';
 import type { Order, OrderWithItems, ActionResponse } from '@/types';
-import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+
+// Los flujos públicos corren del lado del servidor, por lo que usan el cliente
+// con service_role (bypassa RLS). El service_role NUNCA se expone al navegador.
+function requireAdmin() {
+    if (!supabaseAdmin) throw new Error("Configuración del servidor incompleta.");
+    return supabaseAdmin;
+}
 
 export async function getOrders(filters?: { status?: string; query?: string }): Promise<ActionResponse<Order[]>> {
     return handleAction(async () => {
@@ -70,7 +77,7 @@ export async function updateOrderStatus(orderId: string, status: 'armado' | 'tra
 
 export async function getPublicOrderDetails(orderId: string): Promise<ActionResponse<OrderWithItems>> {
     return handleAction(async () => {
-        const supabase = await createClient();
+        const supabase = requireAdmin();
         const { data, error } = await supabase
             .from('orders')
             .select('*, order_items(quantity, products(name))')
@@ -96,7 +103,7 @@ export async function getLabelData(ids: string[]): Promise<ActionResponse<OrderW
 
 export async function publicConfirmOrder(orderId: string, token?: string): Promise<ActionResponse<null>> {
     return handleAction(async () => {
-        const supabase = await createClient();
+        const supabase = requireAdmin();
 
         const { data: order, error: fetchError } = await supabase
             .from('orders')
