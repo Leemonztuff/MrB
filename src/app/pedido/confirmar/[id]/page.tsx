@@ -9,7 +9,7 @@ const errorMessages: Record<string, string> = {
   confirmation_failed: "Error al confirmar el pedido. Intenta nuevamente.",
   invalid_token: "Token de confirmación inválido.",
   not_found: "Pedido no encontrado.",
-  invalid_status: "Este pedido no puede ser confirmado en su estado actual.",
+  invalid_status: "Este pedido aún no fue despachado.",
 };
 
 export default async function OrderConfirmationPortal({
@@ -80,6 +80,30 @@ export default async function OrderConfirmationPortal({
           <p className="text-muted-foreground leading-relaxed">
             Agradecemos tu colaboración. Esta información nos ayuda a mejorar nuestro servicio de logística para vos.
           </p>
+
+          {order.order_items && order.order_items.length > 0 && (
+            <div className="mt-8 pt-6 border-t border-dashed text-left">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold text-center">
+                Detalle de Productos
+              </p>
+              <p className="text-xs text-muted-foreground text-center mt-1 mb-4">
+                Revisa el pedido aquí:
+              </p>
+              <ul className="space-y-2">
+                {order.order_items.map((item, idx) => (
+                  <li key={idx} className="flex items-center gap-3 bg-muted/40 rounded-lg px-3 py-2">
+                    <span className="shrink-0 min-w-7 h-6 px-1.5 bg-primary/10 text-primary rounded-md text-xs font-black flex items-center justify-center tabular-nums">
+                      {item.quantity}
+                    </span>
+                    <span className="text-sm text-foreground/90 truncate">
+                      {item.products?.name ?? 'Producto'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div className="mt-8 pt-6 border-t border-dashed flex flex-col items-center gap-1">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Resumen del Pedido</p>
             <p className="text-sm font-semibold">{order.client_name_cache}</p>

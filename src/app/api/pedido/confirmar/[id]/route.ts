@@ -25,7 +25,7 @@ export async function GET(
         if (message.includes('no encontrado')) {
             return NextResponse.redirect(`${origin}/pedido/confirmar/${id}?error=not_found`);
         }
-        if (message.includes('estado actual')) {
+        if (message.includes('despachado')) {
             return NextResponse.redirect(`${origin}/pedido/confirmar/${id}?error=invalid_status`);
         }
         return NextResponse.redirect(`${origin}/pedido/confirmar/${id}?error=confirmation_failed`);
