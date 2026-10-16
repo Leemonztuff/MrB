@@ -1,9 +1,21 @@
 'use client';
 
-import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
 import type { LabelData, LabelFormat } from '@/types';
 
+// Registro de la tipografia de marca (Century Gothic) para el PDF.
+// Los archivos se sirven desde /public/fonts para que react-pdf los pueda embeber.
+Font.register({
+  family: 'CenturyGothic',
+  fonts: [
+    { src: '/fonts/CenturyGothicPaneuropeanRegular.ttf', fontWeight: 'normal' },
+    { src: '/fonts/CenturyGothicPaneuropeanBold.ttf', fontWeight: 'bold' },
+    { src: '/fonts/CenturyGothicPaneuropeanBlack.ttf', fontWeight: 900 },
+  ],
+});
+
 const GOLD = '#E6D5A7';
+const BRAND_GOLD = '#C5A45E';
 const DARK = '#111111';
 const GRAY = '#666666';
 const LIGHT_GRAY = '#999999';
@@ -12,6 +24,7 @@ const styles = StyleSheet.create({
   page: {
     padding: 10,
     size: 'A4',
+    fontFamily: 'CenturyGothic',
   },
   labelCompact: {
     width: '100%',
@@ -57,14 +70,16 @@ const styles = StyleSheet.create({
   },
   brand: {
     fontSize: 22,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'CenturyGothic',
+    fontWeight: 900,
     color: DARK,
     letterSpacing: -0.5,
     marginBottom: 6,
   },
   clientName: {
     fontSize: 18,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'CenturyGothic',
+    fontWeight: 'bold',
     color: DARK,
     marginBottom: 4,
   },
@@ -76,7 +91,8 @@ const styles = StyleSheet.create({
   },
   deliveryWindow: {
     fontSize: 10,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'CenturyGothic',
+    fontWeight: 'bold',
     color: DARK,
     backgroundColor: '#f0f0f0',
     padding: '4 8',
@@ -98,7 +114,8 @@ const styles = StyleSheet.create({
   },
   qrText: {
     fontSize: 8,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'CenturyGothic',
+    fontWeight: 'bold',
     color: GRAY,
   },
   bundleBadge: {
@@ -106,7 +123,8 @@ const styles = StyleSheet.create({
     color: GOLD,
     padding: '5 12',
     fontSize: 11,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'CenturyGothic',
+    fontWeight: 'bold',
     width: '100%',
     textAlign: 'center',
   },

@@ -20,8 +20,8 @@ export function LabelPreview({
   const totalPages = Math.ceil(labels.length / format);
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="bg-white border-b border-gray-200 px-6 py-4 no-print">
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="sticky top-0 z-10 bg-card/80 backdrop-blur border-b border-border px-6 py-4 no-print">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Button
@@ -34,26 +34,28 @@ export function LabelPreview({
               Volver
             </Button>
             <div>
-              <h1 className="text-lg font-bold text-gray-900">Vista Previa de Rotulos</h1>
-              <p className="text-sm text-gray-500">
-                {labels.length} rotulo(s) - {totalPages} pagina(s)
+              <h1 className="text-lg font-black italic tracking-tight">
+                Vista Previa de <span className="text-primary">Rótulos</span>
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {labels.length} rótulo(s) · {totalPages} página(s)
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
               {([1, 2, 3] as LabelFormat[]).map((f) => (
                 <button
                   key={f}
                   onClick={() => setFormat(f)}
                   className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                     format === f
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  {f} {f === 1 ? 'rotulo' : 'rotulos'}/pag
+                  {f} {f === 1 ? 'rótulo' : 'rótulos'}/pág
                 </button>
               ))}
             </div>
@@ -77,7 +79,7 @@ export function LabelPreview({
 
             <Button
               size="sm"
-              className="gap-2 bg-gray-900 hover:bg-gray-800"
+              className="gap-2"
               onClick={() => window.print()}
             >
               <Printer className="h-4 w-4" />
@@ -88,7 +90,7 @@ export function LabelPreview({
       </div>
 
       <div className="max-w-7xl mx-auto p-6 print-area">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-white rounded-lg shadow-2xl overflow-hidden ring-1 ring-black/5">
           <PDFViewer width="100%" height={800} showToolbar={false}>
             <LabelDocument labels={labels} format={format} logoUrl={logoUrl} />
           </PDFViewer>
