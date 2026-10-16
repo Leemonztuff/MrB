@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePDF } from '@react-pdf/renderer';
 import { LabelDocument } from './label-pdf';
+import { markOrdersAsPrinted } from '@/app/admin/actions/orders.actions';
 import { Button } from '@/components/ui/button';
 import { Download, Printer, ArrowLeft, Loader2 } from 'lucide-react';
 import type { LabelData, LabelFormat } from '@/types';
@@ -18,6 +19,16 @@ export function LabelPreview({
 }) {
   const [format, setFormat] = useState<LabelFormat>(3);
   const totalPages = Math.ceil(labels.length / format);
+
+  // Los rótulos repetidos por bulto comparten el mismo pedido: se deduplican.
+  const orderIds = useMemo(() => [...new Set(labels.map(l => l.id))], [labels]);
+
+  // El pedido se marca como impreso recién cuando el usuario imprime o descarga,
+  // no al abrir la vista previa. Ese flag habilita el despacho en el servidor.
+  const markPrinted = useCallback(() => {
+    if (orderIds.length === 0) return;
+    markOrdersAsPrinted(orderIds).catch(() => {});
+  }, [orderIds]);
 
   const pdfDocument = useMemo(
     () => <LabelDocument labels={labels} format={format} logoUrl={logoUrl} />,
@@ -42,6 +53,7 @@ export function LabelPreview({
   // y dispara la impresión nativa del documento.
   const handlePrint = useCallback(() => {
     if (!instance.url) return;
+    markPrinted();
     const iframe = document.createElement('iframe');
     iframe.setAttribute('aria-hidden', 'true');
     Object.assign(iframe.style, {
@@ -62,7 +74,7 @@ export function LabelPreview({
       }
     };
     document.body.appendChild(iframe);
-  }, [instance.url]);
+  }, [instance.url, markPrinted]);
 
   const previewSrc = instance.url ? `${instance.url}#toolbar=0&navpanes=0&statusbar=0` : undefined;
 
@@ -104,7 +116,7 @@ export function LabelPreview({
 
             {instance.url ? (
               <Button asChild variant="outline" size="sm" className="gap-2">
-                <a href={instance.url} download={fileName}>
+                <a href={instance.url} download={fileName} onClick={markPrinted}>
                   <Download className="h-4 w-4" />
                   Descargar PDF
                 </a>

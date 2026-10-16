@@ -4,7 +4,6 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { getLabelData } from '@/app/admin/actions/orders.actions';
 import { getPublicLogoUrl } from '@/app/admin/actions/settings.actions';
-import { markOrdersAsPrinted } from '@/app/admin/actions/orders.actions';
 import { generateQRBase64 } from '@/lib/qr-generator';
 import { getPrintSelections, clearPrintSelections } from '@/lib/print-helpers';
 import { LabelPreview } from './label-preview';
@@ -70,10 +69,6 @@ function LabelsPrintContent() {
 
         setLabels(allLabels);
         clearPrintSelections();
-
-        // Mark orders as printed
-        const orderIds = [...new Set(selections.map(s => s.id))];
-        await markOrdersAsPrinted(orderIds);
       } catch (err: any) {
         console.error('Print Error:', err);
         let message = 'Error al procesar los datos. Verifica que los pedidos sean validos.';

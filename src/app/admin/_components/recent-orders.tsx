@@ -40,22 +40,20 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
     const [selectedOrders, setSelectedOrders] = useState<Record<string, boolean>>({})
     const [orderBundles, setOrderBundles] = useState<Record<string, number>>({});
     const [showUnprintedWarning, setShowUnprintedWarning] = useState(false);
-    const [pendingDispatchIds, setPendingDispatchIds] = useState<string[]>([]);
+    const [pendingSelections, setPendingSelections] = useState<{ id: string; bundles: number }[]>([]);
+
+    const toSelections = (ids: string[]) => ids.map(id => ({ id, bundles: orderBundles[id] || 1 }));
 
     const handleUpdateStatus = (orderId: string, nextStatus: 'transito' | 'entregado') => {
-        if (nextStatus === 'transito') {
-            const order = orders.find(o => o.id === orderId);
-            if (order && !order.printed_at) {
-                setPendingDispatchIds([orderId]);
-                setShowUnprintedWarning(true);
-                return;
-            }
-        }
-
         startTransition(async () => {
             const { error } = await updateOrderStatus(orderId, nextStatus);
             if (error) {
-                toast({ title: "Error", description: "No se pudo actualizar el estado.", variant: "destructive" });
+                if (error.code === 'NOT_PRINTED') {
+                    setPendingSelections([{ id: orderId, bundles: orderBundles[orderId] || 1 }]);
+                    setShowUnprintedWarning(true);
+                } else {
+                    toast({ title: "Error", description: error.message || "No se pudo actualizar el estado.", variant: "destructive" });
+                }
             } else {
                 setOrders(current => current.filter(o => o.id !== orderId));
                 toast({ title: "Estado Actualizado", description: `El pedido está ahora marcado como ${nextStatus === 'transito' ? 'despachado' : 'conformado'}.` });
@@ -64,23 +62,19 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
     }
 
     const confirmBatchDispatch = () => {
-        const orderIds = selectedOrderList.map(o => o.id);
-        const unprintedOrders = orders.filter(o => orderIds.includes(o.id) && !o.printed_at);
-
-        if (unprintedOrders.length > 0) {
-            setPendingDispatchIds(orderIds);
-            setShowUnprintedWarning(true);
-            return;
-        }
-
-        executeDispatch(orderIds);
+        executeDispatch(selectedOrderList.map(o => o.id));
     }
 
     const executeDispatch = (orderIds: string[]) => {
         startTransition(async () => {
             const { error } = await bulkUpdateOrderStatus(orderIds, 'transito');
             if (error) {
-                toast({ title: "Error", description: "No se pudieron despachar los pedidos.", variant: "destructive" });
+                if (error.code === 'NOT_PRINTED') {
+                    setPendingSelections(toSelections(orderIds));
+                    setShowUnprintedWarning(true);
+                } else {
+                    toast({ title: "Error", description: error.message || "No se pudieron despachar los pedidos.", variant: "destructive" });
+                }
             } else {
                 setOrders(current => current.filter(o => !orderIds.includes(o.id)));
                 setSelectedOrders({});
@@ -244,34 +238,29 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-amber-500">
                             <AlertTriangle className="h-5 w-5" />
-                            Pedidos sin imprimir
+                            Rótulo sin imprimir
                         </DialogTitle>
                         <DialogDescription>
-                            Algunos pedidos seleccionados no tienen rótulo impreso. 
-                            ¿Deseas imprimir los rótulos antes de despachar?
+                            Los pedidos deben imprimirse antes de despacharse. Genera e imprime los
+                            rótulos y luego vuelve a confirmar el despacho.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="flex flex-col sm:flex-row gap-2">
                         <Button
                             variant="outline"
-                            onClick={() => {
-                                const unprintedOrders = selectedOrderList.filter(o => {
-                                    const order = orders.find(ord => ord.id === o.id);
-                                    return order && !order.printed_at;
-                                });
-                                openPrintPage(unprintedOrders);
-                                setShowUnprintedWarning(false);
-                            }}
-                            className="gap-2"
+                            onClick={() => setShowUnprintedWarning(false)}
                         >
-                            <Printer className="h-4 w-4" />
-                            Imprimir primero
+                            Cancelar
                         </Button>
                         <Button
-                            variant="destructive"
-                            onClick={() => executeDispatch(pendingDispatchIds)}
+                            onClick={() => {
+                                openPrintPage(pendingSelections);
+                                setShowUnprintedWarning(false);
+                            }}
+                            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                         >
-                            Despachar de todas formas
+                            <Printer className="h-4 w-4" />
+                            Imprimir rótulos
                         </Button>
                     </DialogFooter>
                 </DialogContent>

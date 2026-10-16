@@ -12,6 +12,16 @@ function requireAdmin() {
     return supabaseAdmin;
 }
 
+// Un pedido solo puede despacharse (armado -> transito) si su rótulo fue impreso.
+function notPrintedError(count = 1) {
+    const message = count > 1
+        ? `${count} pedidos no tienen rótulo impreso y no pueden despacharse.`
+        : "El pedido no tiene rótulo impreso y no puede despacharse.";
+    const error = new Error(message) as Error & { code?: string };
+    error.code = 'NOT_PRINTED';
+    return error;
+}
+
 export async function getOrders(filters?: { status?: string; query?: string }): Promise<ActionResponse<Order[]>> {
     return handleAction(async () => {
         const supabase = await getSupabaseClientWithAuth();
@@ -69,6 +79,17 @@ export async function getOrdersBatch(ids: string[]): Promise<ActionResponse<Orde
 export async function updateOrderStatus(orderId: string, status: 'armado' | 'transito' | 'entregado'): Promise<ActionResponse<null>> {
     return handleAction(async () => {
         const supabase = await getSupabaseClientWithAuth();
+
+        if (status === 'transito') {
+            const { data: order, error: fetchError } = await supabase
+                .from('orders')
+                .select('printed_at')
+                .eq('id', orderId)
+                .single();
+            if (fetchError) throw fetchError;
+            if (!order?.printed_at) throw notPrintedError();
+        }
+
         const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
         if (error) throw error;
         return null;
@@ -119,8 +140,8 @@ export async function publicConfirmOrder(orderId: string, token?: string): Promi
             throw new Error("Token de confirmación inválido.");
         }
 
-        if (order.status !== 'armado' && order.status !== 'transito') {
-            throw new Error("Este pedido no puede ser confirmado en su estado actual.");
+        if (order.status !== 'transito') {
+            throw new Error("Este pedido aún no fue despachado.");
         }
 
         const { error } = await supabase
@@ -135,6 +156,17 @@ export async function publicConfirmOrder(orderId: string, token?: string): Promi
 export async function bulkUpdateOrderStatus(orderIds: string[], status: 'armado' | 'transito' | 'entregado'): Promise<ActionResponse<null>> {
     return handleAction(async () => {
         const supabase = await getSupabaseClientWithAuth();
+
+        if (status === 'transito') {
+            const { data: orders, error: fetchError } = await supabase
+                .from('orders')
+                .select('id, printed_at')
+                .in('id', orderIds);
+            if (fetchError) throw fetchError;
+            const unprinted = (orders ?? []).filter(o => !o.printed_at);
+            if (unprinted.length > 0) throw notPrintedError(unprinted.length);
+        }
+
         const { error } = await supabase
             .from('orders')
             .update({ status })
