@@ -34,13 +34,13 @@ export async function upsertProduct(formData: FormData): Promise<ActionResponse<
       const filePath = `products/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('product_images')
+        .from('app_assets')
         .upload(filePath, imageFile, { upsert: true });
 
       if (uploadError) throw new Error("Error al subir la imagen.");
 
-      const { data: publicUrlData } = supabase.storage
-        .from('product_images')
+      const { data: publicUrlData } = await supabase.storage
+        .from('app_assets')
         .getPublicUrl(filePath);
 
       finalImageUrl = publicUrlData.publicUrl;

@@ -20,7 +20,7 @@ export async function getSettings(): Promise<AppSettings> {
 
     if (error) {
         console.error("getSettings error:", error.message);
-        return { whatsapp_number: "", vat_percentage: 21, logo_url: null };
+        return { whatsapp_number: "", vat_percentage: 21, logo_url: null, label_logo_url: null };
     }
 
     const settings = (data || []).reduce((acc: any, { key, value }: { key: string, value: any }) => {
@@ -32,6 +32,7 @@ export async function getSettings(): Promise<AppSettings> {
         whatsapp_number: settings.whatsapp_number || "",
         vat_percentage: settings.vat_percentage || 21,
         logo_url: settings.logo_url || null,
+        label_logo_url: settings.label_logo_url || null,
     };
 }
 
@@ -53,20 +54,34 @@ export async function getPublicWhatsappNumber(): Promise<ActionResponse<string>>
 }
 
 /**
- * Gets the Logo URL. This action is public and can be called from server components
- * without authentication. Runs server-side with the service_role client.
+ * Gets a public app setting by key. These actions are public and can be called from
+ * server components without authentication. Runs server-side with the service_role client.
  */
-export async function getPublicLogoUrl(): Promise<ActionResponse<string | null>> {
+async function getPublicSetting(key: string): Promise<ActionResponse<string | null>> {
     return handleAction(async () => {
         const supabase = requireAdmin();
         const { data, error } = await supabase
             .from('app_settings')
             .select('value')
-            .eq('key', 'logo_url')
-            .single();
+            .eq('key', key)
+            .maybeSingle();
         if (error) throw error;
-        return data.value as string | null;
+        return (data?.value ?? null) as string | null;
     });
+}
+
+/**
+ * Gets the square brand icon URL (used across the app UI).
+ */
+export async function getPublicLogoUrl(): Promise<ActionResponse<string | null>> {
+    return getPublicSetting('logo_url');
+}
+
+/**
+ * Gets the wide logo URL used on the shipping labels (recommended 912x168).
+ */
+export async function getPublicLabelLogoUrl(): Promise<ActionResponse<string | null>> {
+    return getPublicSetting('label_logo_url');
 }
 
 
@@ -97,17 +112,23 @@ export async function updateSettings(formData: FormData): Promise<{ error?: stri
     return {};
 }
 
-export async function updateLogo(formData: FormData): Promise<{ error?: string }> {
+async function uploadLogoAsset(
+    formData: FormData,
+    {
+        field,
+        fileNameBase,
+        settingKey,
+    }: { field: string; fileNameBase: string; settingKey: string }
+): Promise<{ error?: string }> {
     const supabase = await getSupabaseClientWithAuth();
-    const logoImage = formData.get('logo_image') as File | null;
+    const logoImage = formData.get(field) as File | null;
 
     if (!logoImage || logoImage.size === 0) {
         return { error: "No se proporcionó ninguna imagen." };
     }
 
     const fileExt = logoImage.name.split('.').pop();
-    const fileName = `logo.${fileExt}`;
-    const filePath = `public/${fileName}`;
+    const filePath = `public/${fileNameBase}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
         .from('app_assets')
@@ -125,7 +146,7 @@ export async function updateLogo(formData: FormData): Promise<{ error?: string }
     const logoUrl = `${publicUrlData.publicUrl}?t=${new Date().getTime()}`; // Cache-busting
 
     const { error: dbError } = await supabase.from('app_settings').upsert(
-        { key: 'logo_url', value: logoUrl },
+        { key: settingKey, value: logoUrl },
         { onConflict: 'key' }
     );
 
@@ -140,24 +161,45 @@ export async function updateLogo(formData: FormData): Promise<{ error?: string }
     return {};
 }
 
-export async function deleteLogo(): Promise<{ error?: string }> {
+async function deleteLogoAsset(settingKey: string): Promise<{ error?: string }> {
     const supabase = await getSupabaseClientWithAuth();
 
     const { error } = await supabase
         .from('app_settings')
         .delete()
-        .eq('key', 'logo_url');
+        .eq('key', settingKey);
 
     if (error) {
         console.error("deleteLogo error:", error.message);
         return { error: "No se pudo eliminar el logo de la base de datos." };
     }
 
-    // Optional: Also delete the file from storage if desired
-    // For this app, we'll just remove the DB reference to keep it simple.
-
     revalidatePath('/admin', 'layout');
     revalidatePath('/login');
     revalidatePath('/signup');
     return {};
+}
+
+export async function updateLogo(formData: FormData): Promise<{ error?: string }> {
+    return uploadLogoAsset(formData, {
+        field: 'logo_image',
+        fileNameBase: 'logo',
+        settingKey: 'logo_url',
+    });
+}
+
+export async function deleteLogo(): Promise<{ error?: string }> {
+    return deleteLogoAsset('logo_url');
+}
+
+export async function updateLabelLogo(formData: FormData): Promise<{ error?: string }> {
+    return uploadLogoAsset(formData, {
+        field: 'label_logo_image',
+        fileNameBase: 'label-logo',
+        settingKey: 'label_logo_url',
+    });
+}
+
+export async function deleteLabelLogo(): Promise<{ error?: string }> {
+    return deleteLogoAsset('label_logo_url');
 }

@@ -102,6 +102,45 @@ export async function importBackup(
 
 const STORAGE_BUCKETS = ["app_assets", "product_images"] as const;
 
+async function addStorageFolderToZip(
+  admin: NonNullable<typeof supabaseAdmin>,
+  bucket: string,
+  prefix: string,
+  zip: JSZip
+): Promise<void> {
+  const { data: files, error: listError } = await admin.storage
+    .from(bucket)
+    .list(prefix, { limit: 1000 });
+
+  if (listError) {
+    console.error(`Error listando '${bucket}/${prefix}':`, listError.message);
+    return;
+  }
+
+  for (const file of files ?? []) {
+    const path = prefix ? `${prefix}/${file.name}` : file.name;
+
+    if (file.id === null) {
+      await addStorageFolderToZip(admin, bucket, path, zip);
+      continue;
+    }
+
+    const { data: fileData, error: downloadError } = await admin.storage
+      .from(bucket)
+      .download(path);
+
+    if (downloadError || !fileData) {
+      console.error(
+        `Error descargando '${bucket}/${path}':`,
+        downloadError?.message
+      );
+      continue;
+    }
+
+    zip.file(`${bucket}/${path}`, await fileData.arrayBuffer());
+  }
+}
+
 export async function exportImages(): Promise<{
   data: string;
   filename: string;
@@ -112,35 +151,7 @@ export async function exportImages(): Promise<{
   const zip = new JSZip();
 
   for (const bucket of STORAGE_BUCKETS) {
-    const { data: files, error: listError } = await admin.storage
-      .from(bucket)
-      .list("");
-
-    if (listError) {
-      console.error(`Error listando bucket '${bucket}':`, listError.message);
-      continue;
-    }
-
-    if (!files) continue;
-
-    for (const file of files) {
-      if (file.id === null) continue;
-
-      const { data: fileData, error: downloadError } = await admin.storage
-        .from(bucket)
-        .download(file.name);
-
-      if (downloadError || !fileData) {
-        console.error(
-          `Error descargando '${bucket}/${file.name}':`,
-          downloadError?.message
-        );
-        continue;
-      }
-
-      const arrayBuffer = await fileData.arrayBuffer();
-      zip.file(`${bucket}/${file.name}`, arrayBuffer);
-    }
+    await addStorageFolderToZip(admin, bucket, "", zip);
   }
 
   const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });

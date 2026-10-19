@@ -9,6 +9,7 @@ import { upsertProduct } from "@/app/admin/actions/products.actions";
 import type { FormConfig } from "../../_components/entity-dialog";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
+import { StorageImagePicker } from "./storage-image-picker";
 
 // 1. Esquema de validación para Producto
 const productSchema = z.object({
@@ -16,6 +17,7 @@ const productSchema = z.object({
   description: z.string().optional(),
   category: z.string().optional(),
   image: z.any().optional(),
+  image_url: z.string().nullable().optional(),
 });
 
 // 2. Función para obtener los valores por defecto del formulario de Producto
@@ -40,14 +42,23 @@ const renderProductFields = (form: any) => {
           <FormItem>
             <FormLabel>Imagen del Producto</FormLabel>
             <FormControl>
-              <Input
-                type="file"
-                accept="image/png, image/jpeg, image/webp"
-                onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
-              />
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  type="file"
+                  accept="image/png, image/jpeg, image/webp"
+                  onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
+                  className="flex-1"
+                />
+                <StorageImagePicker
+                  onSelect={(url) => {
+                    form.setValue("image_url", url, { shouldDirty: true, shouldValidate: true });
+                    form.setValue("image", undefined, { shouldDirty: true });
+                  }}
+                />
+              </div>
             </FormControl>
             <FormDescription>
-              Sube una imagen para el producto (recomendado: formato cuadrado).
+              Subí una imagen nueva o elegí una existente del bucket (recomendado: formato cuadrado).
             </FormDescription>
             <FormMessage />
           </FormItem>
@@ -116,7 +127,7 @@ const renderProductFields = (form: any) => {
 
 // Wrapper action: uploads image client-side to Supabase Storage first,
 // then sends only the URL string to the Server Action (avoids 1MB body limit).
-const handleUpsertProduct = async (payload: z.infer<typeof productSchema> & { id?: string; image_url?: string }) => {
+const handleUpsertProduct = async (payload: z.infer<typeof productSchema> & { id?: string }) => {
   const { createClient } = await import('@/lib/supabase/client');
   const supabase = createClient();
 
@@ -130,7 +141,7 @@ const handleUpsertProduct = async (payload: z.infer<typeof productSchema> & { id
     const filePath = `products/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
-      .from('product_images')
+      .from('app_assets')
       .upload(filePath, imageFile, { upsert: true });
 
     if (uploadError) {
@@ -139,7 +150,7 @@ const handleUpsertProduct = async (payload: z.infer<typeof productSchema> & { id
     }
 
     const { data: publicUrlData } = supabase.storage
-      .from('product_images')
+      .from('app_assets')
       .getPublicUrl(filePath);
 
     finalImageUrl = publicUrlData.publicUrl;

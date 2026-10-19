@@ -3,6 +3,7 @@ import { PageContainer } from "@/components/shared/page-container";
 import { getSettings } from "@/app/admin/actions/settings.actions";
 import { SettingsForm } from "./_components/settings-form";
 import { BackupClient } from "./_components/backup-client";
+import { StorageMaintenance } from "./_components/StorageMaintenance";
 import {
   Accordion,
   AccordionContent,
@@ -31,6 +32,12 @@ export default async function SettingsPage() {
           <AccordionTrigger>Backup y Restauracion</AccordionTrigger>
           <AccordionContent>
             <BackupClient />
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="storage">
+          <AccordionTrigger>Almacenamiento</AccordionTrigger>
+          <AccordionContent>
+            <StorageMaintenance />
           </AccordionContent>
         </AccordionItem>
       </Accordion>

@@ -113,6 +113,7 @@ export type AppSettings = {
     whatsapp_number: string;
     vat_percentage: number;
     logo_url: string | null;
+    label_logo_url: string | null;
 }
 
 export type AppSettingsRow = {

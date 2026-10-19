@@ -13,6 +13,7 @@ import { updateSettings } from '@/app/admin/actions/settings.actions';
 import type { AppSettings } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LogoUploader } from './LogoUploader';
+import { LabelLogoUploader } from './LabelLogoUploader';
 
 const settingsSchema = z.object({
     whatsapp_number: z.string().min(10, "Debe ser un número válido."),
@@ -102,7 +103,10 @@ export function SettingsForm({ settings }: { settings: AppSettings }) {
                     </Card>
                 </form>
             </FormProvider>
-            <LogoUploader currentLogoUrl={settings.logo_url} />
+            <div className="space-y-8">
+                <LogoUploader currentLogoUrl={settings.logo_url} />
+                <LabelLogoUploader currentLogoUrl={settings.label_logo_url} />
+            </div>
         </div>
     );
 }

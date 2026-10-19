@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { getLabelData } from '@/app/admin/actions/orders.actions';
-import { getPublicLogoUrl } from '@/app/admin/actions/settings.actions';
+import { getPublicLogoUrl, getPublicLabelLogoUrl } from '@/app/admin/actions/settings.actions';
 import { generateQRBase64 } from '@/lib/qr-generator';
 import { getPrintSelections, clearPrintSelections } from '@/lib/print-helpers';
 import { LabelPreview } from './label-preview';
@@ -28,12 +28,14 @@ function LabelsPrintContent() {
       }
 
       try {
-        const [labelResult, logo] = await Promise.all([
+        const [labelResult, logo, labelLogo] = await Promise.all([
           getLabelData(selections.map(o => o.id)),
           getPublicLogoUrl(),
+          getPublicLabelLogoUrl(),
         ]);
 
-        setLogoUrl(logo.data ?? null);
+        // El rótulo usa el logo horizontal (912x168); si no existe, cae al icono cuadrado.
+        setLogoUrl(labelLogo.data ?? logo.data ?? null);
 
         if (labelResult.error || !labelResult.data) {
           throw new Error(labelResult.error?.message || 'Error al cargar pedidos');
