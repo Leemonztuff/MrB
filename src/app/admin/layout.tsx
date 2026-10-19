@@ -20,6 +20,7 @@ import { Notifications } from "./_components/notifications";
 import { getNotificationData, getDashboardData } from "@/app/admin/actions/dashboard.actions";
 import { getSettings } from "@/app/admin/actions/settings.actions";
 import { AppNav } from "./_components/app-nav";
+import { AutoRefresh } from "./_components/auto-refresh";
 import type { DashboardStats } from "@/types";
 
 const createNotifications = (
@@ -80,6 +81,7 @@ export default async function AdminLayout({
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background/95">
+      <AutoRefresh />
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-20 flex-col glass border-r-0 sm:flex shadow-none">
         <nav className="flex flex-col items-center gap-6 px-2 py-8">
           <Link

@@ -60,6 +60,10 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
         const origin = window.location.origin;
         setGeneratedLink(`${origin}/onboarding/${result.data.onboarding_token}`);
         setView("link");
+        toast({
+          title: "¡Cliente creado!",
+          description: "El enlace de invitación está listo para compartir.",
+        });
       }
     });
   };
