@@ -286,7 +286,7 @@ export async function submitOrder(payload: {
             p_client_name_cache: finalClientName,
             p_notes: payload.notes || null,
             p_payment_type: null,
-            p_items: JSON.stringify(orderItems),
+            p_items: orderItems,
         });
 
         if (orderError) {

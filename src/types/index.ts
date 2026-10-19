@@ -42,6 +42,8 @@ export type Promotion = {
     created_at: string;
 };
 
+export type PaymentType = 'remito' | 'proforma';
+
 export type Order = {
     id: string;
     client_id: string | null;
@@ -52,6 +54,7 @@ export type Order = {
     client_name_cache: string;
     notes?: string | null;
     printed_at?: string | null;
+    payment_type?: PaymentType | null;
     confirmation_token?: string | null;
 }
 
@@ -59,6 +62,7 @@ export type OrderWithItems = Order & {
     order_items: {
         quantity: number;
         price_per_unit: number;
+        is_bonus?: boolean;
         products: {
             name: string;
             category: string | null;
@@ -121,6 +125,7 @@ export type Agreement = {
     agreement_name: string;
     client_type: 'barberia' | 'distribuidor' | 'especial' | 'consumidor_final';
     price_list_id: string | null;
+    payment_type?: PaymentType;
     created_at: string;
 };
 

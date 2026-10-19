@@ -1,24 +1,42 @@
 -- ============================================================================
--- DIAGNOSTICO (parte 2): definicion real de la funcion y valores del enum
+-- DIAGNOSTICO (parte 3): dump completo del esquema public
 -- ============================================================================
--- Pegar TODO este contenido en el SQL Editor de Supabase (una sola sentencia
--- devuelve ambas cosas) y copiar el resultado.
--- Es solo lectura (no modifica nada).
+-- Pegar TODO este contenido en el SQL Editor de Supabase y copiar el resultado.
+-- Es UNA sola sentencia (Supabase solo muestra el resultado de la ultima) y es
+-- de solo lectura (no modifica nada).
 -- ============================================================================
 
-select 'FUNCION' as seccion, pg_get_functiondef(oid) as valor
-from pg_proc
-where proname = 'create_order_with_items'
+select 'COLUMN' as tipo, table_name || '.' || ordinal_position::text || '.' || column_name as nombre,
+       data_type || coalesce(' / ' || udt_name, '') || ' / null=' || is_nullable || ' / def=' || coalesce(column_default, '-') as detalle
+from information_schema.columns
+where table_schema = 'public'
 
 union all
 
-select 'ENUM payment_type', string_agg(e.enumlabel, ', ' order by e.enumsortorder)
+select 'ENUM', t.typname, string_agg(e.enumlabel, ', ' order by e.enumsortorder)
 from pg_type t
 join pg_enum e on e.enumtypid = t.oid
-where t.typname = (
-    select udt_name
-    from information_schema.columns
-    where table_schema = 'public'
-      and table_name = 'orders'
-      and column_name = 'payment_type'
-);
+join pg_namespace n on n.oid = t.typnamespace
+where n.nspname = 'public'
+group by t.typname
+
+union all
+
+select 'FUNC', p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')', pg_get_functiondef(p.oid)
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public'
+
+union all
+
+select 'INDEX', indexname, indexdef
+from pg_indexes
+where schemaname = 'public'
+
+union all
+
+select 'POLICY', policyname, tablename || ' / roles=' || roles::text || ' / using=' || coalesce(qual, '-') || ' / check=' || coalesce(with_check, '-')
+from pg_policies
+where schemaname = 'public'
+
+order by 1, 2;
