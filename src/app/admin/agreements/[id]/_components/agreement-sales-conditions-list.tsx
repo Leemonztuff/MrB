@@ -47,7 +47,7 @@ export default function AgreementSalesConditionsList({ conditions, agreementId }
     return (
         <div className="text-center py-12 text-muted-foreground">
             <p>No hay condiciones de venta asignadas a este convenio.</p>
-            <p className="text-sm">Usa el botón "Asignar" para empezar.</p>
+            <p className="text-sm">Usa el botón &quot;Asignar&quot; para empezar.</p>
         </div>
     )
   }

@@ -50,7 +50,7 @@ export function PriceListProductsTable({ items, priceListId }: { items: PriceLis
     return (
         <div className="text-center py-12 text-muted-foreground">
             <p>No hay productos en esta lista de precios.</p>
-            <p className="text-sm">Usa el botón "Asignar Productos" para empezar.</p>
+            <p className="text-sm">Usa el botón &quot;Asignar Productos&quot; para empezar.</p>
         </div>
     )
   }

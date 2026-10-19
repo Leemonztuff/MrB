@@ -42,7 +42,7 @@ export default function AgreementPromotionsList({ promotions, agreementId }: { p
     return (
         <div className="text-center py-12 text-muted-foreground">
             <p>No hay promociones asignadas a este convenio.</p>
-            <p className="text-sm">Usa el botón "Asignar Promoción" para empezar.</p>
+            <p className="text-sm">Usa el botón &quot;Asignar Promoción&quot; para empezar.</p>
         </div>
     )
   }

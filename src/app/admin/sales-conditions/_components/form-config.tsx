@@ -182,7 +182,7 @@ const RenderFields = ({ form }: {form: any}) => {
 
         {/* --- Campos Condicionales --- */}
         <div className={cn("space-y-4 p-4 border rounded-md bg-muted/30", selectedType === "net_days" ? "block" : "hidden")}>
-            <h4 className="font-medium text-sm">Reglas de "Plazo de pago"</h4>
+            <h4 className="font-medium text-sm">Reglas de &quot;Plazo de pago&quot;</h4>
             <FormField control={form.control} name="rules.net_days.days" render={({ field }) => (
                 <FormItem>
                     <FormLabel>Días de Plazo</FormLabel>
@@ -194,7 +194,7 @@ const RenderFields = ({ form }: {form: any}) => {
         </div>
 
         <div className={cn("space-y-4 p-4 border rounded-md bg-muted/30", selectedType === "discount" ? "block" : "hidden")}>
-            <h4 className="font-medium text-sm">Reglas de "Descuento"</h4>
+            <h4 className="font-medium text-sm">Reglas de &quot;Descuento&quot;</h4>
             <FormField control={form.control} name="rules.discount.percentage" render={({ field }) => (
                 <FormItem>
                     <FormLabel>Porcentaje de Descuento</FormLabel>
@@ -206,7 +206,7 @@ const RenderFields = ({ form }: {form: any}) => {
         </div>
 
         <div className={cn("space-y-4 p-4 border rounded-md bg-muted/30", selectedType === "installments" ? "block" : "hidden")}>
-            <h4 className="font-medium text-sm">Reglas de "Cuotas"</h4>
+            <h4 className="font-medium text-sm">Reglas de &quot;Cuotas&quot;</h4>
             <FormField control={form.control} name="rules.installments.installments" render={({ field }) => (
                 <FormItem>
                     <FormLabel>Cantidad de Cuotas</FormLabel>
@@ -218,7 +218,7 @@ const RenderFields = ({ form }: {form: any}) => {
         </div>
 
          <div className={cn("space-y-4 p-4 border rounded-md bg-muted/30", selectedType === "split_payment" ? "block" : "hidden")}>
-            <h4 className="font-medium text-sm">Reglas de "Pago Dividido"</h4>
+            <h4 className="font-medium text-sm">Reglas de &quot;Pago Dividido&quot;</h4>
             <div className="grid grid-cols-2 gap-4">
                  <FormField control={form.control} name="rules.split_payment.initial_percentage" render={({ field }) => (
                     <FormItem>

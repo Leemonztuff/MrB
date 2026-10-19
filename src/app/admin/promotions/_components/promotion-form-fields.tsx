@@ -106,7 +106,7 @@ export function PromotionFormFields({ form }: { form: any }) {
         )}
       >
         <h4 className="font-medium text-sm">
-          Reglas de "Compre X, lleve Y gratis"
+          Reglas de &quot;Compre X, lleve Y gratis&quot;
         </h4>
         <div className="grid grid-cols-2 gap-4">
           <FormField
@@ -144,7 +144,7 @@ export function PromotionFormFields({ form }: { form: any }) {
           selectedType === "free_shipping" ? "block" : "hidden"
         )}
       >
-        <h4 className="font-medium text-sm">Reglas de "Envío sin cargo"</h4>
+        <h4 className="font-medium text-sm">Reglas de &quot;Envío sin cargo&quot;</h4>
         <FormField
           control={form.control}
           name="rules.free_shipping.min_units"
@@ -179,7 +179,7 @@ export function PromotionFormFields({ form }: { form: any }) {
           selectedType === "min_amount_discount" ? "block" : "hidden"
         )}
       >
-        <h4 className="font-medium text-sm">Reglas de "Descuento por Monto Mínimo"</h4>
+        <h4 className="font-medium text-sm">Reglas de &quot;Descuento por Monto Mínimo&quot;</h4>
          <div className="grid grid-cols-2 gap-4">
             <FormField
             control={form.control}

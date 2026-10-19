@@ -10,10 +10,12 @@ B2B order management app for beauty product suppliers. Single Next.js 15 package
 npm install          # install deps
 npm run dev          # dev server on http://localhost:9003
 npm run build        # production build
-npm run lint         # next lint
+npm run lint         # eslint (flat config, eslint.config.mjs)
+npm run typecheck    # tsc --noEmit
+npm test             # vitest run
 ```
 
-No test framework is configured. No CI workflows exist.
+Tests live next to the code as `*.test.ts` (Vitest, node environment, `@/*` alias configured in `vitest.config.mts`). No CI workflows exist.
 
 ## Build Quirks
 

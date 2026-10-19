@@ -1,4 +1,5 @@
 
+import Link from "next/link";
 import { getOrderPageData } from "@/app/actions/user.actions";
 import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/app/logo";
@@ -64,7 +65,7 @@ export default async function OrderPage({
           {errorMessage}
         </p>
         <Button asChild>
-          <a href="/">Volver al inicio</a>
+          <Link href="/">Volver al inicio</Link>
         </Button>
       </div>
     );
