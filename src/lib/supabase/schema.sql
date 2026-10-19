@@ -7,6 +7,9 @@ DROP VIEW IF EXISTS public.agreements_with_counts CASCADE;
 DROP VIEW IF EXISTS public.dashboard_stats CASCADE;
 DROP FUNCTION IF EXISTS public.get_notification_counts() CASCADE;
 DROP FUNCTION IF EXISTS public.get_client_stats(uuid) CASCADE;
+DROP FUNCTION IF EXISTS public.get_dashboard_metrics() CASCADE;
+DROP FUNCTION IF EXISTS public.get_order_status_counts() CASCADE;
+DROP FUNCTION IF EXISTS public.increment_total_revenue(double precision) CASCADE;
 DROP TABLE IF EXISTS public.order_items CASCADE;
 DROP TABLE IF EXISTS public.orders CASCADE;
 DROP TABLE IF EXISTS public.clients CASCADE;
@@ -19,16 +22,42 @@ DROP TABLE IF EXISTS public.products CASCADE;
 DROP TABLE IF EXISTS public.sales_conditions CASCADE;
 DROP TABLE IF EXISTS public.promotions CASCADE;
 DROP TABLE IF EXISTS public.app_settings CASCADE;
+-- Tablas legacy (no las usa la app; se mantienen para reflejar la DB productiva)
+DROP TABLE IF EXISTS public.news_likes CASCADE;
+DROP TABLE IF EXISTS public.news CASCADE;
+DROP TABLE IF EXISTS public.price_list_product_promotions CASCADE;
+DROP TABLE IF EXISTS public.inventory_movements CASCADE;
+DROP TABLE IF EXISTS public.pending_changes CASCADE;
+DROP TABLE IF EXISTS public.client_audit_log CASCADE;
+DROP TABLE IF EXISTS public.product_categories CASCADE;
+DROP FUNCTION IF EXISTS public.update_updated_at_column() CASCADE;
 DROP TYPE IF EXISTS public.order_status CASCADE;
 DROP TYPE IF EXISTS public.client_status CASCADE;
 DROP TYPE IF EXISTS public.client_type CASCADE;
 DROP TYPE IF EXISTS public.payment_type CASCADE;
+DROP TYPE IF EXISTS public.change_type CASCADE;
+DROP TYPE IF EXISTS public.inventory_movement_type CASCADE;
+DROP TYPE IF EXISTS public.movement_type CASCADE;
+DROP TYPE IF EXISTS public.client_status_enum CASCADE;
+DROP TYPE IF EXISTS public.client_type_enum CASCADE;
+DROP TYPE IF EXISTS public.agreement_client_type_enum CASCADE;
+DROP TYPE IF EXISTS public.order_status_enum CASCADE;
 
 -- 2. TYPES
 CREATE TYPE public.order_status AS ENUM ('armado', 'transito', 'entregado');
 CREATE TYPE public.client_status AS ENUM ('pending_onboarding', 'pending_agreement', 'active', 'archived');
 CREATE TYPE public.client_type AS ENUM ('barberia', 'distribuidor', 'especial', 'consumidor_final');
 CREATE TYPE public.payment_type AS ENUM ('remito', 'proforma');
+
+-- Tipos legacy
+CREATE TYPE public.change_type AS ENUM ('contact_name', 'email', 'phone', 'cuit', 'address', 'delivery_window', 'instagram', 'contact_dni', 'fiscal_status');
+CREATE TYPE public.inventory_movement_type AS ENUM ('in', 'out', 'adjustment', 'reserved');
+CREATE TYPE public.movement_type AS ENUM ('in', 'out', 'adjustment', 'reserved');
+-- Duplicados sin uso presentes en la DB productiva
+CREATE TYPE public.client_status_enum AS ENUM ('pending_onboarding', 'pending_agreement', 'active', 'archived');
+CREATE TYPE public.client_type_enum AS ENUM ('barberia', 'distribuidor', 'especial');
+CREATE TYPE public.agreement_client_type_enum AS ENUM ('barberia', 'distribuidor', 'especial');
+CREATE TYPE public.order_status_enum AS ENUM ('armado', 'transito', 'entregado');
 
 -- 3. TABLES
 CREATE TABLE public.products (
@@ -142,6 +171,86 @@ CREATE TABLE public.app_settings (
     updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Tablas legacy (no las usa la app). Las FK marcadas [inferida] no vienen del dump.
+CREATE TABLE public.product_categories (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug text NOT NULL UNIQUE,
+    name text NOT NULL,
+    description text,
+    icon text,
+    color text DEFAULT '#6366f1',
+    sort_order integer DEFAULT 0,
+    is_active boolean DEFAULT true,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_product_categories_slug ON public.product_categories(slug);
+CREATE INDEX IF NOT EXISTS idx_product_categories_active ON public.product_categories(is_active) WHERE is_active = true;
+
+CREATE TABLE public.news (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    title text NOT NULL,
+    content text NOT NULL,
+    image_url text,
+    is_active boolean NOT NULL DEFAULT true,
+    display_order integer NOT NULL DEFAULT 0,
+    starts_at timestamp with time zone,
+    ends_at timestamp with time zone,
+    promotion_id uuid REFERENCES public.promotions(id) ON DELETE SET NULL, -- [inferida]
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE public.news_likes (
+    news_id uuid REFERENCES public.news(id) ON DELETE CASCADE, -- [inferida]
+    client_id uuid REFERENCES public.clients(id) ON DELETE CASCADE, -- [inferida]
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    PRIMARY KEY (news_id, client_id)
+);
+
+CREATE TABLE public.inventory_movements (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    product_id uuid REFERENCES public.products(id) ON DELETE SET NULL, -- [inferida]
+    type public.inventory_movement_type NOT NULL,
+    quantity integer NOT NULL DEFAULT 0,
+    reason text,
+    reference_id uuid,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    created_by uuid
+);
+
+CREATE TABLE public.pending_changes (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id uuid REFERENCES public.clients(id) ON DELETE CASCADE, -- [inferida]
+    change_type public.change_type NOT NULL,
+    old_value text,
+    new_value text,
+    status text NOT NULL DEFAULT 'pending',
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    resolved_at timestamp with time zone,
+    resolved_by uuid
+);
+
+CREATE TABLE public.client_audit_log (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id uuid REFERENCES public.clients(id) ON DELETE CASCADE, -- [inferida]
+    event_type text NOT NULL,
+    description text NOT NULL,
+    metadata jsonb,
+    created_by uuid,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_client_audit_log_client_id ON public.client_audit_log(client_id, created_at DESC);
+
+CREATE TABLE public.price_list_product_promotions (
+    price_list_id uuid REFERENCES public.price_lists(id) ON DELETE CASCADE, -- [inferida]
+    product_id uuid REFERENCES public.products(id) ON DELETE CASCADE, -- [inferida]
+    promotion_id uuid REFERENCES public.promotions(id) ON DELETE SET NULL, -- [inferida]
+    PRIMARY KEY (price_list_id, product_id)
+);
+
 -- 4. VIEWS
 CREATE OR REPLACE VIEW public.agreements_with_counts AS
 SELECT 
@@ -191,6 +300,83 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Funciones legacy (no usadas por la app)
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_order_status_counts()
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    result JSONB;
+BEGIN
+    result := jsonb_build_object(
+        'armado', (SELECT COUNT(*)::int FROM orders WHERE status = 'armado'),
+        'transito', (SELECT COUNT(*)::int FROM orders WHERE status = 'transito'),
+        'entregado', (SELECT COUNT(*)::int FROM orders WHERE status = 'entregado')
+    );
+    RETURN result;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_dashboard_metrics()
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    result JSONB;
+    m_start_of_month TIMESTAMP;
+BEGIN
+    m_start_of_month := date_trunc('month', CURRENT_DATE);
+
+    result := jsonb_build_object(
+        'orders', jsonb_build_object(
+            'pending', (SELECT COUNT(*)::int FROM orders WHERE status = 'armado'),
+            'in_transit', (SELECT COUNT(*)::int FROM orders WHERE status = 'transito'),
+            'delivered', (SELECT COUNT(*)::int FROM orders WHERE status = 'entregado'),
+            'total_units', COALESCE((SELECT SUM(quantity)::int FROM order_items), 0),
+            'average_order_value', COALESCE((SELECT ROUND(AVG(total_amount))::int FROM orders), 0)
+        ),
+        'clients', jsonb_build_object(
+            'active', (SELECT COUNT(*)::int FROM clients WHERE status = 'active'),
+            'pending', (SELECT COUNT(*)::int FROM clients WHERE status = 'pending_agreement'),
+            'new_this_month', (SELECT COUNT(*)::int FROM clients WHERE created_at >= m_start_of_month)
+        ),
+        'top_products', (
+            SELECT COALESCE(jsonb_agg(jsonb_build_object('name', name, 'total_quantity', total_quantity)), '[]'::jsonb)
+            FROM (
+                SELECT p.name, SUM(oi.quantity)::int as total_quantity
+                FROM order_items oi
+                JOIN products p ON p.id = oi.product_id
+                GROUP BY p.id, p.name
+                ORDER BY total_quantity DESC
+                LIMIT 5
+            ) t
+        )
+    );
+
+    RETURN result;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.increment_total_revenue(amount_to_add double precision)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- Stub sin efecto: las estadísticas se calculan en vivo con la vista dashboard_stats.
+END;
+$$;
 -- 6. ATOMIC ORDER CREATION
 -- IMPORTANTE: esta definición es la que existe en la base productiva. Si se cambia,
 -- hay que aplicarla con una migración y mantenerla sincronizada con el código
@@ -364,6 +550,21 @@ CREATE POLICY "Allow all for authenticated" ON public.orders FOR ALL USING (auth
 CREATE POLICY "Allow all for authenticated" ON public.order_items FOR ALL USING (auth.role() = 'authenticated');
 
 CREATE POLICY "Allow all for authenticated" ON public.app_settings FOR ALL USING (auth.role() = 'authenticated');
+
+-- RLS de tablas legacy. En la DB productiva news/inventory_movements/product_categories
+-- tenían policy abierta (public, using=true) => corregido a solo authenticated.
+ALTER TABLE public.product_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.news ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.news_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inventory_movements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pending_changes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.client_audit_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.price_list_product_promotions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all for authenticated" ON public.product_categories FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow all for authenticated" ON public.news FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow all for authenticated" ON public.inventory_movements FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow all for authenticated" ON public.client_audit_log FOR ALL USING (auth.role() = 'authenticated');
 
 
 -- 8. INITIAL SETTINGS
