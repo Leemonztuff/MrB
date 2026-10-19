@@ -219,29 +219,35 @@ export async function submitOrder(payload: {
         }
 
         // Reconstruimos los items con precios autoritativos de la base de datos.
-        const items: CartItem[] = [];
-        for (const item of payload.cart) {
-            let pricePerUnit = item.product.price;
-            let volumePrice = item.product.volume_price;
+        // Una sola consulta para toda la lista (evita el N+1 por producto).
+        const priceByProduct = new Map<string, { price: number; volume_price: number | null }>();
 
-            if (priceListId) {
-                const { data: pli } = await supabase
-                    .from('price_list_items')
-                    .select('price, volume_price')
-                    .eq('price_list_id', priceListId)
-                    .eq('product_id', item.product.id)
-                    .maybeSingle();
-                if (pli) {
-                    pricePerUnit = pli.price;
-                    volumePrice = pli.volume_price;
-                }
+        if (priceListId) {
+            const productIds = payload.cart.map((item) => item.product.id);
+            const { data: pliRows, error: pliError } = await supabase
+                .from('price_list_items')
+                .select('product_id, price, volume_price')
+                .eq('price_list_id', priceListId)
+                .in('product_id', productIds);
+
+            if (pliError) throw pliError;
+
+            for (const row of pliRows ?? []) {
+                priceByProduct.set(row.product_id, { price: row.price, volume_price: row.volume_price });
             }
-
-            items.push({
-                product: { ...item.product, price: pricePerUnit, volume_price: volumePrice },
-                quantity: item.quantity,
-            });
         }
+
+        const items: CartItem[] = payload.cart.map((item) => {
+            const override = priceByProduct.get(item.product.id);
+            return {
+                product: {
+                    ...item.product,
+                    price: override ? override.price : item.product.price,
+                    volume_price: override ? override.volume_price : item.product.volume_price,
+                },
+                quantity: item.quantity,
+            };
+        });
 
         // Usamos exactamente la misma lógica de cálculo que el cliente para que
         // el total coincida (IVA, umbral de volumen y promociones incluidos).

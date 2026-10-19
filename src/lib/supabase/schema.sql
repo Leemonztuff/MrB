@@ -109,17 +109,23 @@ CREATE TABLE public.agreements (
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+CREATE INDEX IF NOT EXISTS idx_agreements_price_list_id ON public.agreements(price_list_id);
+
 CREATE TABLE public.agreement_promotions (
     agreement_id uuid REFERENCES public.agreements(id) ON DELETE CASCADE,
     promotion_id uuid REFERENCES public.promotions(id) ON DELETE CASCADE,
     PRIMARY KEY (agreement_id, promotion_id)
 );
 
+CREATE INDEX IF NOT EXISTS idx_agreement_promotions_promotion_id ON public.agreement_promotions(promotion_id);
+
 CREATE TABLE public.agreement_sales_conditions (
     agreement_id uuid REFERENCES public.agreements(id) ON DELETE CASCADE,
     sales_condition_id uuid REFERENCES public.sales_conditions(id) ON DELETE CASCADE,
     PRIMARY KEY (agreement_id, sales_condition_id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_agreement_sales_conditions_sales_condition_id ON public.agreement_sales_conditions(sales_condition_id);
 
 CREATE TABLE public.clients (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -141,6 +147,9 @@ CREATE TABLE public.clients (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_clients_order_token ON public.clients(order_token);
+CREATE INDEX IF NOT EXISTS idx_clients_status ON public.clients(status);
+CREATE INDEX IF NOT EXISTS idx_clients_agreement_id ON public.clients(agreement_id);
+CREATE INDEX IF NOT EXISTS idx_clients_onboarding_token ON public.clients(onboarding_token);
 
 CREATE TABLE public.orders (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -158,6 +167,10 @@ CREATE TABLE public.orders (
 
 CREATE INDEX IF NOT EXISTS idx_orders_confirmation_token ON public.orders(confirmation_token);
 CREATE INDEX IF NOT EXISTS idx_orders_printed_at ON public.orders(printed_at);
+CREATE INDEX IF NOT EXISTS idx_orders_status_created_at ON public.orders(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_created_at ON public.orders(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_client_id ON public.orders(client_id);
+CREATE INDEX IF NOT EXISTS idx_orders_agreement_id ON public.orders(agreement_id);
 
 CREATE TABLE public.order_items (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -167,6 +180,9 @@ CREATE TABLE public.order_items (
     price_per_unit numeric NOT NULL DEFAULT 0,
     is_bonus boolean NOT NULL DEFAULT false
 );
+
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON public.order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON public.order_items(product_id);
 
 CREATE TABLE public.app_settings (
     key text PRIMARY KEY,
