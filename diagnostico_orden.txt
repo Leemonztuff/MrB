@@ -1,0 +1,24 @@
+-- ============================================================================
+-- DIAGNOSTICO (parte 2): definicion real de la funcion y valores del enum
+-- ============================================================================
+-- Pegar TODO este contenido en el SQL Editor de Supabase (una sola sentencia
+-- devuelve ambas cosas) y copiar el resultado.
+-- Es solo lectura (no modifica nada).
+-- ============================================================================
+
+select 'FUNCION' as seccion, pg_get_functiondef(oid) as valor
+from pg_proc
+where proname = 'create_order_with_items'
+
+union all
+
+select 'ENUM payment_type', string_agg(e.enumlabel, ', ' order by e.enumsortorder)
+from pg_type t
+join pg_enum e on e.enumtypid = t.oid
+where t.typname = (
+    select udt_name
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'orders'
+      and column_name = 'payment_type'
+);
