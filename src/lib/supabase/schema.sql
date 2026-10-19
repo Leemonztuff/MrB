@@ -135,9 +135,12 @@ CREATE TABLE public.clients (
     instagram text,
     status public.client_status NOT NULL DEFAULT 'pending_onboarding',
     onboarding_token uuid,
+    order_token text NOT NULL DEFAULT replace(gen_random_uuid()::text, '-'::text, ''),
     agreement_id uuid REFERENCES public.agreements(id) ON DELETE SET NULL,
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_clients_order_token ON public.clients(order_token);
 
 CREATE TABLE public.orders (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

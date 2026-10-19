@@ -29,10 +29,10 @@ const categoryTranslations: Record<string, string> = {
 export default async function OrderPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ token: string }>;
 }) {
-  const { id } = await params;
-  const { data, error } = await getOrderPageData(id);
+  const { token } = await params;
+  const { data, error } = await getOrderPageData(token);
 
   if (error || !data) {
     const errorMessage = error?.message || "No se pudo encontrar la informacion necesaria para este pedido.";

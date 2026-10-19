@@ -76,15 +76,15 @@ export async function logout() {
     redirect('/login');
 }
 
-export async function getOrderPageData(clientId: string): Promise<ActionResponse<any>> {
+export async function getOrderPageData(token: string): Promise<ActionResponse<any>> {
     return handleAction(async () => {
         const supabase = requireAdmin();
 
-        // 1. Buscar el cliente por ID
+        // 1. Buscar el cliente por su token de pedido (no por id)
         const { data: client, error: clientError } = await supabase
             .from('clients')
             .select('*')
-            .eq('id', clientId)
+            .eq('order_token', token)
             .maybeSingle();
 
         if (clientError || !client) throw new Error("Cliente inválido.");

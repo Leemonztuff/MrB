@@ -51,7 +51,7 @@ After setting env vars, run `src/lib/supabase/schema.sql` in Supabase SQL Editor
 | Route | Access | Purpose |
 |---|---|---|
 | `/login`, `/signup` | Public | Auth (signup blocked after first admin created) |
-| `/pedido/[id]` | Public | Customer order page |
+| `/pedido/[token]` | Public | Customer order page (token = `clients.order_token`) |
 | `/onboarding/[token]` | Public | Customer onboarding |
 | `/admin/*` | Protected | Admin dashboard |
 

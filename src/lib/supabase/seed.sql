@@ -130,8 +130,8 @@ on conflict do nothing;
 -- 9. CLIENTES DE EJEMPLO
 -- ----------------------------------------------------------------------------
 -- Cliente ACTIVO (ya con convenio) -> sirve para probar el portal de pedidos:
---   https://TU-DOMINIO/pedido/<id-del-cliente>
-insert into clients (contact_name, email, cuit, status, address, delivery_window, agreement_id, onboarding_token)
+--   https://TU-DOMINIO/pedido/demo-order-token
+insert into clients (contact_name, email, cuit, status, address, delivery_window, agreement_id, onboarding_token, order_token)
 select
     'Barbería Demo',
     'demo@mrblonde.test',
@@ -140,7 +140,8 @@ select
     'Av. Siempre Viva 742, CABA',
     'Lunes a Viernes 9 a 18 hs',
     a.id,
-    '11111111-1111-1111-1111-111111111111'
+    '11111111-1111-1111-1111-111111111111',
+    'demo-order-token'
 from agreements a
 where a.agreement_name = 'Barbería Estándar'
 on conflict (email) do nothing;

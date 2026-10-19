@@ -80,6 +80,7 @@ export type Client = {
     address: string | null;
     status: 'pending_onboarding' | 'pending_agreement' | 'active' | 'archived';
     onboarding_token: string | null;
+    order_token: string;
     agreement_id: string | null;
     delivery_window: string | null;
     instagram?: string | null;
