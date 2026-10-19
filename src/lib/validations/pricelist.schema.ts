@@ -2,8 +2,10 @@ import { z } from "zod";
 
 export const priceListItemSchema = z.object({
   product_id: z.string().uuid(),
-  price: z.number().positive("El precio debe ser mayor a 0"),
-  volume_price: z.number().positive("El precio volumen debe ser mayor a 0").nullable(),
+  // Se permite 0: al asignar productos a una lista se agregan con precio $0
+  // y luego el admin los edita. Exigir >0 rompía esa asignación.
+  price: z.number().min(0, "El precio no puede ser negativo"),
+  volume_price: z.number().min(0, "El precio volumen no puede ser negativo").nullable(),
 });
 
 export const assignProductsSchema = z.object({
