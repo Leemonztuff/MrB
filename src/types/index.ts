@@ -182,9 +182,11 @@ export type PriceListItem = {
 
 export type LabelData = {
     id: string;
+    status: Order['status'];
     client_name_cache: string;
     created_at: string;
     total_amount: number;
+    printed_at?: string | null;
     notes?: string | null;
     confirmation_token?: string | null;
     clients?: {

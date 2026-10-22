@@ -15,8 +15,8 @@ function requireAdmin() {
 // Un pedido solo puede despacharse (armado -> transito) si su rótulo fue impreso.
 function notPrintedError(count = 1) {
     const message = count > 1
-        ? `${count} pedidos no tienen rótulo impreso y no pueden despacharse.`
-        : "El pedido no tiene rótulo impreso y no puede despacharse.";
+        ? `${count} pedidos no tienen confirmada la impresión del rótulo de envío y no pueden despacharse.`
+        : "No está confirmada la impresión del rótulo de envío. Confirmala desde la vista previa antes de despachar.";
     const error = new Error(message) as Error & { code?: string };
     error.code = 'NOT_PRINTED';
     return error;
@@ -180,13 +180,37 @@ export async function bulkUpdateOrderStatus(orderIds: string[], status: 'armado'
 export async function markOrdersAsPrinted(orderIds: string[]): Promise<ActionResponse<null>> {
     return handleAction(async () => {
         const supabase = await getSupabaseClientWithAuth();
-        const { error } = await supabase
+        const uniqueOrderIds = [...new Set(orderIds)];
+        if (uniqueOrderIds.length === 0) {
+            throw new Error("No hay pedidos para confirmar.");
+        }
+
+        const { error: updateError } = await supabase
             .from('orders')
             .update({ printed_at: new Date().toISOString() })
-            .in('id', orderIds)
+            .in('id', uniqueOrderIds)
+            .eq('status', 'armado')
             .is('printed_at', null);
 
-        if (error) throw error;
+        if (updateError) throw updateError;
+
+        const { data: orders, error: verifyError } = await supabase
+            .from('orders')
+            .select('id, printed_at')
+            .in('id', uniqueOrderIds);
+
+        if (verifyError) throw verifyError;
+
+        const printedOrderIds = new Set((orders ?? [])
+            .filter(order => order.printed_at)
+            .map(order => order.id));
+        const unconfirmedCount = uniqueOrderIds.filter(id => !printedOrderIds.has(id)).length;
+        if (unconfirmedCount > 0) {
+            throw new Error(
+                `No se pudo confirmar la impresión de ${unconfirmedCount} pedido(s). Actualiza la vista y vuelve a intentarlo.`
+            );
+        }
+
         return null;
     }, ['/admin', '/admin/orders']);
 }
