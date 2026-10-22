@@ -12,6 +12,7 @@ import { OrderNoteWidget } from "./order-note-widget";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ShippingLabelButton } from "./shipping-label-button";
+import { CuratedOrderButton } from "./curated-order-button";
 import { formatDistanceToNow } from "date-fns";
 import { openPrintPage } from "@/lib/print-helpers";
 import { es } from "date-fns/locale";
@@ -114,6 +115,10 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
                     </div>
                     <div className="flex items-center gap-2">
                         <ShippingLabelButton orders={selectedOrderList} />
+                        <CuratedOrderButton
+                            initialOrderIds={selectedOrderList.map(order => order.id)}
+                            availableOrders={orders}
+                        />
                         <Button
                             onClick={confirmBatchDispatch}
                             disabled={isPending}
@@ -194,6 +199,11 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
                             </div>
 
                             <div className="flex items-center gap-1.5">
+                                <CuratedOrderButton
+                                    initialOrderIds={[order.id]}
+                                    availableOrders={orders}
+                                    iconOnly
+                                />
                                 <Button
                                     variant="outline"
                                     size="icon"

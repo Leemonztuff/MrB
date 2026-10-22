@@ -64,6 +64,7 @@ export type OrderWithItems = Order & {
         price_per_unit: number;
         is_bonus?: boolean;
         products: {
+            id: string;
             name: string;
             category: string | null;
             image_url: string | null;

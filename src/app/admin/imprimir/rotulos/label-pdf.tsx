@@ -1,19 +1,9 @@
 'use client';
 
-import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import type { LabelData, LabelFormat } from '@/types';
 import { formatDate } from '@/lib/formatters';
-
-// Tipografia de marca (Century Gothic) para el PDF.
-// Los archivos se sirven desde /public/fonts para que react-pdf los pueda embeber.
-Font.register({
-  family: 'CenturyGothic',
-  fonts: [
-    { src: '/fonts/CenturyGothicPaneuropeanRegular.ttf', fontWeight: 'normal' },
-    { src: '/fonts/CenturyGothicPaneuropeanBold.ttf', fontWeight: 'bold' },
-    { src: '/fonts/CenturyGothicPaneuropeanBlack.ttf', fontWeight: 900 },
-  ],
-});
+import '@/lib/pdf-fonts';
 
 const BRAND_GOLD = '#C5A45E';
 const DARK = '#111111';
