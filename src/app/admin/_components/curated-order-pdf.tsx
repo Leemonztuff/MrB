@@ -92,11 +92,6 @@ const styles = StyleSheet.create({
     fontSize: 9,
     lineHeight: 1.2,
   },
-  bonus: {
-    color: GRAY,
-    fontSize: 7,
-    marginTop: 2,
-  },
   quantity: {
     width: 48,
     textAlign: 'center',
@@ -137,9 +132,6 @@ function OrderSheet({ order, logoUrl }: { order: OrderWithItems; logoUrl: string
         <View key={line.id} style={[styles.line, { minHeight: rowHeight }]}>
           <View style={styles.product}>
             <Text style={styles.productName}>{line.name}</Text>
-            {line.bonusQuantity > 0 ? (
-              <Text style={styles.bonus}>{line.bonusQuantity} en promo incluidas</Text>
-            ) : null}
           </View>
           <Text style={styles.quantity}>{line.quantity}</Text>
           <View style={styles.checkbox} />

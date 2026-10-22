@@ -68,7 +68,7 @@ export async function getOrdersBatch(ids: string[]): Promise<ActionResponse<Orde
         const supabase = await getSupabaseClientWithAuth();
         const { data, error } = await supabase
             .from('orders')
-            .select('*, order_items(quantity, price_per_unit, is_bonus, products(*)), clients(*)')
+            .select('*, order_items(quantity, price_per_unit, products(*)), clients(*)')
             .in('id', ids);
 
         if (error) throw error;
