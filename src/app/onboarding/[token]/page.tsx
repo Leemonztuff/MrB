@@ -45,7 +45,11 @@ export default async function OnboardingPage({ params }: { params: Promise<{ tok
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4">Tus datos ya fueron completados con éxito.</p>
+            <p className="text-muted-foreground mb-4">
+              {client.agreement_id
+                ? "Tus datos están completos y tu cuenta está activa."
+                : "Tus datos están completos. El administrador debe asignarte un convenio para habilitar los pedidos."}
+            </p>
             {client.agreement_id && (
               <Button asChild className="w-full">
                 <Link href={`/pedido/${client.order_token}`}>Ir al Catálogo</Link>

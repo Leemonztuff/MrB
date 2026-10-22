@@ -320,11 +320,24 @@ export async function submitOrder(payload: {
     }, ['/admin']);
 }
 
-export async function submitOnboardingForm(payload: any): Promise<ActionResponse<null>> {
+export async function submitOnboardingForm(
+    payload: any
+): Promise<ActionResponse<{ status: 'active' | 'pending_agreement' }>> {
     return handleAction(async () => {
         const supabase = requireAdmin();
         const validated = onboardingSchema.parse(payload);
         const { onboarding_token, ...data } = validated;
+
+        const { data: client, error: clientError } = await supabase
+            .from('clients')
+            .select('agreement_id, status')
+            .eq('onboarding_token', onboarding_token)
+            .maybeSingle();
+
+        if (clientError) throw clientError;
+        if (!client || client.status !== 'pending_onboarding') {
+            throw new Error("El enlace de alta ya fue utilizado o no es válido.");
+        }
 
         const address = formatAddress(data);
         const delivery_window = formatDeliveryWindow(data);
@@ -338,16 +351,22 @@ export async function submitOnboardingForm(payload: any): Promise<ActionResponse
             address,
             delivery_window,
             instagram: data.instagram,
-            status: 'pending_agreement'
+            status: client.agreement_id ? 'active' as const : 'pending_agreement' as const,
         };
 
-        const { error } = await supabase
+        const { data: updatedClient, error } = await supabase
             .from('clients')
             .update(updateData)
-            .eq('onboarding_token', onboarding_token);
+            .eq('onboarding_token', onboarding_token)
+            .eq('status', 'pending_onboarding')
+            .select('status')
+            .maybeSingle();
 
         if (error) throw error;
-        return null;
+        if (!updatedClient) {
+            throw new Error("El estado del cliente cambió. Actualizá la página e intentá nuevamente.");
+        }
+        return { status: updatedClient.status };
     }, ['/admin']);
 }
 

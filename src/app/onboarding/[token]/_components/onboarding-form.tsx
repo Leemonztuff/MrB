@@ -263,9 +263,10 @@ export function OnboardingForm({ client }: { client: Client }) {
       } else {
         toast({
           title: "¡Formulario enviado con éxito!",
-          description: "Tus datos fueron guardados. Pronto recibirás tu enlace para pedidos.",
+          description: result.data?.status === 'active'
+            ? "Tu cuenta ya está activa. Ya podés hacer pedidos."
+            : "Tus datos fueron guardados. Un administrador debe asignarte un convenio para habilitar los pedidos.",
         });
-        // Refresh the page to show the "already registered" message
         router.refresh();
       }
     });
