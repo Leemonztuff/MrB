@@ -6,7 +6,7 @@ import { formatDate } from '@/lib/formatters';
 import '@/lib/pdf-fonts';
 
 const BRAND_GOLD = '#C5A45E';
-const DARK = '#111111';
+const DARK = '#3A3A3A';
 const GRAY = '#5F5F5F';
 const LIGHT = '#9A9A9A';
 const BADGE_TEXT = '#E6D5A7';

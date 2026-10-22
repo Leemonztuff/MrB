@@ -6,7 +6,7 @@ import { aggregateOrderItems } from '@/lib/curated-order';
 import '@/lib/pdf-fonts';
 
 const GOLD = '#C5A45E';
-const DARK = '#111111';
+const DARK = '#3A3A3A';
 const GRAY = '#5F5F5F';
 
 const styles = StyleSheet.create({
