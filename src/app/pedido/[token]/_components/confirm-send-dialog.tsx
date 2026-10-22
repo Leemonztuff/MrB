@@ -38,9 +38,10 @@ export function ConfirmSendDialog({
             Enviar pedido
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Se registrara tu pedido de <strong>{totalItems} unidades</strong> por{" "}
-            <strong>{formatCurrency(totalPrice)}</strong> y se abrira WhatsApp para
-            enviarlo.
+            Primero registraremos tu pedido de <strong>{totalItems} unidades</strong> por{" "}
+            <strong>{formatCurrency(totalPrice)}</strong>. Después se abrirá WhatsApp con
+            el mensaje preparado. Para completar el envío, tendrás que tocar{" "}
+            <strong>Enviar</strong> en WhatsApp.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -50,7 +51,7 @@ export function ConfirmSendDialog({
             disabled={isPending}
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
           >
-            {isPending ? "Enviando..." : "Confirmar y Enviar"}
+            {isPending ? "Registrando pedido..." : "Registrar y abrir WhatsApp"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

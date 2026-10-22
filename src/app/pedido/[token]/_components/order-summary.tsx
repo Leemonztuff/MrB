@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Gift, Truck, Percent, Trash2 } from "lucide-react";
+import { ArrowRight, ExternalLink, Gift, Truck, Percent, Trash2 } from "lucide-react";
 import { submitOrder } from "@/app/actions/user.actions";
 import { getPublicWhatsappNumber } from "@/app/admin/actions/settings.actions";
 import type { Promotion } from "@/types";
@@ -191,6 +191,7 @@ export function OrderSummary({
   const [notes, setNotes] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
+  const [whatsappFallback, setWhatsappFallback] = useState<{ url: string; orderId: string } | null>(null);
 
   useEffect(() => {
     getPublicWhatsappNumber().then((res) => setWhatsappNumber(res.data ?? ""));
@@ -238,6 +239,10 @@ export function OrderSummary({
 
   const confirmSend = () => {
     setShowConfirm(false);
+    setWhatsappFallback(null);
+    const whatsappWindow = window.open("about:blank", "_blank");
+    if (whatsappWindow) whatsappWindow.opener = null;
+
     startTransition(async () => {
       const result = await submitOrder({
         cart: items,
@@ -248,6 +253,7 @@ export function OrderSummary({
       });
 
       if (result.error || !result.data) {
+        whatsappWindow?.close();
         toast({
           title: "Error al guardar el pedido",
           description: result.error?.message || "Ocurrio un error inesperado.",
@@ -271,14 +277,30 @@ export function OrderSummary({
         notes
       );
       const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
-      window.open(whatsappUrl, "_blank");
+      let whatsappOpened = false;
+      if (whatsappWindow && !whatsappWindow.closed) {
+        try {
+          whatsappWindow.location.href = whatsappUrl;
+          whatsappOpened = true;
+        } catch (error) {
+          console.error("No se pudo abrir el mensaje de WhatsApp:", error);
+          setWhatsappFallback({ url: whatsappUrl, orderId: result.data.orderId });
+        }
+      } else {
+        setWhatsappFallback({ url: whatsappUrl, orderId: result.data.orderId });
+      }
 
       clearCart();
       setNotes("");
-      toast({
-        title: "Pedido enviado!",
-        description: "Tu pedido se ha registrado y enviado por WhatsApp.",
-      });
+      toast(whatsappOpened
+        ? {
+            title: "Pedido registrado",
+            description: "WhatsApp se abrió con el mensaje preparado. Tocá Enviar allí para completar el envío.",
+          }
+        : {
+            title: "Pedido registrado; falta enviarlo",
+            description: "No se pudo abrir WhatsApp automáticamente. Usa el enlace que aparece en el resumen.",
+          });
     });
   };
 
@@ -383,9 +405,27 @@ export function OrderSummary({
                 className="w-full h-14 gap-3 font-black uppercase tracking-widest rounded-xl shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground group"
                 disabled={isPending || items.length === 0}
               >
-                {isPending ? "Procesando..." : "Enviar por WhatsApp"}
+                {isPending ? "Registrando pedido..." : "Continuar por WhatsApp"}
                 <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
+              <p className="text-xs leading-relaxed text-muted-foreground" role="note">
+                Al continuar, guardamos el pedido y abrimos WhatsApp con el mensaje listo.
+                El pedido solo se envía cuando toques <strong>Enviar</strong> en WhatsApp.
+              </p>
+              {whatsappFallback && (
+                <div role="status" className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+                  <p className="text-sm font-semibold">
+                    El pedido #{whatsappFallback.orderId.slice(-6).toUpperCase()} quedó registrado, pero WhatsApp no se abrió.
+                    Todavía falta enviarlo.
+                  </p>
+                  <Button asChild className="w-full gap-2">
+                    <a href={whatsappFallback.url} target="_blank" rel="noopener noreferrer">
+                      Abrir WhatsApp para enviar el pedido
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="py-12 text-center">
