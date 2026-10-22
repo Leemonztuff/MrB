@@ -5,7 +5,7 @@ import { useTransition, useState } from "react";
 import type { Order } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { StickyNote, ChevronRight, Package, Truck, Clock, AlertTriangle } from "lucide-react";
+import { StickyNote, ChevronRight, Package, Truck, Clock, AlertTriangle, Info } from "lucide-react";
 import { updateOrderStatus, bulkUpdateOrderStatus } from "@/app/admin/actions/orders.actions";
 import { useToast } from "@/hooks/use-toast";
 import { OrderNoteWidget } from "./order-note-widget";
@@ -128,6 +128,10 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
                             Confirmar Despacho
                         </Button>
                     </div>
+                    <p className="flex basis-full items-center gap-2 text-xs text-muted-foreground">
+                        <Info className="h-4 w-4 shrink-0 text-primary" />
+                        Para despachar, primero imprimí los rótulos de envío. La orden de preparación solo sirve para armar el pedido.
+                    </p>
                 </div>
             )}
 
@@ -198,34 +202,40 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
                                 <p className="text-sm sm:text-base font-headline font-black text-primary leading-none truncate w-full text-right">{formatCurrency(order.total_amount)}</p>
                             </div>
 
-                            <div className="flex items-center gap-1.5">
-                                <CuratedOrderButton
-                                    initialOrderIds={[order.id]}
-                                    availableOrders={orders}
-                                    iconOnly
-                                />
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-9 w-9 sm:h-10 sm:w-10 glass border-white/10 hover:bg-white/5 rounded-xl transition-all"
-                                    title="Generar Rótulo"
-                                    onClick={() => {
-                                        openPrintPage([{ id: order.id, bundles: orderBundles[order.id] || 1 }]);
-                                    }}
-                                >
-                                    <Printer className="h-4 w-4" />
-                                </Button>
+                            <div className="flex flex-col items-end gap-1.5">
+                                <div className="flex items-center gap-1.5">
+                                    <CuratedOrderButton
+                                        initialOrderIds={[order.id]}
+                                        availableOrders={orders}
+                                        iconOnly
+                                    />
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-9 w-9 sm:h-10 sm:w-10 glass border-white/10 hover:bg-white/5 rounded-xl transition-all"
+                                        title="Imprimir rótulo de envío"
+                                        aria-label="Imprimir rótulo de envío"
+                                        onClick={() => {
+                                            openPrintPage([{ id: order.id, bundles: orderBundles[order.id] || 1 }]);
+                                        }}
+                                    >
+                                        <Printer className="h-4 w-4" />
+                                    </Button>
 
-                                <Button
-                                    variant="default"
-                                    size="sm"
-                                    className="h-9 sm:h-10 px-3 sm:px-4 gap-2 font-black shadow-lg shadow-primary/10 active:scale-95 transition-all group/btn bg-primary hover:bg-primary/90 rounded-xl shrink-0"
-                                    onClick={() => handleUpdateStatus(order.id, 'transito')}
-                                    disabled={isPending}
-                                >
-                                    <Truck className="h-4 w-4 group-hover/btn:translate-x-0.5 transition-transform shrink-0" />
-                                    <span className="hidden sm:inline italic">Despachar</span>
-                                </Button>
+                                    <Button
+                                        variant="default"
+                                        size="sm"
+                                        className="h-9 sm:h-10 px-3 sm:px-4 gap-2 font-black shadow-lg shadow-primary/10 active:scale-95 transition-all group/btn bg-primary hover:bg-primary/90 rounded-xl shrink-0"
+                                        onClick={() => handleUpdateStatus(order.id, 'transito')}
+                                        disabled={isPending}
+                                    >
+                                        <Truck className="h-4 w-4 group-hover/btn:translate-x-0.5 transition-transform shrink-0" />
+                                        <span className="hidden sm:inline italic">Despachar</span>
+                                    </Button>
+                                </div>
+                                <p className="max-w-64 text-right text-[10px] leading-tight text-muted-foreground">
+                                    Despacho requiere rótulo de envío impreso; la orden de preparación no lo reemplaza.
+                                </p>
                             </div>
                         </div>
                     </div>

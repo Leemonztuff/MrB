@@ -178,12 +178,12 @@ export function CuratedOrderButton({
         className={iconOnly
           ? 'h-9 w-9 sm:h-10 sm:w-10 glass border-white/10 hover:bg-white/5 rounded-xl'
           : 'gap-2'}
-        title="Imprimir órdenes de preparación"
-        aria-label="Imprimir órdenes de preparación"
+        title="Orden de preparación: sirve para armar el pedido, no habilita el despacho"
+        aria-label="Imprimir orden de preparación"
         onClick={handleOpen}
       >
         <FileText className="h-4 w-4" />
-        {!iconOnly && 'Órdenes'}
+        {!iconOnly && 'Preparación'}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>

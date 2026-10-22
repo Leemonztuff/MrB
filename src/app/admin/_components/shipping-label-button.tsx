@@ -17,7 +17,7 @@ export function ShippingLabelButton({ orders }: { orders: { id: string, bundles:
       openPrintPage(orders);
       toast({
         title: "Rótulos Generados",
-        description: `Se han preparado ${orders.reduce((acc, o) => acc + o.bundles, 0)} rótulos para impresión.`,
+        description: `Se han preparado ${orders.reduce((acc, o) => acc + o.bundles, 0)} rótulos de envío para imprimir.`,
       });
     } catch (err) {
       console.error("Error triggering print flow:", err);
@@ -40,7 +40,7 @@ export function ShippingLabelButton({ orders }: { orders: { id: string, bundles:
       className="gap-2 glass border-white/10 hover:bg-white/5 transition-all"
     >
       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
-      {loading ? "Generando..." : `Generar Rótulos (${orders.reduce((acc, o) => acc + o.bundles, 0)} bultos)`}
+      {loading ? "Generando..." : `Imprimir Rótulos de Envío (${orders.reduce((acc, o) => acc + o.bundles, 0)} bultos)`}
     </Button>
   );
 }
