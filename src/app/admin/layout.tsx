@@ -21,6 +21,7 @@ import { getNotificationData, getDashboardData } from "@/app/admin/actions/dashb
 import { getSettings } from "@/app/admin/actions/settings.actions";
 import { AppNav } from "./_components/app-nav";
 import { AutoRefresh } from "./_components/auto-refresh";
+import { ThemeToggle } from "./_components/theme-toggle";
 import type { DashboardStats } from "@/types";
 
 const createNotifications = (
@@ -135,6 +136,7 @@ export default async function AdminLayout({
             </Link>
           </div>
           <div className="ml-auto flex items-center gap-4">
+            <ThemeToggle />
             <Notifications notifications={notifications} />
             <Sheet>
               <SheetTrigger asChild>

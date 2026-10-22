@@ -1,5 +1,6 @@
 
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
 import { cn } from '@/lib/utils';
@@ -40,7 +41,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="dark" style={{ colorScheme: "dark" }} suppressHydrationWarning>
+    <html lang="es" className="dark" suppressHydrationWarning>
+      <Script id="theme-init" strategy="beforeInteractive">
+        {`try {
+          var savedTheme = localStorage.getItem('mrb-theme');
+          if (savedTheme === 'light') document.documentElement.classList.remove('dark');
+          else document.documentElement.classList.add('dark');
+        } catch {}
+        `}
+      </Script>
       <body
         className={cn(
           "font-century-gothic antialiased min-h-screen bg-background",
