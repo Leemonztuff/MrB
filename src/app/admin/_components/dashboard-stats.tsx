@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { DashboardPeriodMetrics } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowDownRight, ArrowUpRight, Clock3, Package, Printer, RefreshCw, Users } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Clock3, MessageCircle, Package, PackageCheck, Printer, RefreshCw, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import { useTransition } from "react";
 
 type WorkloadMetrics = {
     pendingOrdersCount: number;
+    pendingWhatsAppCount: number;
+    pendingPreparationCount: number;
     unprintedOrdersCount: number;
     overdueOrdersCount: number;
     pendingClientsCount: number;
@@ -49,9 +51,25 @@ export function DashboardStats({
             warning: false,
         },
         {
+            title: "Recepción por confirmar",
+            value: workload.pendingWhatsAppCount,
+            description: "Mensajes de pedido aún no verificados",
+            href: "/admin/orders?status=armado&workflow=whatsapp",
+            icon: MessageCircle,
+            warning: workload.pendingWhatsAppCount > 0,
+        },
+        {
+            title: "Pedidos por preparar",
+            value: workload.pendingPreparationCount,
+            description: "Recepción confirmada; falta preparar",
+            href: "/admin/orders?status=armado&workflow=preparation",
+            icon: PackageCheck,
+            warning: workload.pendingPreparationCount > 0,
+        },
+        {
             title: "Rótulos por confirmar",
             value: workload.unprintedOrdersCount,
-            description: "Pedidos sin impresión confirmada",
+            description: "Pedidos preparados sin rótulo confirmado",
             href: "/admin/orders?status=armado&labels=pending",
             icon: Printer,
             warning: workload.unprintedOrdersCount > 0,
@@ -100,7 +118,7 @@ export function DashboardStats({
                         {isRefreshing ? "Actualizando..." : "Actualizar"}
                     </Button>
                 </div>
-                <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
                     {operationalCards.map(({ title, value, description, href, icon: Icon, warning }) => (
                         <Link
                             key={title}

@@ -9,11 +9,12 @@ import { ShippingLabelButton } from '../../_components/shipping-label-button';
 import { ReprintLabelButton } from '../../_components/reprint-label-button';
 import { OrderStatusBadge } from '../../_components/order-status-badge';
 import { Input } from '@/components/ui/input';
-import { Printer, CheckCircle2, Truck, AlertTriangle } from 'lucide-react';
+import { Printer, CheckCircle2, Truck, AlertTriangle, MessageCircle, PackageCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { updateOrderStatus } from '@/app/admin/actions/orders.actions';
+import { markOrderWorkflowStep, updateOrderStatus } from '@/app/admin/actions/orders.actions';
 import { useToast } from '@/hooks/use-toast';
+import { getOrderDispatchBlocker } from '@/lib/order-workflow';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,6 +68,27 @@ export function OrdersTable({ orders }: OrdersTableProps) {
     });
   };
 
+  const handleWorkflowStep = (order: Order, step: 'whatsapp' | 'preparation') => {
+    startTransition(async () => {
+      const { error } = await markOrderWorkflowStep(order.id, step);
+      if (error) {
+        toast({
+          title: 'No se pudo actualizar el pedido',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: step === 'whatsapp' ? 'Recepción confirmada' : 'Pedido preparado',
+        description: step === 'whatsapp'
+          ? 'Quedó registrada la verificación manual de recepción del mensaje.'
+          : `El pedido de ${order.client_name_cache} quedó marcado como preparado.`,
+      });
+    });
+  };
+
   return (
     <>
       <Table>
@@ -104,17 +126,51 @@ export function OrdersTable({ orders }: OrdersTableProps) {
                   <div className="flex items-center gap-2">
                     <OrderStatusBadge status={order.status} />
                     {order.printed_at && (
-                      <Badge variant="outline" className="text-[10px] border-green-500/30 text-green-400 bg-green-500/10">
+                      <Badge variant="outline" className="text-[10px] border-green-500/30 text-green-700 bg-green-500/10 dark:text-green-400">
                         <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Impreso
+                        Rótulo confirmado
                       </Badge>
                     )}
                   </div>
+                  {order.status === 'armado' && (
+                    <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                      <p>
+                        WhatsApp: {order.whatsapp_confirmed_at ? 'recepción confirmada' : 'por confirmar'}
+                      </p>
+                      <p>
+                        Preparación: {order.prepared_at ? 'pedido preparado' : 'pendiente'}
+                      </p>
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell className="text-right pr-6">
                   <div className="flex items-center justify-end gap-2">
                     {order.status === 'armado' && (
                       <>
+                        {!order.whatsapp_confirmed_at && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleWorkflowStep(order, 'whatsapp')}
+                            disabled={isPending}
+                            className="gap-2"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                            Confirmar recepción
+                          </Button>
+                        )}
+                        {order.whatsapp_confirmed_at && !order.prepared_at && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleWorkflowStep(order, 'preparation')}
+                            disabled={isPending}
+                            className="gap-2"
+                          >
+                            <PackageCheck className="h-4 w-4" />
+                            Marcar preparado
+                          </Button>
+                        )}
                         <div className="flex items-center gap-1">
                           <Printer className="h-3 w-3 text-muted-foreground" />
                           <Input
@@ -131,12 +187,25 @@ export function OrdersTable({ orders }: OrdersTableProps) {
                         <Button
                           size="sm"
                           onClick={() => handleDispatch(order)}
-                          disabled={isPending}
+                          disabled={
+                            isPending
+                            || getOrderDispatchBlocker(order) === 'whatsapp'
+                            || getOrderDispatchBlocker(order) === 'preparation'
+                          }
                           className="gap-2"
                         >
                           <Truck className="h-4 w-4" />
                           Despachar
                         </Button>
+                        <p className="max-w-48 text-right text-[10px] leading-tight text-muted-foreground">
+                          {getOrderDispatchBlocker(order) === 'whatsapp'
+                            ? 'Confirmá la recepción del pedido por WhatsApp.'
+                            : getOrderDispatchBlocker(order) === 'preparation'
+                              ? 'Marcá el pedido como preparado.'
+                              : getOrderDispatchBlocker(order) === 'label'
+                                ? 'El despacho requiere imprimir y confirmar el rótulo de envío.'
+                                : 'El pedido cumple los requisitos para despachar.'}
+                        </p>
                       </>
                     )}
                     {order.status !== 'armado' && (

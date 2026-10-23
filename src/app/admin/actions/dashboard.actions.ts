@@ -13,6 +13,8 @@ export async function getDashboardData(periodDays: 7 | 30 | 90 = 30): Promise<Ac
     pendingClients: Client[];
     workload: {
         pendingOrdersCount: number;
+        pendingWhatsAppCount: number;
+        pendingPreparationCount: number;
         unprintedOrdersCount: number;
         overdueOrdersCount: number;
         pendingClientsCount: number;
@@ -25,15 +27,19 @@ export async function getDashboardData(periodDays: 7 | 30 | 90 = 30): Promise<Ac
         const [
             pendingOrdersResult,
             pendingOrdersCountResult,
+            pendingWhatsAppCountResult,
+            pendingPreparationCountResult,
             unprintedOrdersCountResult,
             overdueOrdersCountResult,
             pendingClientsResult,
             pendingClientsCountResult,
             periodMetricsResult,
         ] = await Promise.all([
-            supabase.from("orders").select("id, client_id, agreement_id, created_at, total_amount, status, client_name_cache, notes, printed_at").eq("status", "armado").order("created_at", { ascending: false }).limit(10),
+            supabase.from("orders").select("id, client_id, agreement_id, created_at, total_amount, status, client_name_cache, notes, printed_at, whatsapp_confirmed_at, prepared_at").eq("status", "armado").order("created_at", { ascending: false }).limit(10),
             supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "armado"),
-            supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "armado").is("printed_at", null),
+            supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "armado").is("whatsapp_confirmed_at", null),
+            supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "armado").not("whatsapp_confirmed_at", "is", null).is("prepared_at", null),
+            supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "armado").not("prepared_at", "is", null).is("printed_at", null),
             supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "armado").lt("created_at", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()),
             supabase.from("clients").select("*").eq("status", "pending_agreement").order("created_at", { ascending: false }).limit(8),
             supabase.from("clients").select("id", { count: "exact", head: true }).eq("status", "pending_agreement"),
@@ -42,6 +48,8 @@ export async function getDashboardData(periodDays: 7 | 30 | 90 = 30): Promise<Ac
 
         if (pendingOrdersResult.error) throw pendingOrdersResult.error;
         if (pendingOrdersCountResult.error) throw pendingOrdersCountResult.error;
+        if (pendingWhatsAppCountResult.error) throw pendingWhatsAppCountResult.error;
+        if (pendingPreparationCountResult.error) throw pendingPreparationCountResult.error;
         if (unprintedOrdersCountResult.error) throw unprintedOrdersCountResult.error;
         if (overdueOrdersCountResult.error) throw overdueOrdersCountResult.error;
         if (pendingClientsResult.error) throw pendingClientsResult.error;
@@ -57,6 +65,8 @@ export async function getDashboardData(periodDays: 7 | 30 | 90 = 30): Promise<Ac
             pendingClients,
             workload: {
                 pendingOrdersCount: pendingOrdersCountResult.count ?? 0,
+                pendingWhatsAppCount: pendingWhatsAppCountResult.count ?? 0,
+                pendingPreparationCount: pendingPreparationCountResult.count ?? 0,
                 unprintedOrdersCount: unprintedOrdersCountResult.count ?? 0,
                 overdueOrdersCount: overdueOrdersCountResult.count ?? 0,
                 pendingClientsCount: pendingClientsCountResult.count ?? 0,

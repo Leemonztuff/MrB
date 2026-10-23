@@ -54,6 +54,8 @@ export type Order = {
     client_name_cache: string;
     notes?: string | null;
     printed_at?: string | null;
+    whatsapp_confirmed_at?: string | null;
+    prepared_at?: string | null;
     payment_type?: PaymentType | null;
     confirmation_token?: string | null;
 }

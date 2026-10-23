@@ -31,6 +31,7 @@ DROP TABLE IF EXISTS public.pending_changes CASCADE;
 DROP TABLE IF EXISTS public.client_audit_log CASCADE;
 DROP TABLE IF EXISTS public.product_categories CASCADE;
 DROP FUNCTION IF EXISTS public.update_updated_at_column() CASCADE;
+DROP FUNCTION IF EXISTS public.enforce_order_dispatch_prerequisites() CASCADE;
 DROP TYPE IF EXISTS public.order_status CASCADE;
 DROP TYPE IF EXISTS public.client_status CASCADE;
 DROP TYPE IF EXISTS public.client_type CASCADE;
@@ -161,16 +162,62 @@ CREATE TABLE public.orders (
     notes text,
     confirmation_token uuid DEFAULT gen_random_uuid(),
     printed_at timestamp with time zone,
+    whatsapp_confirmed_at timestamp with time zone,
+    prepared_at timestamp with time zone,
     payment_type public.payment_type,
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_orders_confirmation_token ON public.orders(confirmation_token);
 CREATE INDEX IF NOT EXISTS idx_orders_printed_at ON public.orders(printed_at);
+CREATE INDEX IF NOT EXISTS idx_orders_whatsapp_pending
+    ON public.orders(created_at DESC)
+    WHERE status = 'armado' AND whatsapp_confirmed_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_orders_preparation_pending
+    ON public.orders(created_at DESC)
+    WHERE status = 'armado' AND whatsapp_confirmed_at IS NOT NULL AND prepared_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_orders_label_pending
+    ON public.orders(created_at DESC)
+    WHERE status = 'armado' AND prepared_at IS NOT NULL AND printed_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_orders_status_created_at ON public.orders(status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_orders_created_at ON public.orders(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_orders_client_id ON public.orders(client_id);
 CREATE INDEX IF NOT EXISTS idx_orders_agreement_id ON public.orders(agreement_id);
+
+CREATE OR REPLACE FUNCTION public.enforce_order_dispatch_prerequisites()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    dispatch_transition boolean;
+BEGIN
+    dispatch_transition := TG_OP = 'INSERT';
+    IF TG_OP = 'UPDATE' THEN
+        dispatch_transition := OLD.status IS DISTINCT FROM NEW.status;
+    END IF;
+
+    IF NEW.status = 'transito' AND dispatch_transition THEN
+        IF NEW.whatsapp_confirmed_at IS NULL THEN
+            RAISE EXCEPTION 'Confirmá la recepción del pedido por WhatsApp antes de despachar.'
+                USING ERRCODE = '23514';
+        END IF;
+        IF NEW.prepared_at IS NULL THEN
+            RAISE EXCEPTION 'Marcá el pedido como preparado antes de despachar.'
+                USING ERRCODE = '23514';
+        END IF;
+        IF NEW.printed_at IS NULL THEN
+            RAISE EXCEPTION 'Confirmá la impresión del rótulo de envío antes de despachar.'
+                USING ERRCODE = '23514';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER orders_dispatch_prerequisites
+    BEFORE INSERT OR UPDATE OF status ON public.orders
+    FOR EACH ROW
+    EXECUTE FUNCTION public.enforce_order_dispatch_prerequisites();
 
 CREATE TABLE public.order_items (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

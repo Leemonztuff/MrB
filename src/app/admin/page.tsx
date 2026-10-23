@@ -32,6 +32,8 @@ export default async function AdminDashboardPage({
     const pendingClients = data?.pendingClients ?? [];
     const workload = data?.workload ?? {
         pendingOrdersCount: 0,
+        pendingWhatsAppCount: 0,
+        pendingPreparationCount: 0,
         unprintedOrdersCount: 0,
         overdueOrdersCount: 0,
         pendingClientsCount: 0,

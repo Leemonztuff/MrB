@@ -5,8 +5,8 @@ import { useTransition, useState, useEffect } from "react";
 import type { Order } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { StickyNote, ChevronRight, Package, Truck, Clock, AlertTriangle, Info, CheckCircle2, X } from "lucide-react";
-import { updateOrderStatus, bulkUpdateOrderStatus } from "@/app/admin/actions/orders.actions";
+import { StickyNote, ChevronRight, Package, Truck, Clock, AlertTriangle, Info, CheckCircle2, X, MessageCircle, PackageCheck } from "lucide-react";
+import { markOrderWorkflowStep, updateOrderStatus, bulkUpdateOrderStatus } from "@/app/admin/actions/orders.actions";
 import { useToast } from "@/hooks/use-toast";
 import { OrderNoteWidget } from "./order-note-widget";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,6 +18,8 @@ import { openPrintPage } from "@/lib/print-helpers";
 import { es } from "date-fns/locale";
 import { Printer } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
+import { getOrderDispatchBlocker } from "@/lib/order-workflow";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -54,6 +56,29 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
     }, [initialOrders]);
 
     const toSelections = (ids: string[]) => ids.map(id => ({ id, bundles: orderBundles[id] || 1 }));
+
+    const handleWorkflowStep = (orderId: string, step: 'whatsapp' | 'preparation') => {
+        startTransition(async () => {
+            const { error } = await markOrderWorkflowStep(orderId, step);
+            if (error) {
+                toast({ title: "No se pudo actualizar el pedido", description: error.message, variant: "destructive" });
+                return;
+            }
+
+            const timestamp = new Date().toISOString();
+            setOrders(current => current.map(order => order.id !== orderId
+                ? order
+                : step === 'whatsapp'
+                    ? { ...order, whatsapp_confirmed_at: timestamp }
+                    : { ...order, prepared_at: timestamp }));
+            toast({
+                title: step === 'whatsapp' ? "Recepción confirmada" : "Pedido preparado",
+                description: step === 'whatsapp'
+                    ? "Quedó registrada la verificación manual de recepción del mensaje."
+                    : "El pedido quedó marcado como preparado.",
+            });
+        });
+    };
 
     const handleUpdateStatus = (orderId: string, nextStatus: 'transito' | 'entregado') => {
         startTransition(async () => {
@@ -110,6 +135,11 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
     const selectedOrderList = Object.entries(selectedOrders)
         .filter(([_, isSelected]) => isSelected)
         .map(([id, _]) => ({ id, bundles: orderBundles[id] || 1 }));
+    const selectedWorkflowBlocker = selectedOrderList
+        .map(selection => orders.find(order => order.id === selection.id))
+        .filter((order): order is Order => Boolean(order))
+        .map(getOrderDispatchBlocker)
+        .find(blocker => blocker === 'whatsapp' || blocker === 'preparation');
 
     const toggleSelection = (orderId: string) => {
         setSelectedOrders(prev => ({ ...prev, [orderId]: !prev[orderId] }));
@@ -166,7 +196,7 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
                         />
                         <Button
                             onClick={confirmBatchDispatch}
-                            disabled={isPending}
+                            disabled={isPending || Boolean(selectedWorkflowBlocker)}
                             className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 h-9"
                         >
                             <Truck className="h-4 w-4" />
@@ -175,7 +205,11 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
                     </div>
                     <p className="flex basis-full items-center gap-2 text-xs text-muted-foreground">
                         <Info className="h-4 w-4 shrink-0 text-primary" />
-                        Para despachar, primero imprimí los rótulos de envío. La orden de preparación solo sirve para armar el pedido.
+                        {selectedWorkflowBlocker === 'whatsapp'
+                            ? "Confirmá la recepción del pedido por WhatsApp antes de prepararlo."
+                            : selectedWorkflowBlocker === 'preparation'
+                                ? "Marcá como preparado cada pedido seleccionado antes de despacharlo."
+                                : "El despacho requiere recepción verificada, pedido preparado y rótulo de envío impreso. La orden de preparación no reemplaza al rótulo."}
                     </p>
                 </div>
             )}
@@ -225,6 +259,23 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
                                         {formatDistanceToNow(new Date(order.created_at), { locale: es, addSuffix: true })}
                                     </span>
                                 </div>
+                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                    <Badge variant="outline" className={order.whatsapp_confirmed_at
+                                        ? "border-green-600/30 text-green-700 dark:text-green-400"
+                                        : "border-amber-500/30 text-amber-700 dark:text-amber-400"}>
+                                        WhatsApp: {order.whatsapp_confirmed_at ? "recepción confirmada" : "por confirmar"}
+                                    </Badge>
+                                    <Badge variant="outline" className={order.prepared_at
+                                        ? "border-green-600/30 text-green-700 dark:text-green-400"
+                                        : "border-muted-foreground/30 text-muted-foreground"}>
+                                        {order.prepared_at ? "Preparado" : "Por preparar"}
+                                    </Badge>
+                                    <Badge variant="outline" className={order.printed_at
+                                        ? "border-green-600/30 text-green-700 dark:text-green-400"
+                                        : "border-muted-foreground/30 text-muted-foreground"}>
+                                        Rótulo: {order.printed_at ? "confirmado" : "pendiente"}
+                                    </Badge>
+                                </div>
                             </div>
                         </div>
 
@@ -248,6 +299,32 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
                             </div>
 
                             <div className="flex flex-col items-end gap-1.5">
+                                <div className="flex flex-wrap justify-end gap-2">
+                                    {!order.whatsapp_confirmed_at && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleWorkflowStep(order.id, 'whatsapp')}
+                                            disabled={isPending}
+                                            className="h-9 gap-2"
+                                        >
+                                            <MessageCircle className="h-4 w-4" />
+                                            Confirmar recepción
+                                        </Button>
+                                    )}
+                                    {order.whatsapp_confirmed_at && !order.prepared_at && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleWorkflowStep(order.id, 'preparation')}
+                                            disabled={isPending}
+                                            className="h-9 gap-2"
+                                        >
+                                            <PackageCheck className="h-4 w-4" />
+                                            Marcar preparado
+                                        </Button>
+                                    )}
+                                </div>
                                 <div className="flex items-center gap-1.5">
                                     <CuratedOrderButton
                                         initialOrderIds={[order.id]}
@@ -272,14 +349,20 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
                                         size="sm"
                                         className="h-9 sm:h-10 px-3 sm:px-4 gap-2 font-black shadow-lg shadow-primary/10 active:scale-95 transition-all group/btn bg-primary hover:bg-primary/90 rounded-xl shrink-0"
                                         onClick={() => handleUpdateStatus(order.id, 'transito')}
-                                        disabled={isPending}
+                                        disabled={isPending || getOrderDispatchBlocker(order) === 'whatsapp' || getOrderDispatchBlocker(order) === 'preparation'}
                                     >
                                         <Truck className="h-4 w-4 group-hover/btn:translate-x-0.5 transition-transform shrink-0" />
                                         <span className="hidden sm:inline italic">Despachar</span>
                                     </Button>
                                 </div>
                                 <p className="max-w-64 text-right text-[10px] leading-tight text-muted-foreground">
-                                    Despacho requiere rótulo de envío impreso; la orden de preparación no lo reemplaza.
+                                    {getOrderDispatchBlocker(order) === 'whatsapp'
+                                        ? "Confirmá manualmente la recepción del mensaje en WhatsApp."
+                                        : getOrderDispatchBlocker(order) === 'preparation'
+                                            ? "Confirmá la recepción y marcá el pedido como preparado."
+                                            : getOrderDispatchBlocker(order) === 'label'
+                                                ? "Imprimí y confirmá el rótulo de envío para habilitar el despacho."
+                                                : "Listo para despachar. La orden de preparación no reemplaza el rótulo."}
                                 </p>
                             </div>
                         </div>
