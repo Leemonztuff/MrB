@@ -45,7 +45,12 @@ export async function getPriceListById(id: string): Promise<ActionResponse<Detai
 
 type UpsertPriceListPayload = { name: string, prices_include_vat: boolean, id?: string };
 export async function upsertPriceList(payload: UpsertPriceListPayload) {
-  const result = await upsertEntity("price_lists", payload, ["/admin/commercial-settings"]);
+  const result = await upsertEntity("price_lists", payload, [
+    "/admin/commercial-settings",
+    "/admin/agreements",
+    "/admin/agreements/[id]",
+    "/admin/clients",
+  ]);
    if (result.error && result.error.code === '23505') { // Unique constraint violation
       return { success: false, error: { ...result.error, message: `El nombre '${payload.name}' ya existe.` } };
   }
@@ -53,7 +58,12 @@ export async function upsertPriceList(payload: UpsertPriceListPayload) {
 }
 
 export async function deletePriceList(id: string) {
-    return await deleteEntity("price_lists", id, ["/admin/commercial-settings"]);
+    return await deleteEntity("price_lists", id, [
+        "/admin/commercial-settings",
+        "/admin/agreements",
+        "/admin/agreements/[id]",
+        "/admin/clients",
+    ]);
 }
 
 export async function getUnassignedProductsForPriceList(priceListId: string): Promise<ActionResponse<any[]>> {
@@ -69,7 +79,7 @@ export async function getUnassignedProductsForPriceList(priceListId: string): Pr
         const assignedIds = assignedProductIds.map(p => p.product_id);
         const query = supabase.from('products').select('*').order('name');
         if (assignedIds.length > 0) {
-            query.not('id', 'in', assignedIds);
+            query.not('id', 'in', `(${assignedIds.join(',')})`);
         }
         const { data, error } = await query;
         if (error) throw error;

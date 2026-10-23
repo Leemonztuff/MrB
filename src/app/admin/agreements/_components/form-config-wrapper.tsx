@@ -10,11 +10,25 @@ import { useFormContext } from "react-hook-form";
 
 export function AgreementFormFieldsWrapper({ children }: { children: React.ReactNode }) {
   const [priceLists, setPriceLists] = useState<PriceList[]>([]);
+  const [isLoadingPriceLists, setIsLoadingPriceLists] = useState(true);
+  const [priceListsError, setPriceListsError] = useState<string | null>(null);
   const form = useFormContext();
 
   const fetchPriceLists = useCallback(async () => {
-    const { data } = await getPriceLists();
-    setPriceLists(data ?? []);
+    setIsLoadingPriceLists(true);
+    setPriceListsError(null);
+    try {
+      const { data, error } = await getPriceLists();
+      if (error) {
+        setPriceListsError(error.message);
+        return;
+      }
+      setPriceLists(data ?? []);
+    } catch (error) {
+      setPriceListsError(error instanceof Error ? error.message : "Error inesperado al cargar las listas.");
+    } finally {
+      setIsLoadingPriceLists(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -27,5 +41,11 @@ export function AgreementFormFieldsWrapper({ children }: { children: React.React
   }, [form]);
 
   // We pass the fetched data and the callback down to the actual render function
-  return cloneElement(children as React.ReactElement, { priceLists, onPriceListCreated: handlePriceListCreated });
+  return cloneElement(children as React.ReactElement, {
+    priceLists,
+    isLoadingPriceLists,
+    priceListsError,
+    onRetryPriceLists: fetchPriceLists,
+    onPriceListCreated: handlePriceListCreated,
+  });
 }

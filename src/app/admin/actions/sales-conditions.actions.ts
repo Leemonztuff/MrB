@@ -22,12 +22,19 @@ type UpsertSalesConditionPayload = Omit<SalesCondition, "id" | "created_at" | "r
 };
 
 export async function upsertSalesCondition(payload: UpsertSalesConditionPayload) {
-  const revalidatePaths = ["/admin/commercial-settings", "/admin/agreements"];
+  const revalidatePaths = [
+    "/admin/commercial-settings",
+    "/admin/agreements",
+    "/admin/agreements/[id]",
+  ];
   return await upsertEntity("sales_conditions", payload, revalidatePaths);
 }
 
 export async function deleteSalesCondition(id: string) {
-  const revalidatePaths = ["/admin/commercial-settings", "/admin/agreements"];
+  const revalidatePaths = [
+    "/admin/commercial-settings",
+    "/admin/agreements",
+    "/admin/agreements/[id]",
+  ];
   return await deleteEntity("sales_conditions", id, revalidatePaths);
 }
-

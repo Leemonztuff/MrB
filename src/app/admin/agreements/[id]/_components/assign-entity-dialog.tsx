@@ -66,7 +66,8 @@ export function AssignEntityDialog<T extends Entity>({
   const [isOpen, setIsOpen] = useState(false);
   const [entities, setEntities] = useState<T[]>([]);
   const [isPending, startTransition] = useTransition();
-  const [isLoading, startLoading] = useTransition();
+  const [isLoading, setIsLoading] = useState(false);
+  const [entitiesError, setEntitiesError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const form = useForm<AssignFormValues>({
@@ -77,14 +78,33 @@ export function AssignEntityDialog<T extends Entity>({
   const selectedIds = form.watch("ids");
 
   const fetchUnassignedEntities = useCallback(async () => {
-    startLoading(async () => {
-        const { data, error } = await getUnassignedEntitiesAction(agreementId);
-        if (error) {
-          toast({ title: "Error", description: `No se pudieron cargar ${entityNamePlural.toLowerCase()}.`, variant: "destructive" });
-        } else {
-          setEntities(data ?? []);
-        }
+    setIsLoading(true);
+    setEntitiesError(null);
+    try {
+      const { data, error } = await getUnassignedEntitiesAction(agreementId);
+      if (error) {
+        setEntities([]);
+        setEntitiesError(error.message);
+        toast({
+          title: "Error",
+          description: `No se pudieron cargar ${entityNamePlural.toLowerCase()}: ${error.message}`,
+          variant: "destructive",
+        });
+      } else {
+        setEntities(data ?? []);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Ocurrió un error inesperado.";
+      setEntities([]);
+      setEntitiesError(message);
+      toast({
+        title: "Error",
+        description: `No se pudieron cargar ${entityNamePlural.toLowerCase()}: ${message}`,
+        variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
+    }
   }, [agreementId, toast, getUnassignedEntitiesAction, entityNamePlural]);
 
   useEffect(() => {
@@ -113,6 +133,7 @@ export function AssignEntityDialog<T extends Entity>({
 
   const handleNewEntitySuccess = useCallback(async (newEntity: T) => {
       await fetchUnassignedEntities();
+      setEntities(current => current.some(entity => entity.id === newEntity.id) ? current : [...current, newEntity]);
       form.setValue('ids', [...(form.getValues().ids || []), newEntity.id], { shouldValidate: true });
   }, [fetchUnassignedEntities, form]);
 
@@ -133,7 +154,10 @@ export function AssignEntityDialog<T extends Entity>({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       setIsOpen(open);
-      if (!open) form.reset();
+      if (!open) {
+        form.reset();
+        setEntitiesError(null);
+      }
     }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-lg">
@@ -167,7 +191,14 @@ export function AssignEntityDialog<T extends Entity>({
                   </div>
                    <ScrollArea className="h-60 border rounded-md">
                      <div className="p-1">
-                      {entities.length > 0 ? entities.map(entity => (
+                      {entitiesError ? (
+                        <div className="space-y-2 p-4 text-center text-sm text-destructive" role="alert">
+                          <p>No se pudieron cargar {entityNamePlural.toLowerCase()}: {entitiesError}</p>
+                          <Button type="button" variant="outline" size="sm" onClick={fetchUnassignedEntities}>
+                            Reintentar
+                          </Button>
+                        </div>
+                      ) : entities.length > 0 ? entities.map(entity => (
                            <FormField
                               key={entity.id}
                               control={form.control}

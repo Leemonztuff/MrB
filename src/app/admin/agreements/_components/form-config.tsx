@@ -19,7 +19,21 @@ const agreementSchema = z.object({
 });
 
 // We need a new component to handle its own state and props
-const AgreementFormFields = ({ form, priceLists = [], onPriceListCreated = () => {} }: { form: any, priceLists: PriceList[], onPriceListCreated: (newPriceList: PriceList) => void }) => {
+const AgreementFormFields = ({
+  form,
+  priceLists = [],
+  isLoadingPriceLists = false,
+  priceListsError,
+  onRetryPriceLists = () => {},
+  onPriceListCreated = () => {},
+}: {
+  form: any;
+  priceLists: PriceList[];
+  isLoadingPriceLists?: boolean;
+  priceListsError?: string | null;
+  onRetryPriceLists?: () => void;
+  onPriceListCreated: (newPriceList: PriceList) => void;
+}) => {
 
   const upsertPriceListActionWithCallback = async (payload: any) => {
     const result = await priceListFormConfig.upsertAction(payload);
@@ -80,10 +94,14 @@ const AgreementFormFields = ({ form, priceLists = [], onPriceListCreated = () =>
           render={({ field }) => (
             <FormItem>
               <FormLabel>Lista de Precios</FormLabel>
-              <Select onValueChange={(value) => field.onChange(value === 'null' ? null : value)} value={field.value ?? 'null'}>
+              <Select
+                onValueChange={(value) => field.onChange(value === 'null' ? null : value)}
+                value={field.value ?? 'null'}
+                disabled={isLoadingPriceLists || Boolean(priceListsError)}
+              >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una lista..." />
+                    <SelectValue placeholder={isLoadingPriceLists ? "Cargando listas..." : "Selecciona una lista..."} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -95,7 +113,16 @@ const AgreementFormFields = ({ form, priceLists = [], onPriceListCreated = () =>
                   ))}
                 </SelectContent>
               </Select>
-              <FormDescription>La lista que define los precios para este convenio.</FormDescription>
+              {priceListsError ? (
+                <div className="flex flex-wrap items-center gap-2 text-sm text-destructive" role="alert">
+                  <span>No se pudieron cargar las listas de precios: {priceListsError}</span>
+                  <Button variant="link" size="sm" type="button" className="h-auto p-0" onClick={onRetryPriceLists}>
+                    Reintentar
+                  </Button>
+                </div>
+              ) : (
+                <FormDescription>La lista que define los precios para este convenio.</FormDescription>
+              )}
               <FormMessage />
             </FormItem>
           )}

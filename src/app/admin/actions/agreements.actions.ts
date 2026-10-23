@@ -65,7 +65,9 @@ type UpsertAgreementPayload = Pick<Agreement, "agreement_name" | "client_type" |
 };
 
 export async function upsertAgreement(payload: UpsertAgreementPayload): Promise<ActionResponse<Agreement>> {
-    const result = await upsertEntity("agreements", payload, ["/admin/agreements", "/admin/clients"]);
+    const revalidatePaths = ["/admin/agreements", "/admin/clients"];
+    if (payload.id) revalidatePaths.push(`/admin/agreements/${payload.id}`);
+    const result = await upsertEntity("agreements", payload, revalidatePaths);
     if (!result.success && result.error?.code === '23505') {
         return {
             success: false,
@@ -98,7 +100,7 @@ export async function getUnassignedPromotions(agreementId: string): Promise<Acti
         const query = supabase.from('promotions').select('*').order('name');
 
         if (assignedIds.length > 0) {
-            query.not('id', 'in', assignedIds);
+            query.not('id', 'in', `(${assignedIds.join(',')})`);
         }
 
         const { data, error } = await query;
@@ -151,7 +153,7 @@ export async function getUnassignedSalesConditions(agreementId: string): Promise
         const query = supabase.from('sales_conditions').select('*').order('name');
 
         if (assignedIds.length > 0) {
-            query.not('id', 'in', assignedIds);
+            query.not('id', 'in', `(${assignedIds.join(',')})`);
         }
 
         const { data, error } = await query;
@@ -215,7 +217,7 @@ export async function getUnassignedProducts(agreementId: string): Promise<Action
         const query = supabase.from('products').select('*').order('name');
 
         if (assignedIds.length > 0) {
-            query.not('id', 'in', assignedIds);
+            query.not('id', 'in', `(${assignedIds.join(',')})`);
         }
 
         const { data, error } = await query;

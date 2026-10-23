@@ -34,7 +34,13 @@ export async function handleAction<T>(
         const data = await actionFn();
 
         if (revalidatePaths.length > 0) {
-            revalidatePaths.forEach(path => revalidatePath(path));
+            revalidatePaths.forEach(path => {
+                if (path.includes("[")) {
+                    revalidatePath(path, "page");
+                } else {
+                    revalidatePath(path);
+                }
+            });
         }
 
         return { success: true, data };
