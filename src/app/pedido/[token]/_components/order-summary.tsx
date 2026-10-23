@@ -18,6 +18,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/formatters";
 import { ConfirmSendDialog } from "./confirm-send-dialog";
+import { AgreementSummary } from "./agreement-summary";
+import type { SalesCondition } from "@/types";
 
 function formatWhatsAppMessage(
   clientName: string,
@@ -169,8 +171,11 @@ function AppliedPromotions() {
 export function OrderSummary({
   clientId,
   clientName,
-  pricesIncludeVat,
   promotions,
+  agreementName,
+  priceListName,
+  pricesIncludeVat,
+  salesConditions,
   vatPercentage,
   volumeThreshold,
   validProductIds = [],
@@ -180,6 +185,9 @@ export function OrderSummary({
   clientName: string;
   pricesIncludeVat: boolean;
   promotions: Promotion[];
+  agreementName: string;
+  priceListName: string;
+  salesConditions: SalesCondition[];
   vatPercentage: number;
   volumeThreshold?: number;
   validProductIds?: string[];
@@ -322,8 +330,16 @@ export function OrderSummary({
           {hasItems && <CardDescription className="text-xs uppercase font-bold tracking-widest opacity-60">Revisa tu orden antes de confirmar.</CardDescription>}
         </CardHeader>
         <CardContent>
+          <AgreementSummary
+            agreementName={agreementName}
+            priceListName={priceListName}
+            pricesIncludeVat={pricesIncludeVat}
+            vatPercentage={vatPercentage}
+            promotions={promotions}
+            salesConditions={salesConditions}
+          />
           {hasItems ? (
-            <div className="flex flex-col gap-6">
+            <div className="mt-6 flex flex-col gap-6">
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {items.map((item) => (
                   <div key={item.product.id} className="flex items-center gap-2 py-2">

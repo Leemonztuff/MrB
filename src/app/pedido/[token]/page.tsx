@@ -15,7 +15,7 @@ import { OrderSummary } from "./_components/order-summary";
 import { CartDrawerWrapper } from "./_components/cart-drawer-wrapper";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
-import { AgreementPromotion, ProductWithPrice } from "@/types";
+import { AgreementPromotion, AgreementSalesCondition, ProductWithPrice } from "@/types";
 
 const categoryTranslations: Record<string, string> = {
   "Wax": "Ceras",
@@ -74,6 +74,9 @@ export default async function OrderPage({
   const { agreement, client, productsByCategory, vatPercentage, logoUrl, volumeThreshold, validProductIds } = data;
   const categories = Object.keys(productsByCategory);
   const promotions = (agreement.agreement_promotions || []).map((ap: AgreementPromotion) => ap.promotions);
+  const salesConditions = (agreement.agreement_sales_conditions || [])
+    .map((item: AgreementSalesCondition) => item.sales_conditions)
+    .filter(Boolean);
 
   const formatCategoryTitle = (category: string) => {
     const translation = categoryTranslations[category];
@@ -157,8 +160,11 @@ export default async function OrderPage({
             <OrderSummary
               clientId={client?.id ?? "generic"}
               clientName={client?.contact_name ?? "Cliente"}
-              pricesIncludeVat={agreement.price_lists?.prices_include_vat ?? true}
               promotions={promotions}
+              agreementName={agreement.agreement_name}
+              priceListName={agreement.price_lists.name}
+              pricesIncludeVat={agreement.price_lists.prices_include_vat}
+              salesConditions={salesConditions}
               vatPercentage={vatPercentage}
               volumeThreshold={volumeThreshold}
               validProductIds={validProductIds ?? []}

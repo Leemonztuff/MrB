@@ -106,7 +106,7 @@ export async function getOrderPageData(token: string): Promise<ActionResponse<an
         // 2. Obtener el convenio del cliente con sus promociones y lista de precios
         const [agreementResult, settingsResult] = await Promise.all([
             supabase.from('agreements')
-                .select('*, agreement_promotions(promotions(*)), price_lists(*)')
+                .select('*, agreement_promotions(promotions(*)), agreement_sales_conditions(sales_conditions(*)), price_lists(*)')
                 .eq('id', client.agreement_id)
                 .maybeSingle(),
             supabase.from('app_settings').select('key, value')
