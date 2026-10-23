@@ -111,6 +111,14 @@ export type DashboardStats = {
     overdue_orders_count: number;
 }
 
+export type DashboardPeriodMetrics = {
+    current_order_amount: number;
+    previous_order_amount: number;
+    current_order_count: number;
+    previous_order_count: number;
+    current_client_count: number;
+}
+
 export type AppSettings = {
     whatsapp_number: string;
     vat_percentage: number;

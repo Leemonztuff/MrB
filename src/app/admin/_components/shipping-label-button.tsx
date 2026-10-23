@@ -7,17 +7,32 @@ import { Printer, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { openPrintPage } from "@/lib/print-helpers";
 
-export function ShippingLabelButton({ orders }: { orders: { id: string, bundles: number }[] }) {
+export function ShippingLabelButton({
+  orders,
+  onClick,
+}: {
+  orders: { id: string, bundles: number }[];
+  onClick?: () => void;
+}) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const handlePrint = async () => {
     setLoading(true);
     try {
-      openPrintPage(orders);
+      const opened = openPrintPage(orders);
+      if (!opened) {
+        toast({
+          title: "No se abrió la vista de rótulos",
+          description: "Permití las ventanas emergentes para este sitio y volvé a intentarlo.",
+          variant: "destructive"
+        });
+        return;
+      }
+      onClick?.();
       toast({
-        title: "Rótulos Generados",
-        description: `Se han preparado ${orders.reduce((acc, o) => acc + o.bundles, 0)} rótulos de envío para imprimir.`,
+        title: "Vista de rótulos abierta",
+        description: `Se abrió la vista con ${orders.reduce((acc, o) => acc + o.bundles, 0)} rótulos de envío.`,
       });
     } catch (err) {
       console.error("Error triggering print flow:", err);

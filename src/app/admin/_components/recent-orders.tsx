@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useTransition, useState } from "react";
+import { useTransition, useState, useEffect } from "react";
 import type { Order } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { StickyNote, ChevronRight, Package, Truck, Clock, AlertTriangle, Info } from "lucide-react";
+import { StickyNote, ChevronRight, Package, Truck, Clock, AlertTriangle, Info, CheckCircle2, X } from "lucide-react";
 import { updateOrderStatus, bulkUpdateOrderStatus } from "@/app/admin/actions/orders.actions";
 import { useToast } from "@/hooks/use-toast";
 import { OrderNoteWidget } from "./order-note-widget";
@@ -32,6 +32,11 @@ type NoteInfo = {
     note: string;
 }
 
+type BatchDispatchResult = {
+    type: 'success' | 'error';
+    message: string;
+}
+
 export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }) {
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
@@ -42,6 +47,11 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
     const [orderBundles, setOrderBundles] = useState<Record<string, number>>({});
     const [showUnprintedWarning, setShowUnprintedWarning] = useState(false);
     const [pendingSelections, setPendingSelections] = useState<{ id: string; bundles: number }[]>([]);
+    const [batchDispatchResult, setBatchDispatchResult] = useState<BatchDispatchResult | null>(null);
+
+    useEffect(() => {
+        setOrders(initialOrders);
+    }, [initialOrders]);
 
     const toSelections = (ids: string[]) => ids.map(id => ({ id, bundles: orderBundles[id] || 1 }));
 
@@ -67,6 +77,7 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
     }
 
     const executeDispatch = (orderIds: string[]) => {
+        setBatchDispatchResult(null);
         startTransition(async () => {
             const { error } = await bulkUpdateOrderStatus(orderIds, 'transito');
             if (error) {
@@ -74,11 +85,19 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
                     setPendingSelections(toSelections(orderIds));
                     setShowUnprintedWarning(true);
                 } else {
+                    setBatchDispatchResult({
+                        type: 'error',
+                        message: error.message || "No se pudieron despachar los pedidos. Intenta nuevamente.",
+                    });
                     toast({ title: "Error", description: error.message || "No se pudieron despachar los pedidos.", variant: "destructive" });
                 }
             } else {
                 setOrders(current => current.filter(o => !orderIds.includes(o.id)));
                 setSelectedOrders({});
+                setBatchDispatchResult({
+                    type: 'success',
+                    message: `${orderIds.length} ${orderIds.length === 1 ? 'pedido fue despachado' : 'pedidos fueron despachados'} correctamente.`,
+                });
                 toast({
                     title: "Despacho Confirmado",
                     description: `${orderIds.length} pedidos han sido marcados como despachados.`
@@ -105,6 +124,32 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
 
     return (
         <div className="relative space-y-4">
+            {batchDispatchResult && (
+                <div
+                    role={batchDispatchResult.type === 'error' ? 'alert' : 'status'}
+                    className={`flex items-start justify-between gap-3 rounded-xl border p-4 ${
+                        batchDispatchResult.type === 'error'
+                            ? 'border-destructive/30 bg-destructive/5 text-destructive'
+                            : 'border-green-600/30 bg-green-600/5 text-foreground'
+                    }`}
+                >
+                    <div className="flex items-start gap-2 text-sm">
+                        {batchDispatchResult.type === 'error'
+                            ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                            : <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />}
+                        <p>{batchDispatchResult.message}</p>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        aria-label="Cerrar resultado del despacho masivo"
+                        onClick={() => setBatchDispatchResult(null)}
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
             {selectedOrderList.length > 0 && (
                 <div className="sticky top-0 z-30 mb-6 glass p-4 rounded-xl flex flex-wrap items-center justify-between border-primary/20 shadow-2xl animate-in fade-in slide-in-from-top-4 gap-4">
                     <div className="flex items-center gap-3">

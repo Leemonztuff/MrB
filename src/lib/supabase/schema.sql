@@ -290,6 +290,59 @@ SELECT
     (SELECT count(*) FROM public.sales_conditions) as total_sales_conditions,
     (SELECT count(*) FROM public.orders WHERE status = 'armado') as pending_orders_count;
 
+CREATE OR REPLACE FUNCTION public.get_dashboard_period_metrics(p_period_days integer)
+RETURNS TABLE (
+    current_order_amount numeric,
+    previous_order_amount numeric,
+    current_order_count bigint,
+    previous_order_count bigint,
+    current_client_count bigint
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY INVOKER
+SET search_path = public
+AS $$
+DECLARE
+    period_end timestamptz := now();
+    period_start timestamptz;
+    previous_start timestamptz;
+BEGIN
+    IF p_period_days NOT IN (7, 30, 90) THEN
+        RAISE EXCEPTION 'El período debe ser de 7, 30 o 90 días.';
+    END IF;
+
+    period_start := period_end - make_interval(days => p_period_days);
+    previous_start := period_start - make_interval(days => p_period_days);
+
+    RETURN QUERY
+    SELECT
+        COALESCE(SUM(o.total_amount) FILTER (
+            WHERE o.created_at >= period_start AND o.created_at < period_end
+        ), 0)::numeric,
+        COALESCE(SUM(o.total_amount) FILTER (
+            WHERE o.created_at >= previous_start AND o.created_at < period_start
+        ), 0)::numeric,
+        COUNT(*) FILTER (
+            WHERE o.created_at >= period_start AND o.created_at < period_end
+        ),
+        COUNT(*) FILTER (
+            WHERE o.created_at >= previous_start AND o.created_at < period_start
+        ),
+        COUNT(DISTINCT o.client_id) FILTER (
+            WHERE o.created_at >= period_start
+              AND o.created_at < period_end
+              AND o.client_id IS NOT NULL
+        )
+    FROM public.orders o
+    WHERE o.created_at >= previous_start
+      AND o.created_at < period_end;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_dashboard_period_metrics(integer) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_dashboard_period_metrics(integer) TO authenticated;
+
 -- 5. FUNCTIONS
 CREATE OR REPLACE FUNCTION public.get_notification_counts()
 RETURNS json AS $$

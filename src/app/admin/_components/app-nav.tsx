@@ -18,14 +18,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { DashboardStats } from "@/types";
-
 type NavItem = {
   href: string;
   icon: React.ElementType;
   label: string;
-  isComplete?: (stats: DashboardStats) => boolean;
-  incompleteTooltip?: string;
 };
 
 const navItems: NavItem[] = [
@@ -37,7 +33,7 @@ const navItems: NavItem[] = [
   { href: "/admin/commercial-settings", icon: Briefcase, label: "Comercial" },
 ];
 
-export function AppNav({ isMobile, stats }: { isMobile: boolean, stats: DashboardStats }) {
+export function AppNav({ isMobile }: { isMobile: boolean }) {
   const pathname = usePathname();
 
   const renderNavItem = (item: NavItem) => {

@@ -16,7 +16,8 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 // --- Client Actions ---
 
 export async function getClients(
-  query?: string
+  query?: string,
+  status?: 'pending_agreement'
 ): Promise<ActionResponse<Client[]>> {
   return handleAction(async () => {
     const supabase = await getSupabaseClientWithAuth();
@@ -26,6 +27,10 @@ export async function getClients(
       .select(`*, agreements ( agreement_name )`)
       .in('status', ['active', 'pending_agreement', 'pending_onboarding'])
       .order('created_at', { ascending: false });
+
+    if (status) {
+      queryBuilder = queryBuilder.eq('status', status);
+    }
 
     if (query) {
       const cleanedQuery = `%${query.replace(/\s/g, '%')}%`;

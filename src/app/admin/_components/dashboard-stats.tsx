@@ -1,115 +1,210 @@
-
 "use client";
 
-import type { DashboardStats as StatsType } from "@/types";
+import Link from "next/link";
+import type { DashboardPeriodMetrics } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Users, Package, TrendingUp, AlertCircle } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Clock3, Package, Printer, RefreshCw, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/formatters";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 
-export function DashboardStats({ stats }: { stats: StatsType | null }) {
+type WorkloadMetrics = {
+    pendingOrdersCount: number;
+    unprintedOrdersCount: number;
+    overdueOrdersCount: number;
+    pendingClientsCount: number;
+}
+
+const formatComparison = (current: number, previous: number) => {
+    if (previous === 0) {
+        return current === 0 ? "Sin actividad en ambos períodos" : "Sin actividad en el período anterior";
+    }
+
+    const change = ((current - previous) / previous) * 100;
+    return `${change > 0 ? "+" : ""}${change.toLocaleString("es-AR", { maximumFractionDigits: 1 })}% respecto al período anterior`;
+};
+
+export function DashboardStats({
+    workload,
+    periodMetrics,
+    periodDays,
+    updatedAt,
+}: {
+    workload: WorkloadMetrics;
+    periodMetrics: DashboardPeriodMetrics;
+    periodDays: 7 | 30 | 90;
+    updatedAt: string;
+}) {
+    const router = useRouter();
+    const [isRefreshing, startRefresh] = useTransition();
+    const operationalCards = [
+        {
+            title: "Pedidos pendientes",
+            value: workload.pendingOrdersCount,
+            description: "Por preparar o despachar",
+            href: "/admin/orders?status=armado",
+            icon: Package,
+            warning: false,
+        },
+        {
+            title: "Rótulos por confirmar",
+            value: workload.unprintedOrdersCount,
+            description: "Pedidos sin impresión confirmada",
+            href: "/admin/orders?status=armado&labels=pending",
+            icon: Printer,
+            warning: workload.unprintedOrdersCount > 0,
+        },
+        {
+            title: "Pedidos demorados",
+            value: workload.overdueOrdersCount,
+            description: "Pendientes hace más de 48 horas",
+            href: "/admin/orders?status=armado&overdue=true",
+            icon: Clock3,
+            warning: workload.overdueOrdersCount > 0,
+        },
+        {
+            title: "Clientes pendientes",
+            value: workload.pendingClientsCount,
+            description: "Esperan asignación de convenio",
+            href: "/admin/clients?status=pending_agreement",
+            icon: Users,
+            warning: false,
+        },
+    ];
+
+    const amountChange = periodMetrics.previous_order_amount > 0
+        ? ((periodMetrics.current_order_amount - periodMetrics.previous_order_amount) / periodMetrics.previous_order_amount) * 100
+        : null;
+    const currentAverage = periodMetrics.current_order_count > 0
+        ? periodMetrics.current_order_amount / periodMetrics.current_order_count
+        : 0;
+
     return (
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-            {/* Total Revenue */}
-            <Card className="glass overflow-hidden border-primary/10 group hover:border-primary/30 transition-all duration-500">
-                <div className="absolute top-0 right-0 p-4 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none">
-                    <DollarSign className="h-16 w-16 -mr-4 -mt-4 rotate-12" />
+        <div className="grid gap-6">
+            <section aria-labelledby="operational-overview-title" className="grid gap-3">
+                <div className="flex flex-wrap items-end justify-between gap-2">
+                    <div>
+                        <h2 id="operational-overview-title" className="text-lg font-bold">Requiere atención</h2>
+                        <p className="text-sm text-muted-foreground">Accesos directos a las tareas pendientes.</p>
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={isRefreshing}
+                        onClick={() => startRefresh(() => router.refresh())}
+                        className="gap-2"
+                    >
+                        <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+                        {isRefreshing ? "Actualizando..." : "Actualizar"}
+                    </Button>
                 </div>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">
-                        Ingresos Totales
-                    </CardTitle>
-                    <div className="p-2 bg-primary/10 rounded-lg group-hover:scale-110 transition-transform">
-                        <DollarSign className="h-4 w-4 text-primary" />
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-3xl font-black font-headline tracking-tighter bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">
-                        {formatCurrency(stats?.total_revenue ?? 0)}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-2 text-[10px] text-primary font-black uppercase tracking-widest">
-                        <div className="h-1 w-1 rounded-full bg-primary animate-pulse" />
-                        Histórico Acumulado
-                    </div>
-                </CardContent>
-            </Card>
+                <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                    {operationalCards.map(({ title, value, description, href, icon: Icon, warning }) => (
+                        <Link
+                            key={title}
+                            href={href}
+                            className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            aria-label={`${title}: ${value}. ${description}`}
+                        >
+                            <Card className={cn(
+                                "h-full glass transition-colors group-hover:border-primary/30",
+                                warning ? "border-amber-500/30 bg-amber-500/5" : "border-white/5"
+                            )}>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-xs font-semibold text-muted-foreground">{title}</CardTitle>
+                                    <Icon className={cn("h-4 w-4", warning ? "text-amber-600 dark:text-amber-400" : "text-primary")} aria-hidden="true" />
+                                </CardHeader>
+                                <CardContent>
+                                    <p className={cn("text-3xl font-black tabular-nums", warning && "text-amber-700 dark:text-amber-300")}>{value}</p>
+                                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                    ))}
+                </div>
+            </section>
 
-            {/* Monthly Sales */}
-            <Card className="glass overflow-hidden border-white/5 group hover:border-primary/20 transition-all duration-500">
-                <div className="absolute top-0 right-0 p-4 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none">
-                    <Package className="h-16 w-16 -mr-4 -mt-4 rotate-12" />
+            <section aria-labelledby="commercial-overview-title" className="rounded-xl border border-border bg-card/60 p-4 sm:p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <h2 id="commercial-overview-title" className="text-lg font-bold">Actividad comercial</h2>
+                        <p className="text-sm text-muted-foreground">Importes de pedidos registrados; no representan pagos recibidos.</p>
+                    </div>
+                    <div aria-label="Período de actividad" className="flex rounded-lg bg-muted p-1">
+                        {([7, 30, 90] as const).map(days => (
+                            <Link
+                                key={days}
+                                href={`/admin?period=${days}`}
+                                aria-current={periodDays === days ? "page" : undefined}
+                                className={cn(
+                                    "flex min-h-10 items-center rounded-md px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                                    periodDays === days
+                                        ? "bg-background text-foreground shadow-sm"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                {days} días
+                            </Link>
+                        ))}
+                    </div>
                 </div>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">
-                        Ventas (Mes)
-                    </CardTitle>
-                    <div className="p-2 bg-secondary rounded-lg group-hover:scale-110 transition-transform">
-                        <Package className="h-4 w-4 text-primary" />
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-3xl font-black font-headline tracking-tighter">
-                        {formatCurrency(stats?.month_revenue ?? 0)}
-                    </div>
-                    <p className="text-[10px] text-muted-foreground uppercase mt-2 font-bold tracking-widest">Mes en curso</p>
-                </CardContent>
-            </Card>
+                <p className="mt-3 text-xs text-muted-foreground">
+                    Datos consultados: <time>{updatedAt}</time>
+                </p>
 
-            {/* VIP Clients */}
-            <Card className="glass overflow-hidden border-white/5 group hover:border-primary/20 transition-all duration-500">
-                <div className="absolute top-0 right-0 p-4 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none">
-                    <Users className="h-16 w-16 -mr-4 -mt-4 rotate-12" />
+                <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <Metric
+                        label={`Importe · últimos ${periodDays} días`}
+                        value={formatCurrency(periodMetrics.current_order_amount)}
+                        comparison={formatComparison(periodMetrics.current_order_amount, periodMetrics.previous_order_amount)}
+                        trend={amountChange}
+                    />
+                    <Metric
+                        label="Pedidos registrados"
+                        value={periodMetrics.current_order_count.toLocaleString("es-AR")}
+                        comparison={`${periodMetrics.previous_order_count.toLocaleString("es-AR")} en los ${periodDays} días anteriores`}
+                    />
+                    <Metric
+                        label="Promedio por pedido"
+                        value={formatCurrency(currentAverage)}
+                        comparison={periodMetrics.current_order_count > 0 ? "Importe del período dividido por pedidos" : "Sin pedidos en este período"}
+                    />
+                    <Metric
+                        label="Clientes con pedidos"
+                        value={periodMetrics.current_client_count.toLocaleString("es-AR")}
+                        comparison={`Clientes únicos en los últimos ${periodDays} días`}
+                    />
                 </div>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">
-                        Clientes VIP
-                    </CardTitle>
-                    <div className="p-2 bg-secondary rounded-lg group-hover:scale-110 transition-transform">
-                        <Users className="h-4 w-4 text-primary" />
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-3xl font-black font-headline tracking-tighter">
-                        +{stats?.active_clients ?? 0}
-                    </div>
-                    <p className="text-[10px] text-muted-foreground uppercase mt-2 font-bold tracking-widest">Activos con convenio</p>
-                </CardContent>
-            </Card>
+            </section>
+        </div>
+    );
+}
 
-            {/* Overdue Orders */}
-            <Card className={cn(
-                "glass overflow-hidden border-white/5 group transition-all duration-500",
-                (stats?.overdue_orders_count ?? 0) > 0
-                    ? "border-destructive/30 bg-destructive/5 hover:border-destructive/50"
-                    : "hover:border-primary/20"
-            )}>
-                <div className="absolute top-0 right-0 p-4 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none">
-                    <AlertCircle className="h-16 w-16 -mr-4 -mt-4 rotate-12" />
-                </div>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">
-                        Demorados
-                    </CardTitle>
-                    <div className={cn(
-                        "p-2 rounded-lg group-hover:scale-110 transition-transform",
-                        ((stats?.overdue_orders_count ?? 0) > 0 ? "bg-destructive/10" : "bg-secondary")
-                    )}>
-                        <AlertCircle className={cn(
-                            "h-4 w-4",
-                            (stats?.overdue_orders_count ?? 0) > 0 ? "text-destructive" : "text-primary"
-                        )} />
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className={cn(
-                        "text-3xl font-black font-headline tracking-tighter",
-                        (stats?.overdue_orders_count ?? 0) > 0 && "text-destructive"
-                    )}>
-                        {(stats?.overdue_orders_count ?? 0)}
-                    </div>
-                    <p className="text-[10px] text-muted-foreground uppercase mt-2 font-bold tracking-widest">Pedidos &gt;48hs</p>
-                </CardContent>
-            </Card>
+function Metric({
+    label,
+    value,
+    comparison,
+    trend,
+}: {
+    label: string;
+    value: string;
+    comparison: string;
+    trend?: number | null;
+}) {
+    const TrendIcon = trend !== undefined && trend !== null && trend >= 0 ? ArrowUpRight : ArrowDownRight;
+
+    return (
+        <div className="min-w-0">
+            <p className="text-xs font-semibold text-muted-foreground">{label}</p>
+            <p className="mt-1 break-words text-2xl font-black tracking-tight text-foreground">{value}</p>
+            <p className="mt-1 flex items-start gap-1 text-xs leading-relaxed text-muted-foreground">
+                {trend !== undefined && trend !== null && (
+                    <TrendIcon className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", trend >= 0 ? "text-green-600 dark:text-green-400" : "text-destructive")} aria-hidden="true" />
+                )}
+                <span>{comparison}</span>
+            </p>
         </div>
     );
 }

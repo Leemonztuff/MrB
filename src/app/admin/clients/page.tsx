@@ -13,11 +13,11 @@ import { SearchClients } from "./_components/search-clients";
 export default async function ClientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ query?: string }>;
+  searchParams: Promise<{ query?: string; status?: string }>;
 }) {
-  const { query: queryParam } = await searchParams;
+  const { query: queryParam, status } = await searchParams;
   const query = queryParam || "";
-  const { data: clients, error } = await getClients(query);
+  const { data: clients, error } = await getClients(query, status === "pending_agreement" ? "pending_agreement" : undefined);
 
   if (error) {
     return <ErrorDisplay message={error.message} />;
@@ -36,8 +36,10 @@ export default async function ClientsPage({
   return (
     <PageContainer>
       <PageHeader
-        title="Clientes"
-        description="Gestiona tus clientes, asígnales convenios y genera enlaces de alta."
+        title={status === "pending_agreement" ? "Clientes pendientes" : "Clientes"}
+        description={status === "pending_agreement"
+          ? "Clientes que esperan asignación de convenio para activar su cuenta."
+          : "Gestiona tus clientes, asígnales convenios y genera enlaces de alta."}
       >
         <div className="flex items-center gap-2">
           <SearchClients />

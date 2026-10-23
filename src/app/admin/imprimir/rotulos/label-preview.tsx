@@ -37,12 +37,17 @@ export function LabelPreview({
   const totalPages = Math.ceil(labels.length / format);
 
   const orderIds = useMemo(() => [...new Set(labels.map(l => l.id))], [labels]);
+  const confirmedOrderIds = useMemo(
+    () => [...new Set(labels.filter(label => label.printed_at).map(label => label.id))],
+    [labels]
+  );
   const ordersToMark = useMemo(
     () => [...new Set(labels
       .filter(label => label.status === 'armado' && !label.printed_at && !markedOrderIds.includes(label.id))
       .map(label => label.id))],
     [labels, markedOrderIds]
   );
+  const totalConfirmedOrders = new Set([...confirmedOrderIds, ...markedOrderIds]).size;
 
   const pdfDocument = useMemo(
     () => <LabelDocument labels={labels} format={format} logoUrl={logoUrl} />,
@@ -66,7 +71,7 @@ export function LabelPreview({
   // Imprime SOLO el PDF (no el chrome de la app): carga el blob en un iframe oculto
   // y dispara la impresión nativa del documento.
   const handlePrint = useCallback(() => {
-    if (!instance.url) return;
+    if (!instance.url || instance.loading || instance.error) return;
     setPrintError(null);
     const iframe = document.createElement('iframe');
     iframe.setAttribute('aria-hidden', 'true');
@@ -86,7 +91,7 @@ export function LabelPreview({
         iframe.contentWindow.print();
       } catch (error) {
         console.error('Error al imprimir los rótulos:', error);
-        const message = 'No se pudo abrir la impresión. Descarga el PDF e imprimilo manualmente.';
+        const message = 'No se pudo abrir la impresión. Descargá el PDF e imprimilo manualmente.';
         setPrintError(message);
         toast({ title: 'No se pudieron imprimir los rótulos', description: message, variant: 'destructive' });
       } finally {
@@ -100,7 +105,7 @@ export function LabelPreview({
       iframe.remove();
     };
     document.body.appendChild(iframe);
-  }, [instance.url, toast]);
+  }, [instance.url, instance.loading, instance.error, toast]);
 
   const confirmPrinted = async () => {
     if (ordersToMark.length === 0) return;
@@ -131,7 +136,9 @@ export function LabelPreview({
     }
   };
 
-  const previewSrc = instance.url ? `${instance.url}#toolbar=0&navpanes=0&statusbar=0` : undefined;
+  const previewSrc = instance.url && !instance.loading && !instance.error
+    ? `${instance.url}#toolbar=0&navpanes=0&statusbar=0`
+    : undefined;
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -147,18 +154,20 @@ export function LabelPreview({
                 Mr. Blonde
               </p>
               <h1 className="text-lg font-black italic tracking-tight leading-tight">
-                Generador de Rótulos
+                Rótulos de envío
               </h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div role="group" aria-label="Rótulos por hoja" className="flex items-center gap-1 bg-muted rounded-lg p-1">
               {([1, 2, 3] as LabelFormat[]).map((f) => (
                 <button
                   key={f}
                   onClick={() => setFormat(f)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  aria-pressed={format === f}
+                  disabled={instance.loading}
+                  className={`min-h-11 px-3 text-xs font-medium rounded-md transition-colors disabled:cursor-wait disabled:opacity-60 ${
                     format === f
                       ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'text-muted-foreground hover:text-foreground'
@@ -169,7 +178,7 @@ export function LabelPreview({
               ))}
             </div>
 
-            {instance.url ? (
+            {instance.url && !instance.loading && !instance.error ? (
               <Button asChild variant="outline" size="sm" className="gap-2">
                 <a href={instance.url} download={fileName}>
                   <Download className="h-4 w-4" />
@@ -178,8 +187,8 @@ export function LabelPreview({
               </Button>
             ) : (
               <Button variant="outline" size="sm" disabled className="gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Generando...
+                {instance.loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {instance.error ? 'PDF no disponible' : instance.loading ? 'Generando...' : 'PDF no disponible'}
               </Button>
             )}
 
@@ -187,38 +196,45 @@ export function LabelPreview({
               size="sm"
               className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
               onClick={handlePrint}
-              disabled={!instance.url}
+              disabled={!instance.url || instance.loading || Boolean(instance.error)}
             >
               <Printer className="h-4 w-4" />
-              Imprimir
+              Imprimir rótulos
             </Button>
           </div>
         </div>
 
         <div className="max-w-6xl mx-auto px-6 pb-3 text-xs text-muted-foreground">
-          {labels.length} rótulo(s) · {totalPages} hoja(s) · A4
+          {orderIds.length} {orderIds.length === 1 ? 'pedido' : 'pedidos'} · {labels.length} {labels.length === 1 ? 'rótulo' : 'rótulos'} · {totalPages} {totalPages === 1 ? 'hoja' : 'hojas'} · A4
+          {instance.error && (
+            <p role="alert" className="mt-2 text-destructive">
+              No se pudo generar el PDF. Volvé al panel y generá los rótulos nuevamente.
+            </p>
+          )}
         </div>
         <div className="max-w-6xl mx-auto px-6 pb-4">
           {ordersToMark.length > 0 ? (
             <div className="flex flex-col gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-foreground">
-                Descargar o abrir la impresión no confirma que los rótulos se hayan impreso.
-                Después de imprimirlos, confirmalo aquí para habilitar el despacho.
+                Descargar el PDF o abrir el diálogo no confirma la impresión. Imprimí los rótulos
+                y después confirmá aquí la impresión de {ordersToMark.length}{' '}
+                {ordersToMark.length === 1 ? 'pedido pendiente' : 'pedidos pendientes'}.
+                {totalConfirmedOrders > 0 && ` ${totalConfirmedOrders} ${totalConfirmedOrders === 1 ? 'pedido ya tiene' : 'pedidos ya tienen'} la impresión confirmada.`}
               </p>
               <Button
                 variant="outline"
                 className="shrink-0 gap-2"
                 onClick={() => setConfirmPrintedOpen(true)}
-                disabled={isMarkingPrinted}
+                disabled={isMarkingPrinted || instance.loading || Boolean(instance.error)}
               >
                 <CheckCircle2 className="h-4 w-4" />
-                Confirmar rótulos impresos
+                Confirmar impresión de {ordersToMark.length} {ordersToMark.length === 1 ? 'pedido' : 'pedidos'}
               </Button>
             </div>
-          ) : markedOrderIds.length > 0 ? (
+          ) : totalConfirmedOrders > 0 ? (
             <p role="status" className="flex items-center gap-2 text-sm text-green-600">
               <CheckCircle2 className="h-4 w-4" />
-              Impresión confirmada. El despacho está habilitado para estos pedidos.
+              Impresión confirmada para {totalConfirmedOrders} {totalConfirmedOrders === 1 ? 'pedido' : 'pedidos'}.
             </p>
           ) : null}
           {printError && (
@@ -235,7 +251,9 @@ export function LabelPreview({
           <AlertDialogHeader>
             <AlertDialogTitle>¿Ya imprimiste los rótulos?</AlertDialogTitle>
             <AlertDialogDescription>
-              Confirmá solo después de que los rótulos hayan salido impresos. Descargar el PDF o abrir el diálogo de impresión no habilita el despacho.
+              Vas a confirmar la impresión de {ordersToMark.length}{' '}
+              {ordersToMark.length === 1 ? 'pedido' : 'pedidos'}. Hacelo solo después
+              de que los rótulos hayan salido impresos; esta confirmación habilita su despacho.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -259,8 +277,8 @@ export function LabelPreview({
         <div className="max-w-6xl mx-auto">
           <div className="rounded-xl overflow-hidden ring-1 ring-white/10 shadow-2xl bg-white">
             {instance.error ? (
-              <div className="p-12 text-center text-sm text-destructive">
-                No se pudo generar la vista previa: {instance.error}
+              <div className="p-12 text-center text-sm text-muted-foreground">
+                El PDF no está disponible. Volvé al panel y generá los rótulos nuevamente.
               </div>
             ) : previewSrc ? (
               <iframe

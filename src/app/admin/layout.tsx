@@ -17,17 +17,19 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Logo } from "@/app/logo";
 import { logout } from "@/app/actions/user.actions";
 import { Notifications } from "./_components/notifications";
-import { getNotificationData, getDashboardData } from "@/app/admin/actions/dashboard.actions";
+import { getNotificationData } from "@/app/admin/actions/dashboard.actions";
 import { getSettings } from "@/app/admin/actions/settings.actions";
 import { AppNav } from "./_components/app-nav";
 import { AutoRefresh } from "./_components/auto-refresh";
 import { ThemeToggle } from "./_components/theme-toggle";
-import type { DashboardStats } from "@/types";
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
 
 const createNotifications = (
   pendingOrdersCount: number,
   pendingClientsCount: number,
-  overdueOrdersCount: number
+  overdueOrdersCount: number,
+  oldestPendingOrderAt: string | null
 ) => {
   const notifications = [];
 
@@ -35,9 +37,11 @@ const createNotifications = (
     notifications.push({
       id: "pending-orders",
       type: "order" as const,
-      title: `${pendingOrdersCount} Pedido(s) Nuevo(s)`,
-      description: "Tienes nuevos pedidos para procesar.",
-      createdAt: new Date(),
+      title: `${pendingOrdersCount} ${pendingOrdersCount === 1 ? "pedido pendiente" : "pedidos pendientes"}`,
+      description: oldestPendingOrderAt
+        ? `El más antiguo se creó ${formatDistanceToNow(new Date(oldestPendingOrderAt), { addSuffix: true, locale: es })}.`
+        : "Pendientes de preparación o despacho.",
+      href: "/admin/orders?status=armado",
     });
   }
 
@@ -45,9 +49,9 @@ const createNotifications = (
     notifications.push({
       id: "pending-clients",
       type: "client" as const,
-      title: `${pendingClientsCount} Cliente(s) Pendiente(s)`,
-      description: "Nuevos clientes esperan asignación de convenio.",
-      createdAt: new Date(),
+      title: `${pendingClientsCount} ${pendingClientsCount === 1 ? "cliente pendiente" : "clientes pendientes"}`,
+      description: "Esperan la asignación de un convenio.",
+      href: "/admin/clients",
     });
   }
 
@@ -55,30 +59,35 @@ const createNotifications = (
     notifications.push({
       id: "overdue-orders",
       type: "overdue" as const,
-      title: `${overdueOrdersCount} Pedido(s) Vencido(s)`,
-      description: "Hay pedidos cuya gestión está demorada.",
-      createdAt: new Date(),
+      title: `${overdueOrdersCount} ${overdueOrdersCount === 1 ? "pedido demorado" : "pedidos demorados"}`,
+      description: "Pendientes de despacho desde hace más de 48 horas.",
+      href: "/admin/orders?status=armado&overdue=true",
     });
   }
 
-  return notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-};
+  return notifications;
+}
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { data: notificationData } = await getNotificationData();
-  const { data: dashboardData } = await getDashboardData();
-  const { logo_url } = await getSettings();
-  const stats = dashboardData?.stats ?? null;
+  const [notificationResult, settingsResult] = await Promise.all([
+    getNotificationData(),
+    getSettings(),
+  ]);
+  const notificationData = notificationResult.data;
+  const { logo_url } = settingsResult;
 
-  const notifications = createNotifications(
-    notificationData?.pending_orders_count ?? 0,
-    notificationData?.pending_clients_count ?? 0,
-    notificationData?.overdue_orders_count ?? 0
-  );
+  const notifications = notificationData
+    ? createNotifications(
+        notificationData.pending_orders_count,
+        notificationData.pending_clients_count,
+        notificationData.overdue_orders_count,
+        notificationData.oldest_pending_order_at
+      )
+    : [];
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-background/95">
@@ -92,7 +101,7 @@ export default async function AdminLayout({
             <Logo logoUrl={logo_url} />
             <span className="sr-only">MR. BLONDE</span>
           </Link>
-          <AppNav isMobile={false} stats={stats as DashboardStats} />
+          <AppNav isMobile={false} />
         </nav>
         <nav className="mt-auto flex flex-col items-center gap-6 px-2 py-8">
           <TooltipProvider>
@@ -137,7 +146,10 @@ export default async function AdminLayout({
           </div>
           <div className="ml-auto flex items-center gap-4">
             <ThemeToggle />
-            <Notifications notifications={notifications} />
+            <Notifications
+              notifications={notifications}
+              error={notificationResult.error?.message}
+            />
             <Sheet>
               <SheetTrigger asChild>
                 <Button
@@ -155,7 +167,7 @@ export default async function AdminLayout({
                   <SheetDescription className="sr-only">Navegación principal de la aplicación para dispositivos móviles.</SheetDescription>
                 </SheetHeader>
                 <nav className="grid gap-6 text-base font-medium">
-                  <AppNav isMobile={true} stats={stats as DashboardStats} />
+                  <AppNav isMobile={true} />
                 </nav>
                 <div className="absolute bottom-4 left-4 right-4 grid gap-4">
                   <Link

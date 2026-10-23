@@ -22,7 +22,7 @@ function notPrintedError(count = 1) {
     return error;
 }
 
-export async function getOrders(filters?: { status?: string; query?: string }): Promise<ActionResponse<Order[]>> {
+export async function getOrders(filters?: { status?: string; query?: string; overdue?: boolean; unprinted?: boolean }): Promise<ActionResponse<Order[]>> {
     return handleAction(async () => {
         const supabase = await getSupabaseClientWithAuth();
         let queryBuilder = supabase.from('orders').select('*').order('created_at', { ascending: false });
@@ -32,6 +32,13 @@ export async function getOrders(filters?: { status?: string; query?: string }): 
         }
         if (filters?.query) {
             queryBuilder = queryBuilder.ilike('client_name_cache', `%${filters.query}%`);
+        }
+        if (filters?.overdue) {
+            const overdueBefore = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+            queryBuilder = queryBuilder.lt('created_at', overdueBefore);
+        }
+        if (filters?.unprinted) {
+            queryBuilder = queryBuilder.is('printed_at', null);
         }
 
         const { data, error } = await queryBuilder;

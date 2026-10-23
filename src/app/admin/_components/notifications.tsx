@@ -1,128 +1,136 @@
-
 "use client";
 
-import { useState } from "react";
-import { formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Bell, Check, Package, UserPlus, Clock } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Bell, Clock, Loader2, Package, UserPlus } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 type Notification = {
-    id: string;
-    type: 'order' | 'client' | 'overdue';
-    title: string;
-    description: string;
-    createdAt: Date;
-}
+  id: string;
+  type: "order" | "client" | "overdue";
+  title: string;
+  description: string;
+  href: string;
+};
 
-const getNotificationConfig = (notification: Notification) => {
-    switch (notification.type) {
-        case 'order':
-            return {
-                icon: Package,
-                href: `/admin`,
-                bgColorClass: "bg-blue-500",
-            };
-        case 'client':
-            return {
-                icon: UserPlus,
-                href: `/admin/clients`,
-                bgColorClass: "bg-green-500",
-            };
-        case 'overdue':
-             return {
-                icon: Clock,
-                href: `/admin`, // Could link to a specific "overdue" page later
-                bgColorClass: "bg-amber-500",
-            };
-        default:
-            return {
-                icon: Bell,
-                href: '#',
-                bgColorClass: "bg-primary"
-            }
-    }
-}
+const notificationStyles = {
+  order: {
+    icon: Package,
+    color: "text-blue-500",
+    background: "bg-blue-500/10",
+  },
+  client: {
+    icon: UserPlus,
+    color: "text-green-500",
+    background: "bg-green-500/10",
+  },
+  overdue: {
+    icon: Clock,
+    color: "text-amber-500",
+    background: "bg-amber-500/10",
+  },
+};
 
-
-export function Notifications({ notifications }: { notifications: Notification[]}) {
-  const [hasUnread, setHasUnread] = useState(notifications.length > 0);
-
-  const handleMarkAsRead = () => {
-    setHasUnread(false);
-  };
+export function Notifications({
+  notifications,
+  error,
+}: {
+  notifications: Notification[];
+  error?: string;
+}) {
+  const router = useRouter();
+  const [isRefreshing, startRefresh] = useTransition();
+  const hasActiveNotifications = notifications.length > 0;
+  const triggerLabel = error
+    ? "Abrir notificaciones; no se pudieron cargar"
+    : hasActiveNotifications
+      ? `Abrir notificaciones; ${notifications.length} ${notifications.length === 1 ? "categoría activa" : "categorías activas"}`
+      : "Abrir notificaciones";
 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="icon" className="relative shrink-0">
+        <Button
+          variant="outline"
+          size="icon"
+          className="relative h-11 w-11 shrink-0"
+          aria-label={triggerLabel}
+        >
           <Bell className="h-5 w-5" />
-          {hasUnread && (
-            <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-destructive ring-2 ring-background" />
+          {(hasActiveNotifications || error) && (
+            <span
+              aria-hidden="true"
+              className={cn(
+                "absolute right-1.5 top-1.5 block h-2.5 w-2.5 rounded-full ring-2 ring-background",
+                error ? "bg-destructive" : "bg-amber-500"
+              )}
+            />
           )}
-          <span className="sr-only">Abrir notificaciones</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
+      <PopoverContent className="w-[min(22rem,calc(100vw-2rem))] p-0" align="end">
         <Card className="border-0 shadow-none">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Notificaciones</CardTitle>
-            {hasUnread && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleMarkAsRead}
-                className="h-auto p-1 text-xs"
-              >
-                <Check className="mr-1 h-3 w-3" />
-                Marcar como leídas
-              </Button>
-            )}
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Avisos</CardTitle>
+            <CardDescription>
+              Pendientes actuales; desaparecen cuando se resuelven.
+            </CardDescription>
           </CardHeader>
-          <ScrollArea className="h-96">
-            <div className="flex flex-col gap-1 p-2">
-                {notifications.length > 0 ? (
-                    notifications.map((notification) => {
-                        const { icon: Icon, href, bgColorClass } = getNotificationConfig(notification);
-                        return (
-                            <Link key={notification.id} href={href} className="block rounded-lg hover:bg-muted/50 p-2">
-                                <div className="flex items-start gap-3">
-                                    <div className={cn("mt-1 flex h-2 w-2 translate-y-1.5 shrink-0 rounded-full", bgColorClass)} />
-                                    <div className="grid gap-0.5">
-                                        <p className="font-semibold text-sm">{notification.title}</p>
-                                        <p className="text-xs text-muted-foreground">{notification.description}</p>
-                                        <p className="text-xs text-muted-foreground/70">
-                                            {formatDistanceToNow(notification.createdAt, { addSuffix: true, locale: es })}
-                                        </p>
-                                    </div>
-                                </div>
-                            </Link>
-                        )
-                    })
-                ) : (
-                    <div className="py-12 text-center text-sm text-muted-foreground">
-                        <Bell className="mx-auto h-8 w-8 mb-2" />
-                        <p>No hay notificaciones nuevas.</p>
-                    </div>
-                )}
-            </div>
+          <ScrollArea className="max-h-96">
+            <CardContent className="grid gap-2 px-3 pb-3">
+              {error ? (
+                <div role="alert" className="grid gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+                  <p className="text-sm text-foreground">
+                    No se pudieron cargar los avisos. Revisá la conexión e intentá nuevamente.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isRefreshing}
+                    onClick={() => startRefresh(() => router.refresh())}
+                    className="w-fit gap-2"
+                  >
+                    {isRefreshing && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {isRefreshing ? "Actualizando..." : "Reintentar"}
+                  </Button>
+                </div>
+              ) : hasActiveNotifications ? (
+                notifications.map((notification) => {
+                  const { icon: Icon, color, background } = notificationStyles[notification.type];
+                  return (
+                    <Link
+                      key={notification.id}
+                      href={notification.href}
+                      className="flex items-start gap-3 rounded-lg p-3 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <span className={cn("mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", background)}>
+                        <Icon className={cn("h-4 w-4", color)} aria-hidden="true" />
+                      </span>
+                      <span className="grid min-w-0 gap-1">
+                        <span className="text-sm font-semibold">{notification.title}</span>
+                        <span className="text-xs leading-relaxed text-muted-foreground">{notification.description}</span>
+                        <span className="text-xs font-medium text-primary">Ver pendientes</span>
+                      </span>
+                    </Link>
+                  );
+                })
+              ) : (
+                <div role="status" className="grid justify-items-center gap-2 py-8 text-center text-sm text-muted-foreground">
+                  <Bell className="h-8 w-8" aria-hidden="true" />
+                  <p>No hay pendientes activos.</p>
+                </div>
+              )}
+            </CardContent>
           </ScrollArea>
-           {notifications.length > 0 && (
-             <CardFooter>
-                <p className="text-xs text-muted-foreground/80 text-center w-full">
-                    Mostrando las últimas {notifications.length} notificaciones.
-                </p>
-            </CardFooter>
-           )}
         </Card>
       </PopoverContent>
     </Popover>

@@ -26,7 +26,7 @@ export function clearPrintSelections(): void {
   sessionStorage.removeItem(PRINT_STORAGE_KEY);
 }
 
-export function openPrintPage(selections: PrintSelection[]): void {
+export function openPrintPage(selections: PrintSelection[]): boolean {
   savePrintSelections(selections);
-  window.open('/admin/imprimir/rotulos', '_blank');
+  return window.open('/admin/imprimir/rotulos', '_blank') !== null;
 }
