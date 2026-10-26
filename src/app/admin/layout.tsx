@@ -3,7 +3,6 @@ import Link from "next/link";
 import {
   LogOut,
   Settings,
-  Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Logo } from "@/app/logo";
 import { logout } from "@/app/actions/user.actions";
 import { Notifications } from "./_components/notifications";
@@ -22,6 +20,7 @@ import { getSettings } from "@/app/admin/actions/settings.actions";
 import { AppNav } from "./_components/app-nav";
 import { AutoRefresh } from "./_components/auto-refresh";
 import { ThemeToggle } from "./_components/theme-toggle";
+import { MobileAdminMenu } from "./_components/mobile-admin-menu";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -150,42 +149,7 @@ export default async function AdminLayout({
               notifications={notifications}
               error={notificationResult.error?.message}
             />
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="shrink-0 sm:hidden"
-                >
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">Toggle navigation menu</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="pt-16">
-                <SheetHeader>
-                  <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
-                  <SheetDescription className="sr-only">Navegación principal de la aplicación para dispositivos móviles.</SheetDescription>
-                </SheetHeader>
-                <nav className="grid gap-6 text-base font-medium">
-                  <AppNav isMobile={true} />
-                </nav>
-                <div className="absolute bottom-4 left-4 right-4 grid gap-4">
-                  <Link
-                    href="/admin/settings"
-                    className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
-                  >
-                    <Settings className="h-5 w-5" />
-                    Configuración
-                  </Link>
-                  <form action={logout}>
-                    <button className="w-full flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground">
-                      <LogOut className="h-5 w-5" />
-                      Cerrar Sesión
-                    </button>
-                  </form>
-                </div>
-              </SheetContent>
-            </Sheet>
+            <MobileAdminMenu />
           </div>
         </header>
         <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 pb-24 sm:pb-4">

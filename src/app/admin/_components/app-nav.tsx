@@ -33,7 +33,13 @@ const navItems: NavItem[] = [
   { href: "/admin/commercial-settings", icon: Briefcase, label: "Comercial" },
 ];
 
-export function AppNav({ isMobile }: { isMobile: boolean }) {
+export function AppNav({
+  isMobile,
+  onNavigate,
+}: {
+  isMobile: boolean;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
 
   const renderNavItem = (item: NavItem) => {
@@ -51,8 +57,9 @@ export function AppNav({ isMobile }: { isMobile: boolean }) {
         <Link
           key={item.href}
           href={item.href}
+          onClick={onNavigate}
           className={cn(
-            "relative flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground",
+            "relative flex min-h-11 items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground",
             isActive && "text-foreground"
           )}
         >
