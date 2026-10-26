@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, ExternalLink, Gift, Truck, Percent, Trash2 } from "lucide-react";
+import { ArrowRight, ExternalLink, Gift, Truck, Percent, Trash2, CircleCheck, MessageCircle } from "lucide-react";
 import { submitOrder } from "@/app/actions/user.actions";
 import { getPublicWhatsappNumber } from "@/app/admin/actions/settings.actions";
 import type { Promotion } from "@/types";
@@ -199,7 +199,11 @@ export function OrderSummary({
   const [notes, setNotes] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
-  const [whatsappFallback, setWhatsappFallback] = useState<{ url: string; orderId: string } | null>(null);
+  const [orderFeedback, setOrderFeedback] = useState<{
+    url: string;
+    orderId: string;
+    whatsappOpened: boolean;
+  } | null>(null);
 
   useEffect(() => {
     getPublicWhatsappNumber().then((res) => setWhatsappNumber(res.data ?? ""));
@@ -222,6 +226,12 @@ export function OrderSummary({
       setVolumeThreshold(volumeThreshold);
     }
   }, [volumeThreshold, setVolumeThreshold]);
+
+  useEffect(() => {
+    if (orderFeedback && items.length > 0) {
+      setOrderFeedback(null);
+    }
+  }, [orderFeedback, items.length]);
 
 
   const handleSend = () => {
@@ -247,7 +257,6 @@ export function OrderSummary({
 
   const confirmSend = () => {
     setShowConfirm(false);
-    setWhatsappFallback(null);
     const whatsappWindow = window.open("about:blank", "_blank");
     if (whatsappWindow) whatsappWindow.opener = null;
 
@@ -292,27 +301,71 @@ export function OrderSummary({
           whatsappOpened = true;
         } catch (error) {
           console.error("No se pudo abrir el mensaje de WhatsApp:", error);
-          setWhatsappFallback({ url: whatsappUrl, orderId: result.data.orderId });
         }
-      } else {
-        setWhatsappFallback({ url: whatsappUrl, orderId: result.data.orderId });
       }
 
       clearCart();
       setNotes("");
-      toast(whatsappOpened
-        ? {
-            title: "Pedido registrado",
-            description: "WhatsApp se abrió con el mensaje preparado. Tocá Enviar allí para completar el envío.",
-          }
-        : {
-            title: "Pedido registrado; falta enviarlo",
-            description: "No se pudo abrir WhatsApp automáticamente. Usa el enlace que aparece en el resumen.",
-          });
+      setOrderFeedback({
+        url: whatsappUrl,
+        orderId: result.data.orderId,
+        whatsappOpened,
+      });
     });
   };
 
   const hasItems = items.length > 0;
+
+  if (orderFeedback) {
+    return (
+      <Card className="glass overflow-hidden border-primary/20" role="status" aria-live="polite">
+        <CardHeader className="items-center pb-3 text-center">
+          {orderFeedback.whatsappOpened ? (
+            <CircleCheck className="mb-2 h-12 w-12 text-primary" aria-hidden="true" />
+          ) : (
+            <MessageCircle className="mb-2 h-12 w-12 text-primary" aria-hidden="true" />
+          )}
+          <CardTitle className="text-xl font-black italic tracking-tight">
+            {orderFeedback.whatsappOpened ? "Pedido listo en WhatsApp" : "Pedido registrado"}
+          </CardTitle>
+          <CardDescription>
+            Número de pedido: #{orderFeedback.orderId.slice(-6).toUpperCase()}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 text-center">
+          {orderFeedback.whatsappOpened ? (
+            <>
+              <p className="text-sm leading-relaxed text-foreground">
+                WhatsApp se abrió con el mensaje preparado. Toca <strong>Enviar</strong> allí para completar el envío.
+              </p>
+              <p className="text-sm font-semibold text-primary">
+                Después de enviarlo, puedes cerrar esta ventana.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm leading-relaxed text-foreground">
+                El pedido quedó guardado, pero WhatsApp no se abrió. Aún falta enviar el mensaje.
+              </p>
+              <Button
+                asChild
+                className="h-11 w-full gap-2 font-bold"
+                onClick={() => setOrderFeedback((current) => current ? { ...current, whatsappOpened: true } : current)}
+              >
+                <a href={orderFeedback.url} target="_blank" rel="noopener noreferrer">
+                  Abrir WhatsApp para enviar
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </Button>
+              <p className="text-sm font-semibold text-primary">
+                Después de enviarlo, puedes cerrar esta ventana.
+              </p>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <>
@@ -428,20 +481,6 @@ export function OrderSummary({
                 Al continuar, guardamos el pedido y abrimos WhatsApp con el mensaje listo.
                 El pedido solo se envía cuando toques <strong>Enviar</strong> en WhatsApp.
               </p>
-              {whatsappFallback && (
-                <div role="status" className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
-                  <p className="text-sm font-semibold">
-                    El pedido #{whatsappFallback.orderId.slice(-6).toUpperCase()} quedó registrado, pero WhatsApp no se abrió.
-                    Todavía falta enviarlo.
-                  </p>
-                  <Button asChild className="w-full gap-2">
-                    <a href={whatsappFallback.url} target="_blank" rel="noopener noreferrer">
-                      Abrir WhatsApp para enviar el pedido
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
-                </div>
-              )}
             </div>
           ) : (
             <div className="py-12 text-center">
