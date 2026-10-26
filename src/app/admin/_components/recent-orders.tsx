@@ -5,7 +5,7 @@ import { useTransition, useState, useEffect } from "react";
 import type { Order } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { StickyNote, ChevronRight, Package, Truck, Clock, AlertTriangle, Info, CheckCircle2, X, MessageCircle, PackageCheck } from "lucide-react";
+import { StickyNote, Truck, Clock, AlertTriangle, Info, CheckCircle2, X, MessageCircle, PackageCheck, CircleCheck, Printer } from "lucide-react";
 import { markOrderWorkflowStep, updateOrderStatus, bulkUpdateOrderStatus } from "@/app/admin/actions/orders.actions";
 import { useToast } from "@/hooks/use-toast";
 import { OrderNoteWidget } from "./order-note-widget";
@@ -16,7 +16,6 @@ import { CuratedOrderButton } from "./curated-order-button";
 import { formatDistanceToNow } from "date-fns";
 import { openPrintPage } from "@/lib/print-helpers";
 import { es } from "date-fns/locale";
-import { Printer } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
 import { getOrderDispatchBlocker } from "@/lib/order-workflow";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +38,27 @@ type BatchDispatchResult = {
     message: string;
 }
 
+const workflowSteps = [
+    { id: 'whatsapp', label: 'Recepción', icon: MessageCircle, tone: 'blue' },
+    { id: 'preparation', label: 'Preparación', icon: PackageCheck, tone: 'violet' },
+    { id: 'label', label: 'Rótulo', icon: Printer, tone: 'amber' },
+] as const;
+
+const workflowStepStyles = {
+    blue: {
+        active: 'border-sky-500/40 bg-sky-500/10 text-sky-800 dark:text-sky-300',
+        icon: 'text-sky-700 dark:text-sky-300',
+    },
+    violet: {
+        active: 'border-violet-500/40 bg-violet-500/10 text-violet-800 dark:text-violet-300',
+        icon: 'text-violet-700 dark:text-violet-300',
+    },
+    amber: {
+        active: 'border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300',
+        icon: 'text-amber-700 dark:text-amber-300',
+    },
+} as const;
+
 export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }) {
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
@@ -50,6 +70,7 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
     const [showUnprintedWarning, setShowUnprintedWarning] = useState(false);
     const [pendingSelections, setPendingSelections] = useState<{ id: string; bundles: number }[]>([]);
     const [batchDispatchResult, setBatchDispatchResult] = useState<BatchDispatchResult | null>(null);
+    const [actionFeedback, setActionFeedback] = useState<BatchDispatchResult | null>(null);
 
     useEffect(() => {
         setOrders(initialOrders);
@@ -61,21 +82,30 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
         startTransition(async () => {
             const { error } = await markOrderWorkflowStep(orderId, step);
             if (error) {
+                setActionFeedback({ type: 'error', message: error.message });
                 toast({ title: "No se pudo actualizar el pedido", description: error.message, variant: "destructive" });
                 return;
             }
 
             const timestamp = new Date().toISOString();
-            setOrders(current => current.map(order => order.id !== orderId
+            const updatedOrders = orders.map(order => order.id !== orderId
                 ? order
                 : step === 'whatsapp'
                     ? { ...order, whatsapp_confirmed_at: timestamp }
-                    : { ...order, prepared_at: timestamp }));
+                    : { ...order, prepared_at: timestamp });
+            setOrders(updatedOrders);
+            const updatedOrder = updatedOrders.find(order => order.id === orderId);
+            const nextStep = updatedOrder ? getOrderDispatchBlocker(updatedOrder) : null;
+            const nextStepMessage = nextStep === 'preparation'
+                ? 'Siguiente paso: marcar el pedido como preparado.'
+                : 'Siguiente paso: imprimir y confirmar el rótulo de envío.';
+            const successMessage = step === 'whatsapp'
+                ? `Recepción confirmada. ${nextStepMessage}`
+                : `Pedido preparado. ${nextStepMessage}`;
+            setActionFeedback({ type: 'success', message: successMessage });
             toast({
                 title: step === 'whatsapp' ? "Recepción confirmada" : "Pedido preparado",
-                description: step === 'whatsapp'
-                    ? "Quedó registrada la verificación manual de recepción del mensaje."
-                    : "El pedido quedó marcado como preparado.",
+                description: successMessage,
             });
         });
     };
@@ -88,14 +118,45 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
                     setPendingSelections([{ id: orderId, bundles: orderBundles[orderId] || 1 }]);
                     setShowUnprintedWarning(true);
                 } else {
+                    setActionFeedback({ type: 'error', message: error.message });
                     toast({ title: "Error", description: error.message || "No se pudo actualizar el estado.", variant: "destructive" });
                 }
             } else {
                 setOrders(current => current.filter(o => o.id !== orderId));
+                setActionFeedback({ type: 'success', message: `Pedido #${orderId.slice(-6).toUpperCase()} despachado correctamente.` });
                 toast({ title: "Estado Actualizado", description: `El pedido está ahora marcado como ${nextStatus === 'transito' ? 'despachado' : 'conformado'}.` });
             }
         });
     }
+
+    const handlePrintLabel = (orderId: string) => {
+        let opened = false;
+        try {
+            opened = openPrintPage([{ id: orderId, bundles: orderBundles[orderId] || 1 }]);
+        } catch (error) {
+            console.error("No se pudo abrir la vista del rótulo:", error);
+            toast({
+                title: "No se pudo preparar el rótulo",
+                description: "Ocurrió un error al abrir la vista de impresión. Volvé a intentarlo.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        if (!opened) {
+            toast({
+                title: "No se abrió la vista del rótulo",
+                description: "Permití las ventanas emergentes para este sitio y volvé a intentarlo.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        toast({
+            title: "Vista de rótulos abierta",
+            description: "Imprimí y confirmá el rótulo allí. Al volver, el centro de operaciones actualizará el paso.",
+        });
+    };
 
     const confirmBatchDispatch = () => {
         executeDispatch(selectedOrderList.map(o => o.id));
@@ -139,7 +200,7 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
         .map(selection => orders.find(order => order.id === selection.id))
         .filter((order): order is Order => Boolean(order))
         .map(getOrderDispatchBlocker)
-        .find(blocker => blocker === 'whatsapp' || blocker === 'preparation');
+        .find((blocker): blocker is NonNullable<typeof blocker> => blocker !== null) ?? null;
 
     const toggleSelection = (orderId: string) => {
         setSelectedOrders(prev => ({ ...prev, [orderId]: !prev[orderId] }));
@@ -154,6 +215,32 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
 
     return (
         <div className="relative space-y-4">
+            {actionFeedback && (
+                <div
+                    role={actionFeedback.type === 'error' ? 'alert' : 'status'}
+                    className={`flex items-start justify-between gap-3 rounded-xl border p-3 ${
+                        actionFeedback.type === 'error'
+                            ? 'border-destructive/30 bg-destructive/5 text-destructive'
+                            : 'border-emerald-600/30 bg-emerald-600/5 text-foreground'
+                    }`}
+                >
+                    <div className="flex items-start gap-2 text-sm">
+                        {actionFeedback.type === 'error'
+                            ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                            : <CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />}
+                        <p>{actionFeedback.message}</p>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        aria-label="Cerrar resultado de la acción"
+                        onClick={() => setActionFeedback(null)}
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
             {batchDispatchResult && (
                 <div
                     role={batchDispatchResult.type === 'error' ? 'alert' : 'status'}
@@ -186,7 +273,7 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
                         <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-black">
                             {selectedOrderList.length}
                         </div>
-                        <p className="font-black italic text-sm tracking-tight text-foreground/90 uppercase">Gestión de Despacho Masivo</p>
+                        <p className="font-black italic text-sm tracking-tight text-foreground/90 uppercase">Despacho de pedidos seleccionados</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <ShippingLabelButton orders={selectedOrderList} />
@@ -196,8 +283,8 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
                         />
                         <Button
                             onClick={confirmBatchDispatch}
-                            disabled={isPending || Boolean(selectedWorkflowBlocker)}
-                            className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 h-9"
+                            disabled={isPending || selectedWorkflowBlocker !== null}
+                            className="gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-black uppercase tracking-widest rounded-xl shadow-lg shadow-emerald-900/20 h-9"
                         >
                             <Truck className="h-4 w-4" />
                             Confirmar Despacho
@@ -209,16 +296,29 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
                             ? "Confirmá la recepción del pedido por WhatsApp antes de prepararlo."
                             : selectedWorkflowBlocker === 'preparation'
                                 ? "Marcá como preparado cada pedido seleccionado antes de despacharlo."
-                                : "El despacho requiere recepción verificada, pedido preparado y rótulo de envío impreso. La orden de preparación no reemplaza al rótulo."}
+                                : selectedWorkflowBlocker === 'label'
+                                    ? "Imprimí y confirmá el rótulo de cada pedido seleccionado antes de despacharlo."
+                                    : "El despacho requiere recepción verificada, pedido preparado y rótulo de envío impreso. La orden de preparación no reemplaza al rótulo."}
                     </p>
                 </div>
             )}
 
-            <div className="grid gap-3">
-                {orders.map((order) => (
+            {orders.length === 0 ? (
+                <div className="rounded-xl border border-emerald-600/20 bg-emerald-600/5 px-4 py-8 text-center">
+                    <CircleCheck className="mx-auto h-8 w-8 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                    <p className="mt-3 font-semibold">No hay pedidos pendientes</p>
+                    <p className="mt-1 text-sm text-muted-foreground">La cola de preparación y despacho está al día.</p>
+                </div>
+            ) : <div className="grid gap-3">
+                {orders.map((order) => {
+                    const blocker = getOrderDispatchBlocker(order);
+                    const overdue = Date.now() - new Date(order.created_at).getTime() > 48 * 60 * 60 * 1000;
+                    return (
                     <div
                         key={order.id}
-                        className="group relative glass hover:bg-white/5 transition-all duration-300 p-4 rounded-xl border-white/5 flex flex-col xl:flex-row xl:items-center gap-4"
+                        className={`group relative glass hover:bg-white/5 transition-all duration-300 p-4 rounded-xl flex flex-col xl:flex-row xl:items-center gap-4 ${
+                            overdue ? 'border-red-500/40 bg-red-500/[0.03]' : 'border-white/5'
+                        }`}
                     >
                         <div className="flex items-center gap-4 flex-1 min-w-0">
                             <Checkbox
@@ -255,26 +355,45 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
                                     <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded text-muted-foreground font-black tracking-widest uppercase">
                                         #{order.id.slice(-6)}
                                     </span>
-                                    <span className="text-[10px] text-primary/70 font-bold uppercase tracking-wider">
+                                    <span className={`text-[10px] font-bold uppercase tracking-wider ${overdue ? 'text-red-700 dark:text-red-300' : 'text-muted-foreground'}`}>
                                         {formatDistanceToNow(new Date(order.created_at), { locale: es, addSuffix: true })}
                                     </span>
+                                    {overdue && (
+                                        <Badge variant="outline" className="border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-300">
+                                            Demorado +48 h
+                                        </Badge>
+                                    )}
                                 </div>
-                                <div className="mt-2 flex flex-wrap gap-1.5">
-                                    <Badge variant="outline" className={order.whatsapp_confirmed_at
-                                        ? "border-green-600/30 text-green-700 dark:text-green-400"
-                                        : "border-amber-500/30 text-amber-700 dark:text-amber-400"}>
-                                        WhatsApp: {order.whatsapp_confirmed_at ? "recepción confirmada" : "por confirmar"}
-                                    </Badge>
-                                    <Badge variant="outline" className={order.prepared_at
-                                        ? "border-green-600/30 text-green-700 dark:text-green-400"
-                                        : "border-muted-foreground/30 text-muted-foreground"}>
-                                        {order.prepared_at ? "Preparado" : "Por preparar"}
-                                    </Badge>
-                                    <Badge variant="outline" className={order.printed_at
-                                        ? "border-green-600/30 text-green-700 dark:text-green-400"
-                                        : "border-muted-foreground/30 text-muted-foreground"}>
-                                        Rótulo: {order.printed_at ? "confirmado" : "pendiente"}
-                                    </Badge>
+                                <div className="mt-3 grid max-w-xl grid-cols-3 gap-2" aria-label="Progreso del pedido">
+                                    {workflowSteps.map((workflowStep) => {
+                                        const complete = workflowStep.id === 'whatsapp'
+                                            ? Boolean(order.whatsapp_confirmed_at)
+                                            : workflowStep.id === 'preparation'
+                                                ? Boolean(order.prepared_at)
+                                                : Boolean(order.printed_at);
+                                        const current = !complete && blocker === workflowStep.id;
+                                        const Icon = complete ? CircleCheck : workflowStep.icon;
+                                        const style = workflowStepStyles[workflowStep.tone];
+                                        return (
+                                            <div
+                                                key={workflowStep.id}
+                                                aria-current={current ? 'step' : undefined}
+                                                className={`flex min-w-0 items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[10px] sm:text-xs ${
+                                                    complete
+                                                        ? 'border-emerald-600/30 bg-emerald-600/5 text-emerald-800 dark:text-emerald-300'
+                                                        : current
+                                                            ? style.active
+                                                            : 'border-border/60 bg-muted/30 text-muted-foreground'
+                                                }`}
+                                            >
+                                                <Icon className={`h-3.5 w-3.5 shrink-0 ${
+                                                    complete ? 'text-emerald-700 dark:text-emerald-300' : current ? style.icon : ''
+                                                }`} aria-hidden="true" />
+                                                <span className="min-w-0 truncate font-semibold">{workflowStep.label}</span>
+                                                <span className="sr-only">{complete ? 'completado' : current ? 'siguiente paso' : 'pendiente'}</span>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>
@@ -298,77 +417,75 @@ export function RecentOrders({ orders: initialOrders = [] }: { orders: Order[] }
                                 <p className="text-sm sm:text-base font-headline font-black text-primary leading-none truncate w-full text-right">{formatCurrency(order.total_amount)}</p>
                             </div>
 
-                            <div className="flex flex-col items-end gap-1.5">
+                            <div className="flex flex-col items-stretch gap-1.5 sm:items-end">
                                 <div className="flex flex-wrap justify-end gap-2">
-                                    {!order.whatsapp_confirmed_at && (
+                                    {blocker === 'whatsapp' && (
                                         <Button
-                                            variant="outline"
                                             size="sm"
                                             onClick={() => handleWorkflowStep(order.id, 'whatsapp')}
                                             disabled={isPending}
-                                            className="h-9 gap-2"
+                                            className="h-10 gap-2 bg-sky-700 text-white hover:bg-sky-800"
                                         >
                                             <MessageCircle className="h-4 w-4" />
                                             Confirmar recepción
                                         </Button>
                                     )}
-                                    {order.whatsapp_confirmed_at && !order.prepared_at && (
+                                    {blocker === 'preparation' && (
                                         <Button
-                                            variant="outline"
                                             size="sm"
                                             onClick={() => handleWorkflowStep(order.id, 'preparation')}
                                             disabled={isPending}
-                                            className="h-9 gap-2"
+                                            className="h-10 gap-2 bg-violet-700 text-white hover:bg-violet-800"
                                         >
                                             <PackageCheck className="h-4 w-4" />
                                             Marcar preparado
                                         </Button>
                                     )}
+                                    {blocker === 'label' && (
+                                        <Button
+                                            size="sm"
+                                            onClick={() => handlePrintLabel(order.id)}
+                                            className="h-10 gap-2 bg-amber-600 text-white hover:bg-amber-700"
+                                        >
+                                            <Printer className="h-4 w-4" />
+                                            Imprimir rótulo
+                                        </Button>
+                                    )}
+                                    {blocker === null && (
+                                        <Button
+                                            size="sm"
+                                            onClick={() => handleUpdateStatus(order.id, 'transito')}
+                                            disabled={isPending}
+                                            className="h-10 gap-2 bg-emerald-700 text-white hover:bg-emerald-800"
+                                        >
+                                            <Truck className="h-4 w-4" />
+                                            Despachar
+                                        </Button>
+                                    )}
                                 </div>
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center justify-end gap-1.5">
                                     <CuratedOrderButton
                                         initialOrderIds={[order.id]}
                                         availableOrders={orders}
                                         iconOnly
                                     />
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        className="h-9 w-9 sm:h-10 sm:w-10 glass border-white/10 hover:bg-white/5 rounded-xl transition-all"
-                                        title="Imprimir rótulo de envío"
-                                        aria-label="Imprimir rótulo de envío"
-                                        onClick={() => {
-                                            openPrintPage([{ id: order.id, bundles: orderBundles[order.id] || 1 }]);
-                                        }}
-                                    >
-                                        <Printer className="h-4 w-4" />
-                                    </Button>
-
-                                    <Button
-                                        variant="default"
-                                        size="sm"
-                                        className="h-9 sm:h-10 px-3 sm:px-4 gap-2 font-black shadow-lg shadow-primary/10 active:scale-95 transition-all group/btn bg-primary hover:bg-primary/90 rounded-xl shrink-0"
-                                        onClick={() => handleUpdateStatus(order.id, 'transito')}
-                                        disabled={isPending || getOrderDispatchBlocker(order) === 'whatsapp' || getOrderDispatchBlocker(order) === 'preparation'}
-                                    >
-                                        <Truck className="h-4 w-4 group-hover/btn:translate-x-0.5 transition-transform shrink-0" />
-                                        <span className="hidden sm:inline italic">Despachar</span>
-                                    </Button>
                                 </div>
-                                <p className="max-w-64 text-right text-[10px] leading-tight text-muted-foreground">
-                                    {getOrderDispatchBlocker(order) === 'whatsapp'
-                                        ? "Confirmá manualmente la recepción del mensaje en WhatsApp."
-                                        : getOrderDispatchBlocker(order) === 'preparation'
-                                            ? "Confirmá la recepción y marcá el pedido como preparado."
-                                            : getOrderDispatchBlocker(order) === 'label'
-                                                ? "Imprimí y confirmá el rótulo de envío para habilitar el despacho."
-                                                : "Listo para despachar. La orden de preparación no reemplaza el rótulo."}
+                                <p className="max-w-64 text-right text-xs leading-tight text-muted-foreground">
+                                    {blocker === 'whatsapp'
+                                        ? "Verificá manualmente que recibiste el pedido por WhatsApp."
+                                        : blocker === 'preparation'
+                                            ? "La recepción está confirmada. Ahora prepará el pedido."
+                                            : blocker === 'label'
+                                                ? "El pedido está preparado. Confirmá el rótulo desde su vista de impresión."
+                                                : "Los tres pasos están completos. Ya podés despachar."}
                                 </p>
                             </div>
                         </div>
                     </div>
-                ))}
+                    );
+                })}
             </div>
+            }
 
             {activeNote && (
                 <div className="fixed bottom-6 right-6 z-50">

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { DashboardPeriodMetrics } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowDownRight, ArrowUpRight, Clock3, MessageCircle, Package, PackageCheck, Printer, RefreshCw, Users } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ArrowRight, Clock3, MessageCircle, Package, PackageCheck, Printer, RefreshCw, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,44 @@ type WorkloadMetrics = {
     overdueOrdersCount: number;
     pendingClientsCount: number;
 }
+
+type OperationalTone = "neutral" | "blue" | "violet" | "amber" | "red" | "teal";
+
+const operationalToneStyles: Record<OperationalTone, { active: string; idle: string }> = {
+    neutral: {
+        active: "border-border bg-card",
+        idle: "border-border/60 bg-card/50",
+    },
+    blue: {
+        active: "border-sky-500/40 bg-sky-500/5",
+        idle: "border-sky-500/20 bg-sky-500/[0.02]",
+    },
+    violet: {
+        active: "border-violet-500/40 bg-violet-500/5",
+        idle: "border-violet-500/20 bg-violet-500/[0.02]",
+    },
+    amber: {
+        active: "border-amber-500/40 bg-amber-500/5",
+        idle: "border-amber-500/20 bg-amber-500/[0.02]",
+    },
+    red: {
+        active: "border-red-500/40 bg-red-500/5",
+        idle: "border-red-500/20 bg-red-500/[0.02]",
+    },
+    teal: {
+        active: "border-teal-500/40 bg-teal-500/5",
+        idle: "border-teal-500/20 bg-teal-500/[0.02]",
+    },
+};
+
+const operationalIconStyles: Record<OperationalTone, string> = {
+    neutral: "text-muted-foreground",
+    blue: "text-sky-700 dark:text-sky-300",
+    violet: "text-violet-700 dark:text-violet-300",
+    amber: "text-amber-700 dark:text-amber-300",
+    red: "text-red-700 dark:text-red-300",
+    teal: "text-teal-700 dark:text-teal-300",
+};
 
 const formatComparison = (current: number, previous: number) => {
     if (previous === 0) {
@@ -48,7 +86,7 @@ export function DashboardStats({
             description: "Por preparar o despachar",
             href: "/admin/orders?status=armado",
             icon: Package,
-            warning: false,
+            tone: "neutral" as const,
         },
         {
             title: "Recepción por confirmar",
@@ -56,7 +94,7 @@ export function DashboardStats({
             description: "Mensajes de pedido aún no verificados",
             href: "/admin/orders?status=armado&workflow=whatsapp",
             icon: MessageCircle,
-            warning: workload.pendingWhatsAppCount > 0,
+            tone: "blue" as const,
         },
         {
             title: "Pedidos por preparar",
@@ -64,7 +102,7 @@ export function DashboardStats({
             description: "Recepción confirmada; falta preparar",
             href: "/admin/orders?status=armado&workflow=preparation",
             icon: PackageCheck,
-            warning: workload.pendingPreparationCount > 0,
+            tone: "violet" as const,
         },
         {
             title: "Rótulos por confirmar",
@@ -72,7 +110,7 @@ export function DashboardStats({
             description: "Pedidos preparados sin rótulo confirmado",
             href: "/admin/orders?status=armado&labels=pending",
             icon: Printer,
-            warning: workload.unprintedOrdersCount > 0,
+            tone: "amber" as const,
         },
         {
             title: "Pedidos demorados",
@@ -80,7 +118,7 @@ export function DashboardStats({
             description: "Pendientes hace más de 48 horas",
             href: "/admin/orders?status=armado&overdue=true",
             icon: Clock3,
-            warning: workload.overdueOrdersCount > 0,
+            tone: "red" as const,
         },
         {
             title: "Clientes pendientes",
@@ -88,7 +126,7 @@ export function DashboardStats({
             description: "Esperan asignación de convenio",
             href: "/admin/clients?status=pending_agreement",
             icon: Users,
-            warning: false,
+            tone: "teal" as const,
         },
     ];
 
@@ -105,7 +143,7 @@ export function DashboardStats({
                 <div className="flex flex-wrap items-end justify-between gap-2">
                     <div>
                         <h2 id="operational-overview-title" className="text-lg font-bold">Requiere atención</h2>
-                        <p className="text-sm text-muted-foreground">Accesos directos a las tareas pendientes.</p>
+                        <p className="text-sm text-muted-foreground">Cada color identifica la tarea pendiente y abre su lista filtrada.</p>
                     </div>
                     <Button
                         variant="outline"
@@ -119,7 +157,7 @@ export function DashboardStats({
                     </Button>
                 </div>
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
-                    {operationalCards.map(({ title, value, description, href, icon: Icon, warning }) => (
+                    {operationalCards.map(({ title, value, description, href, icon: Icon, tone }) => (
                         <Link
                             key={title}
                             href={href}
@@ -127,16 +165,19 @@ export function DashboardStats({
                             aria-label={`${title}: ${value}. ${description}`}
                         >
                             <Card className={cn(
-                                "h-full glass transition-colors group-hover:border-primary/30",
-                                warning ? "border-amber-500/30 bg-amber-500/5" : "border-white/5"
+                                "h-full glass transition-colors group-hover:brightness-105",
+                                operationalToneStyles[tone][value > 0 ? "active" : "idle"]
                             )}>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-xs font-semibold text-muted-foreground">{title}</CardTitle>
-                                    <Icon className={cn("h-4 w-4", warning ? "text-amber-600 dark:text-amber-400" : "text-primary")} aria-hidden="true" />
+                                    <CardTitle className="text-xs font-semibold text-foreground">{title}</CardTitle>
+                                    <Icon className={cn("h-4 w-4", operationalIconStyles[tone])} aria-hidden="true" />
                                 </CardHeader>
                                 <CardContent>
-                                    <p className={cn("text-3xl font-black tabular-nums", warning && "text-amber-700 dark:text-amber-300")}>{value}</p>
-                                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p>
+                                    <p className={cn("text-3xl font-black tabular-nums", value > 0 && operationalIconStyles[tone])}>{value}</p>
+                                    <div className="mt-1 flex items-end justify-between gap-2">
+                                        <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+                                        <ArrowRight className="mb-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                                    </div>
                                 </CardContent>
                             </Card>
                         </Link>
