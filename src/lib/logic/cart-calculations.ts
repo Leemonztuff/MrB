@@ -24,9 +24,13 @@ export const calculatePromotions = (items: CartItemType[], subtotal: number, pro
         switch (promo.rules.type) {
             case 'buy_x_get_y_free':
                 items.forEach(item => {
-                    const hasNoScope = !promo.rules.product_ids && !promo.rules.category_names;
-                    const appliesToProduct = promo.rules.product_ids?.includes(item.product.id);
-                    const appliesToCategory = promo.rules.category_names?.includes(item.product.category);
+                    const hasPriceListScope = Array.isArray(promo.price_list_product_ids);
+                    if (hasPriceListScope && !promo.price_list_product_ids?.includes(item.product.id)) return;
+
+                    const hasNoScope = hasPriceListScope || (!promo.rules.product_ids && !promo.rules.category_names);
+                    const appliesToProduct = hasPriceListScope || promo.rules.product_ids?.includes(item.product.id);
+                    const appliesToCategory = !hasPriceListScope
+                        && promo.rules.category_names?.includes(item.product.category);
                     
                     if (!hasNoScope && !appliesToProduct && !appliesToCategory) return;
                     
@@ -36,7 +40,7 @@ export const calculatePromotions = (items: CartItemType[], subtotal: number, pro
                         if (bonusQuantity > 0) {
                             bonusInfo[item.product.id] = {
                                 productName: item.product.name,
-                                bonusQuantity: bonusQuantity
+                                bonusQuantity: (bonusInfo[item.product.id]?.bonusQuantity ?? 0) + bonusQuantity
                             };
                             if (!appliedPromotions.find(p => p.id === promo.id)) {
                                 appliedPromotions.push(promo);

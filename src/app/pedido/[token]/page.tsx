@@ -15,7 +15,7 @@ import { OrderSummary } from "./_components/order-summary";
 import { CartDrawerWrapper } from "./_components/cart-drawer-wrapper";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
-import { AgreementPromotion, AgreementSalesCondition, ProductWithPrice } from "@/types";
+import { AgreementSalesCondition, ProductWithPrice } from "@/types";
 
 const categoryTranslations: Record<string, string> = {
   "Wax": "Ceras",
@@ -71,9 +71,8 @@ export default async function OrderPage({
     );
   }
 
-  const { agreement, client, productsByCategory, vatPercentage, logoUrl, volumeThreshold, validProductIds } = data;
+  const { agreement, client, promotions, productsByCategory, vatPercentage, logoUrl, volumeThreshold, validProductIds } = data;
   const categories = Object.keys(productsByCategory);
-  const promotions = (agreement.agreement_promotions || []).map((ap: AgreementPromotion) => ap.promotions);
   const salesConditions = (agreement.agreement_sales_conditions || [])
     .map((item: AgreementSalesCondition) => item.sales_conditions)
     .filter(Boolean);

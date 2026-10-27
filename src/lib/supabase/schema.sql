@@ -26,6 +26,7 @@ DROP TABLE IF EXISTS public.app_settings CASCADE;
 -- Tablas legacy (no las usa la app; se mantienen para reflejar la DB productiva)
 DROP TABLE IF EXISTS public.news_likes CASCADE;
 DROP TABLE IF EXISTS public.news CASCADE;
+DROP TABLE IF EXISTS public.price_list_item_promotions CASCADE;
 DROP TABLE IF EXISTS public.price_list_product_promotions CASCADE;
 DROP TABLE IF EXISTS public.inventory_movements CASCADE;
 DROP TABLE IF EXISTS public.pending_changes CASCADE;
@@ -311,12 +312,25 @@ CREATE TABLE public.client_audit_log (
 
 CREATE INDEX IF NOT EXISTS idx_client_audit_log_client_id ON public.client_audit_log(client_id, created_at DESC);
 
+-- Legacy single-promotion mapping; the app uses price_list_item_promotions.
 CREATE TABLE public.price_list_product_promotions (
     price_list_id uuid REFERENCES public.price_lists(id) ON DELETE CASCADE, -- [inferida]
     product_id uuid REFERENCES public.products(id) ON DELETE CASCADE, -- [inferida]
     promotion_id uuid REFERENCES public.promotions(id) ON DELETE SET NULL, -- [inferida]
     PRIMARY KEY (price_list_id, product_id)
 );
+
+CREATE TABLE public.price_list_item_promotions (
+    price_list_id uuid NOT NULL REFERENCES public.price_lists(id) ON DELETE CASCADE,
+    product_id uuid NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+    promotion_id uuid NOT NULL REFERENCES public.promotions(id) ON DELETE CASCADE,
+    PRIMARY KEY (price_list_id, product_id, promotion_id),
+    FOREIGN KEY (price_list_id, product_id)
+        REFERENCES public.price_list_items(price_list_id, product_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_price_list_item_promotions_promotion_id
+    ON public.price_list_item_promotions(promotion_id);
 
 -- 4. VIEWS
 CREATE OR REPLACE VIEW public.agreements_with_counts AS
@@ -680,11 +694,18 @@ ALTER TABLE public.inventory_movements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pending_changes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.client_audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.price_list_product_promotions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.price_list_item_promotions ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow all for authenticated" ON public.product_categories FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow all for authenticated" ON public.news FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow all for authenticated" ON public.inventory_movements FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow all for authenticated" ON public.client_audit_log FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow all for authenticated" ON public.price_list_item_promotions
+    FOR ALL USING (auth.role() = 'authenticated')
+    WITH CHECK (auth.role() = 'authenticated');
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.price_list_item_promotions TO authenticated;
 
 
 -- 8. INITIAL SETTINGS

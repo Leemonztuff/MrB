@@ -16,7 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-import type { PriceListItem } from "@/types";
+import type { PriceListItem, Promotion } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -41,8 +41,17 @@ import { useToast } from "@/hooks/use-toast";
 import { PriceListItemEditDialog } from "./edit-price-dialog";
 import { getImageUrl } from "@/lib/placeholder-images";
 import { formatCurrency } from "@/lib/formatters";
+import { ProductPromotionsDialog } from "./product-promotions-dialog";
 
-export function PriceListProductsTable({ items, priceListId }: { items: PriceListItem[], priceListId: string }) {
+export function PriceListProductsTable({
+  items,
+  priceListId,
+  availablePromotions,
+}: {
+  items: PriceListItem[];
+  priceListId: string;
+  availablePromotions: Promotion[];
+}) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -82,6 +91,7 @@ export function PriceListProductsTable({ items, priceListId }: { items: PriceLis
             <TableHead>Nombre</TableHead>
             <TableHead>Precio Lista</TableHead>
             <TableHead>Precio Volumen (&gt;150)</TableHead>
+            <TableHead>Promociones</TableHead>
             <TableHead>
               <span className="sr-only">Acciones</span>
             </TableHead>
@@ -109,6 +119,13 @@ export function PriceListProductsTable({ items, priceListId }: { items: PriceLis
                    <Badge variant="secondary" className="text-base cursor-pointer hover:bg-secondary/80">{formatCurrencySafe(item.price)}</Badge>
                 </PriceListItemEditDialog>
               </TableCell>
+               <TableCell>
+                 <ProductPromotionsDialog
+                   priceListId={priceListId}
+                   item={item}
+                   promotions={availablePromotions}
+                 />
+               </TableCell>
                <TableCell>
                 <PriceListItemEditDialog 
                   priceListId={priceListId}

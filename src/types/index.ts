@@ -40,6 +40,7 @@ export type Promotion = {
     description: string | null;
     rules: any;
     created_at: string;
+    price_list_product_ids?: string[];
 };
 
 export type PaymentType = 'remito' | 'proforma';
@@ -180,6 +181,7 @@ export type PriceList = {
 
 export type DetailedPriceList = PriceList & {
     price_list_items: PriceListItem[];
+    available_buy_x_promotions: Promotion[];
 };
 
 export type PriceListItem = {
@@ -188,6 +190,7 @@ export type PriceListItem = {
     price: number;
     volume_price: number | null;
     products: Product;
+    assigned_promotion_ids?: string[];
 };
 
 export type LabelData = {

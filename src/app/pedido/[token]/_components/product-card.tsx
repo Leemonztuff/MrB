@@ -39,6 +39,9 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
   const applicablePromos = useMemo(() => {
     return promotions.filter(promo => {
       if (promo.rules?.type !== 'buy_x_get_y_free') return false;
+      if (Array.isArray(promo.price_list_product_ids)) {
+        return promo.price_list_product_ids.includes(product.id);
+      }
 
       const hasNoScope = !promo.rules.product_ids && !promo.rules.category_names;
       if (hasNoScope) return true;

@@ -11,6 +11,8 @@ import { handleAction } from '@/app/admin/actions/_helpers';
 import { onboardingSchema } from '@/lib/validations/client.schema';
 import { formatAddress, formatDeliveryWindow } from '@/lib/formatters';
 import { calculateCartTotals, DEFAULT_VOLUME_THRESHOLD } from '@/lib/logic/cart-calculations';
+import { buildOrderItems } from '@/lib/order-items';
+import { scopePromotionsToPriceListProducts } from '@/lib/price-list-promotions';
 import { z } from 'zod';
 
 const cartQuantitySchema = z.number().int().positive().max(10000);
@@ -125,6 +127,21 @@ export async function getOrderPageData(token: string): Promise<ActionResponse<an
 
         if (itemsError) throw new Error("Error al cargar productos.");
 
+        const { data: promotionAssignments, error: promotionAssignmentsError } = await supabase
+            .from('price_list_item_promotions')
+            .select('product_id, promotion_id')
+            .eq('price_list_id', agreement.price_lists.id);
+
+        if (promotionAssignmentsError) throw new Error("Error al cargar promociones por producto.");
+
+        const agreementPromotions = (agreement.agreement_promotions || [])
+            .map((item: any) => item.promotions)
+            .filter(Boolean);
+        const promotions = scopePromotionsToPriceListProducts(
+            agreementPromotions,
+            promotionAssignments || []
+        );
+
         const products = priceListItems.map((pli: any) => {
             const product = Array.isArray(pli.products) ? pli.products[0] : pli.products;
             return { ...product, price: pli.price, volume_price: pli.volume_price };
@@ -146,6 +163,7 @@ export async function getOrderPageData(token: string): Promise<ActionResponse<an
         return {
             agreement,
             client,
+            promotions,
             productsByCategory,
             validProductIds: products.map((p: any) => p.id),
             vatPercentage: settings.vat_percentage || 21,
@@ -218,6 +236,24 @@ export async function submitOrder(payload: {
                 .filter(Boolean);
         }
 
+        if (priceListId && promotions.length > 0) {
+            const { data: promotionAssignments, error: promotionAssignmentsError } = await supabase
+                .from('price_list_item_promotions')
+                .select('product_id, promotion_id')
+                .eq('price_list_id', priceListId);
+
+            if (promotionAssignmentsError) {
+                throw new Error("No se pudieron validar las promociones del convenio. Intenta nuevamente.");
+            }
+
+            promotions = scopePromotionsToPriceListProducts(
+                promotions,
+                promotionAssignments || []
+            );
+        } else {
+            promotions = scopePromotionsToPriceListProducts(promotions, []);
+        }
+
         // Reconstruimos los items con precios autoritativos de la base de datos.
         // Una sola consulta para toda la lista (evita el N+1 por producto).
         const priceByProduct = new Map<string, { price: number; volume_price: number | null }>();
@@ -270,16 +306,7 @@ export async function submitOrder(payload: {
             throw new Error("El total del pedido no coincide. Por favor, recarga la página e intenta de nuevo.");
         }
 
-        const isVolumeActive = totals.isVolumePricingActive;
-        const orderItems = items.map((item) => {
-            const { price, volume_price } = item.product;
-            const useVolume = isVolumeActive && volume_price != null && volume_price > 0 && volume_price < price;
-            return {
-                product_id: item.product.id,
-                quantity: item.quantity,
-                price_per_unit: useVolume && volume_price != null ? volume_price : price,
-            };
-        });
+        const orderItems = buildOrderItems(items, totals.bonusInfo, totals.isVolumePricingActive);
 
         if (orderItems.some(oi => !oi.product_id || !Number.isFinite(oi.quantity) || !Number.isFinite(oi.price_per_unit))) {
             throw new Error("El pedido contiene productos con precios inválidos. Recargá la página e intenta nuevamente.");

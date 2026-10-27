@@ -74,7 +74,11 @@ export default async function PriceListDetailPage({
           </AssignProductToPriceListDialog>
         </GlassCardHeader>
         <GlassCardContent>
-          <PriceListProductsTable items={priceList.price_list_items} priceListId={priceList.id} />
+          <PriceListProductsTable
+            items={priceList.price_list_items}
+            priceListId={priceList.id}
+            availablePromotions={priceList.available_buy_x_promotions}
+          />
         </GlassCardContent>
       </GlassCard>
     </PageContainer>
