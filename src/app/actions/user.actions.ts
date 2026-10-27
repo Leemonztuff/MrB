@@ -17,6 +17,10 @@ import { scopePromotionsToPriceListProducts } from '@/lib/price-list-promotions'
 import { z } from 'zod';
 
 const cartQuantitySchema = z.number().int().positive().max(10000);
+const operatorPasswordSchema = z
+    .string()
+    .min(8, "La contraseña debe tener al menos 8 caracteres.")
+    .max(72, "La contraseña no puede superar los 72 caracteres.");
 
 // Los flujos públicos corren del lado del servidor, por lo que usan el cliente
 // con service_role (bypassa RLS). El service_role NUNCA se expone al navegador.
@@ -40,6 +44,29 @@ export async function hasUsers(): Promise<boolean> {
         // conservador: no exponer el registro si ya podría existir un admin.
         return true;
     }
+}
+
+export async function updateOperatorPassword(password: string): Promise<ActionResponse<null>> {
+    return handleAction(async () => {
+        const supabase = await createServerClient();
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) throw error;
+        if (!user || user.app_metadata?.role !== 'operario') {
+            throw new Error("Esta opción está disponible únicamente para cuentas de operario.");
+        }
+
+        const validatedPassword = operatorPasswordSchema.parse(password);
+        const admin = requireAdmin();
+        const { error: updateError } = await admin.auth.admin.updateUserById(user.id, {
+            password: validatedPassword,
+            email_confirm: true,
+            app_metadata: { ...user.app_metadata, role: 'operario', pending_activation: false },
+        });
+        if (updateError) throw updateError;
+
+        revalidatePath('/admin/settings');
+        return null;
+    });
 }
 
 export async function login(prevState: AuthState, formData: FormData): Promise<AuthState> {

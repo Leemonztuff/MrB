@@ -2,17 +2,24 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { updateOperatorPassword } from "@/app/actions/user.actions";
 
-export function AccountPasswordForm() {
+type AccountPasswordFormProps = {
+  mode?: "activation" | "change";
+};
+
+export function AccountPasswordForm({ mode = "activation" }: AccountPasswordFormProps) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const { toast } = useToast();
+  const isChange = mode === "change";
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -27,13 +34,20 @@ export function AccountPasswordForm() {
     }
 
     startTransition(async () => {
-      const { error } = await createClient().auth.updateUser({ password });
-      if (error) {
-        if (error.message.toLowerCase().includes("session")) {
-          setErrorMessage("La invitación se abrió sin una sesión activa. Volvé a abrir el enlace del correo en este navegador o solicitá una nueva invitación.");
-        } else {
-          setErrorMessage(`Supabase no aceptó la contraseña: ${error.message}`);
-        }
+      const result = await updateOperatorPassword(password);
+      if (result.error) {
+        const message = result.error.message.toLowerCase().includes("sesión")
+          ? "La sesión expiró. Volvé a abrir el enlace de acceso o solicitá uno nuevo al administrador."
+          : result.error.message;
+        setErrorMessage(message);
+        return;
+      }
+
+      setPassword("");
+      setConfirmPassword("");
+      if (isChange) {
+        toast({ title: "Contraseña actualizada", description: "Usá la nueva contraseña la próxima vez que inicies sesión." });
+        router.refresh();
         return;
       }
 
@@ -74,7 +88,7 @@ export function AccountPasswordForm() {
         <p role="alert" className="text-sm font-medium text-destructive">{errorMessage}</p>
       )}
       <Button type="submit" className="min-h-11 w-full" disabled={isPending}>
-        {isPending ? "Guardando..." : "Guardar contraseña y entrar"}
+        {isPending ? "Guardando..." : isChange ? "Guardar nueva contraseña" : "Guardar contraseña y entrar"}
       </Button>
     </form>
   );

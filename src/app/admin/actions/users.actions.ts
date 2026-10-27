@@ -13,11 +13,32 @@ export type OperatorAccount = {
   confirmedAt: string | null;
   bannedUntil: string | null;
   lastSignInAt: string | null;
+  pendingActivation: boolean;
+};
+
+export type OperatorActivationLink = {
+  email: string;
+  activationUrl: string;
 };
 
 function requireSupabaseAdmin() {
   if (!supabaseAdmin) throw new Error("Configuración del servidor incompleta.");
   return supabaseAdmin;
+}
+
+async function findUserByEmail(admin: ReturnType<typeof requireSupabaseAdmin>, email: string) {
+  let page = 1;
+  const perPage = 100;
+
+  while (true) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+
+    const match = data.users.find(user => user.email?.toLowerCase() === email);
+    if (match) return match;
+    if (data.users.length < perPage) return null;
+    page += 1;
+  }
 }
 
 export async function getOperatorAccounts() {
@@ -40,6 +61,7 @@ export async function getOperatorAccounts() {
           confirmedAt: user.email_confirmed_at ?? null,
           bannedUntil: (user as typeof user & { banned_until?: string | null }).banned_until ?? null,
           lastSignInAt: user.last_sign_in_at ?? null,
+          pendingActivation: Boolean(user.app_metadata?.pending_activation),
         }));
       accounts.push(...operatorUsers);
       if (data.users.length < perPage) break;
@@ -50,34 +72,58 @@ export async function getOperatorAccounts() {
   });
 }
 
-export async function inviteOperator(email: string) {
+export async function createOperatorActivationLink(email: string) {
   return handleAction(async () => {
     await getSupabaseClientWithAuth();
     const validatedEmail = emailSchema.parse(email).toLowerCase();
     const appUrl = process.env.NEXT_PUBLIC_APP_URL;
     if (!appUrl) {
-      throw new Error("Configurá NEXT_PUBLIC_APP_URL antes de enviar invitaciones.");
+      throw new Error("Configurá NEXT_PUBLIC_APP_URL antes de generar enlaces de activación.");
     }
 
     const admin = requireSupabaseAdmin();
-    const redirectTo = new URL("/auth/callback", appUrl).toString();
-    const { data, error } = await admin.auth.admin.inviteUserByEmail(validatedEmail, { redirectTo });
-    if (error) throw error;
-    if (!data.user) throw new Error("Supabase no devolvió el usuario invitado.");
+    const existingUser = await findUserByEmail(admin, validatedEmail);
 
-    const { error: roleError } = await admin.auth.admin.updateUserById(data.user.id, {
-      app_metadata: { ...data.user.app_metadata, role: "operario" },
-    });
-    if (roleError) {
-      const { error: cleanupError } = await admin.auth.admin.deleteUser(data.user.id);
-      if (cleanupError) {
-        console.error("No se pudo limpiar una invitación a operario sin rol:", cleanupError.message);
+    if (!existingUser) {
+      const { data, error } = await admin.auth.admin.createUser({
+        email: validatedEmail,
+        email_confirm: true,
+        app_metadata: { role: "operario", pending_activation: true },
+      });
+      if (error) throw error;
+      if (!data.user) throw new Error("Supabase no devolvió el usuario creado.");
+    } else {
+      if (existingUser.app_metadata?.role !== "operario") {
+        throw new Error("Ese correo ya pertenece a otra cuenta.");
       }
-      throw roleError;
+      const bannedUntil = (existingUser as typeof existingUser & { banned_until?: string | null }).banned_until;
+      if (bannedUntil && new Date(bannedUntil).getTime() > Date.now()) {
+        throw new Error("Habilitá el acceso de este operario antes de generar un enlace.");
+      }
+      const { error } = await admin.auth.admin.updateUserById(existingUser.id, {
+        email_confirm: true,
+        app_metadata: { ...existingUser.app_metadata, role: "operario", pending_activation: true },
+      });
+      if (error) throw error;
     }
 
+    const redirectTo = new URL("/auth/callback", appUrl).toString();
+    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+      type: "magiclink",
+      email: validatedEmail,
+      options: { redirectTo },
+    });
+    if (linkError) throw linkError;
+
+    const tokenHash = linkData.properties?.hashed_token;
+    if (!tokenHash) throw new Error("Supabase no generó el enlace de activación.");
+
+    const activationUrl = new URL("/auth/callback", appUrl);
+    activationUrl.searchParams.set("token_hash", tokenHash);
+    activationUrl.searchParams.set("type", "magiclink");
+
     revalidatePath("/admin/settings");
-    return { email: validatedEmail };
+    return { email: validatedEmail, activationUrl: activationUrl.toString() };
   });
 }
 

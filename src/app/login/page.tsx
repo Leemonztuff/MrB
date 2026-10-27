@@ -35,11 +35,11 @@ export default async function LoginPage({
           <CardTitle className="text-2xl">Admin Login</CardTitle>
           <CardDescription>
             {params?.error === 'invite_expired'
-              ? 'El enlace de invitación no es válido o venció. Solicitá uno nuevo al administrador.'
+              ? 'El enlace de acceso no es válido o venció. Pedile al administrador que genere uno nuevo.'
               : params?.error === 'invite_session'
-                ? 'El enlace se verificó, pero no se pudo iniciar la sesión. Volvé a abrirlo o solicitá una nueva invitación.'
+                ? 'El enlace se verificó, pero no se pudo iniciar la sesión. Volvé a abrirlo o pedí un enlace nuevo.'
                 : params?.error === 'invite_role'
-                  ? 'No se pudo habilitar el acceso de operario. Contactá al administrador para que revise o reenvíe la invitación.'
+                  ? 'No se pudo habilitar el acceso de operario. Contactá al administrador para que revise la cuenta.'
                   : 'Ingresa tus credenciales para acceder al panel.'}
           </CardDescription>
         </CardHeader>

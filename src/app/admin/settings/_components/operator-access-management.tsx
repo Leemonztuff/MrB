@@ -2,8 +2,23 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { KeyRound, Loader2, Mail, ShieldCheck, UserRoundX, UserRoundCheck } from "lucide-react";
-import { inviteOperator, resetOperatorPin, setOperatorAccess, type OperatorAccount } from "@/app/admin/actions/users.actions";
+import {
+  Check,
+  Copy,
+  KeyRound,
+  Link2,
+  Loader2,
+  ShieldCheck,
+  UserRoundCheck,
+  UserRoundX,
+} from "lucide-react";
+import {
+  createOperatorActivationLink,
+  resetOperatorPin,
+  setOperatorAccess,
+  type OperatorAccount,
+  type OperatorActivationLink,
+} from "@/app/admin/actions/users.actions";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,34 +34,66 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export function OperatorAccessManagement({ accounts }: { accounts: OperatorAccount[] }) {
   const [email, setEmail] = useState("");
+  const [activation, setActivation] = useState<OperatorActivationLink | null>(null);
+  const [copied, setCopied] = useState(false);
   const [accountToReset, setAccountToReset] = useState<OperatorAccount | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleInvite = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const requestActivationLink = (targetEmail: string) => {
     startTransition(async () => {
-      const result = await inviteOperator(email);
+      const result = await createOperatorActivationLink(targetEmail);
       if (result.error) {
         toast({
-          title: "No se pudo enviar la invitación",
+          title: "No se pudo generar el enlace",
           description: result.error.message,
           variant: "destructive",
         });
         return;
       }
 
-      toast({
-        title: "Invitación enviada",
-        description: `Se envió un enlace para configurar el acceso de ${result.data?.email}.`,
-      });
+      if (result.data) {
+        setCopied(false);
+        setActivation(result.data);
+      }
       setEmail("");
       router.refresh();
     });
+  };
+
+  const handleCreate = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    requestActivationLink(email);
+  };
+
+  const handleCopyLink = async () => {
+    if (!activation) return;
+    try {
+      await navigator.clipboard.writeText(activation.activationUrl);
+      setCopied(true);
+      toast({
+        title: "Enlace copiado",
+        description: "Compartilo con el operario por un canal privado.",
+      });
+    } catch {
+      toast({
+        title: "No se pudo copiar",
+        description: "Seleccioná el enlace y copialo manualmente.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleAccessChange = (account: OperatorAccount, enabled: boolean) => {
@@ -106,7 +153,7 @@ export function OperatorAccessManagement({ accounts }: { accounts: OperatorAccou
           </div>
         </div>
 
-        <form onSubmit={handleInvite} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+        <form onSubmit={handleCreate} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
           <div className="space-y-2">
             <Label htmlFor="operator-email">Correo electrónico</Label>
             <Input
@@ -122,12 +169,12 @@ export function OperatorAccessManagement({ accounts }: { accounts: OperatorAccou
             />
           </div>
           <Button type="submit" disabled={isPending} className="min-h-11 gap-2">
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
-            Enviar invitación
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+            Crear operario
           </Button>
         </form>
         <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-          La persona recibirá un enlace para definir su contraseña. El envío requiere que el correo y la URL de retorno estén configurados en Supabase.
+          Se genera un enlace de activación sin enviar correos. Copialo y compartilo por WhatsApp o en persona: el operario lo abre, define su contraseña y crea su PIN. Es de un solo uso y vence según la configuración de Supabase.
         </p>
       </div>
 
@@ -139,28 +186,40 @@ export function OperatorAccessManagement({ accounts }: { accounts: OperatorAccou
         {accounts.length === 0 ? (
           <div className="rounded-xl border border-dashed p-6 text-center">
             <p className="font-medium">Todavía no hay operarios</p>
-            <p className="mt-1 text-sm text-muted-foreground">Enviá una invitación para habilitar el acceso operativo.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Creá una cuenta y generá su enlace de activación.</p>
           </div>
         ) : (
           <ul className="divide-y rounded-xl border">
             {accounts.map((account) => {
-              const isDisabled = account.bannedUntil && new Date(account.bannedUntil).getTime() > Date.now();
-              const isPendingInvite = !account.confirmedAt;
+              const isDisabled = Boolean(account.bannedUntil && new Date(account.bannedUntil).getTime() > Date.now());
+              const isPendingActivation = account.pendingActivation || !account.confirmedAt;
               return (
                 <li key={account.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
                     <p className="break-all font-medium">{account.email}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <Badge variant={isDisabled ? "destructive" : isPendingInvite ? "outline" : "secondary"}>
-                        {isDisabled ? "Acceso pausado" : isPendingInvite ? "Invitación pendiente" : "Activo"}
+                      <Badge variant={isDisabled ? "destructive" : isPendingActivation ? "outline" : "secondary"}>
+                        {isDisabled ? "Acceso pausado" : isPendingActivation ? "Activación pendiente" : "Activo"}
                       </Badge>
                       {account.lastSignInAt && (
                         <span>Último acceso {new Intl.DateTimeFormat("es-AR", { dateStyle: "short" }).format(new Date(account.lastSignInAt))}</span>
                       )}
                     </div>
                   </div>
-                  {!isPendingInvite && (
-                    <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={isPendingActivation ? "default" : "outline"}
+                      className="min-h-11 gap-2"
+                      disabled={isPending || isDisabled}
+                      title={isDisabled ? "Habilitá el acceso para generar un enlace." : undefined}
+                      onClick={() => requestActivationLink(account.email)}
+                    >
+                      <Link2 className="h-4 w-4" />
+                      {isPendingActivation ? "Generar enlace" : "Nuevo enlace"}
+                    </Button>
+                    {!isPendingActivation && (
                       <Button
                         type="button"
                         size="sm"
@@ -172,21 +231,33 @@ export function OperatorAccessManagement({ accounts }: { accounts: OperatorAccou
                         <KeyRound className="h-4 w-4" />
                         Restablecer PIN
                       </Button>
+                    )}
+                    {isDisabled ? (
                       <Button
                         type="button"
                         size="sm"
-                        variant={isDisabled ? "outline" : "ghost"}
+                        variant="outline"
                         className="min-h-11 gap-2"
                         disabled={isPending}
-                        onClick={() => handleAccessChange(account, Boolean(isDisabled))}
+                        onClick={() => handleAccessChange(account, true)}
                       >
-                        {isDisabled
-                          ? <UserRoundCheck className="h-4 w-4" />
-                          : <UserRoundX className="h-4 w-4" />}
-                        {isDisabled ? "Habilitar" : "Pausar acceso"}
+                        <UserRoundCheck className="h-4 w-4" />
+                        Habilitar
                       </Button>
-                    </div>
-                  )}
+                    ) : !isPendingActivation ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="min-h-11 gap-2"
+                        disabled={isPending}
+                        onClick={() => handleAccessChange(account, false)}
+                      >
+                        <UserRoundX className="h-4 w-4" />
+                        Pausar acceso
+                      </Button>
+                    ) : null}
+                  </div>
                 </li>
               );
             })}
@@ -210,6 +281,44 @@ export function OperatorAccessManagement({ accounts }: { accounts: OperatorAccou
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog
+        open={Boolean(activation)}
+        onOpenChange={open => {
+          if (!open) {
+            setActivation(null);
+            setCopied(false);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Enlace de activación</DialogTitle>
+            <DialogDescription>
+              Compartilo con {activation?.email} por un canal privado. No lo abras con tu sesión de administrador: el enlace inicia sesión como el operario.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="operator-activation-link">Enlace</Label>
+            <Input
+              id="operator-activation-link"
+              readOnly
+              value={activation?.activationUrl ?? ""}
+              onFocus={event => event.currentTarget.select()}
+              className="font-mono text-xs"
+            />
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              El enlace es de un solo uso. Si vence o ya se usó, generá uno nuevo desde la cuenta del operario.
+            </p>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" onClick={handleCopyLink} className="min-h-11 gap-2">
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied ? "Copiado" : "Copiar enlace"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
