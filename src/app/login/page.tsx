@@ -12,7 +12,12 @@ import {
 import { LoginForm } from './_components/login-form';
 import { redirect } from 'next/navigation';
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ error?: string }>;
+}) {
+  const params = await searchParams;
   const usersExist = await hasUsers();
   if (!usersExist) {
     redirect('/signup');
@@ -29,7 +34,9 @@ export default async function LoginPage() {
           </div>
           <CardTitle className="text-2xl">Admin Login</CardTitle>
           <CardDescription>
-            Ingresa tus credenciales para acceder al panel.
+            {params?.error === 'invite'
+              ? 'El enlace de invitación no es válido o venció. Solicitá uno nuevo al administrador.'
+              : 'Ingresa tus credenciales para acceder al panel.'}
           </CardDescription>
         </CardHeader>
         <CardContent>

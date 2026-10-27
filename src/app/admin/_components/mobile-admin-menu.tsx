@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { LogOut, Menu, Settings } from "lucide-react";
+import { KeyRound, LogOut, Menu, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -14,8 +14,10 @@ import {
 } from "@/components/ui/sheet";
 import { logout } from "@/app/actions/user.actions";
 import { AppNav } from "./app-nav";
+import type { AppRole } from "@/types";
+import { lockOperatorSession } from "@/app/admin/actions/operator-pin.actions";
 
-export function MobileAdminMenu() {
+export function MobileAdminMenu({ role }: { role: AppRole }) {
   const [isOpen, setIsOpen] = useState(false);
   const closeMenu = () => setIsOpen(false);
 
@@ -38,16 +40,39 @@ export function MobileAdminMenu() {
             Navegación principal de la aplicación para dispositivos móviles.
           </SheetDescription>
         </SheetHeader>
-        <AppNav isMobile onNavigate={closeMenu} />
+        <AppNav isMobile onNavigate={closeMenu} role={role} />
         <div className="absolute bottom-4 left-4 right-4 grid gap-4">
-          <Link
-            href="/admin/settings"
-            onClick={closeMenu}
-            className="flex min-h-11 items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
-          >
-            <Settings className="h-5 w-5" />
-            Configuración
-          </Link>
+          {role === "super_admin" ? (
+            <Link
+              href="/admin/settings"
+              onClick={closeMenu}
+              className="flex min-h-11 items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <Settings className="h-5 w-5" />
+              Configuración
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/admin/operator-settings"
+                onClick={closeMenu}
+                className="flex min-h-11 items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+              >
+                <Settings className="h-5 w-5" />
+                Mi acceso
+              </Link>
+              <form action={lockOperatorSession}>
+                <button
+                  type="submit"
+                  onClick={closeMenu}
+                  className="flex min-h-11 w-full items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                >
+                  <KeyRound className="h-5 w-5" />
+                  Bloquear este dispositivo
+                </button>
+              </form>
+            </>
+          )}
           <form action={logout}>
             <button
               type="submit"

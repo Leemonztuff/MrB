@@ -2,6 +2,7 @@
 import Link from "next/link";
 import {
   LogOut,
+  LockKeyhole,
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,13 +17,17 @@ import { Logo } from "@/app/logo";
 import { logout } from "@/app/actions/user.actions";
 import { Notifications } from "./_components/notifications";
 import { getNotificationData } from "@/app/admin/actions/dashboard.actions";
-import { getSettings } from "@/app/admin/actions/settings.actions";
 import { AppNav } from "./_components/app-nav";
 import { AutoRefresh } from "./_components/auto-refresh";
 import { ThemeToggle } from "./_components/theme-toggle";
 import { MobileAdminMenu } from "./_components/mobile-admin-menu";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { getCurrentAppRole } from "@/app/admin/actions/_helpers";
+import { getPublicLogoUrl } from "@/app/admin/actions/settings.actions";
+import { isCurrentOperatorPinSessionUnlocked } from "@/lib/operator-pin-server";
+import { redirect } from "next/navigation";
+import { lockOperatorSession } from "@/app/admin/actions/operator-pin.actions";
 
 const createNotifications = (
   pendingOrdersCount: number,
@@ -72,12 +77,16 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [notificationResult, settingsResult] = await Promise.all([
-    getNotificationData(),
-    getSettings(),
+  const role = await getCurrentAppRole();
+  if (role === "operario" && !(await isCurrentOperatorPinSessionUnlocked())) {
+    redirect("/operator/unlock");
+  }
+  const [notificationResult, logoResult] = await Promise.all([
+    role === "super_admin" ? getNotificationData() : Promise.resolve(null),
+    getPublicLogoUrl(),
   ]);
-  const notificationData = notificationResult.data;
-  const { logo_url } = settingsResult;
+  const notificationData = notificationResult?.data;
+  const logo_url = logoResult.data;
 
   const notifications = notificationData
     ? createNotifications(
@@ -100,24 +109,58 @@ export default async function AdminLayout({
             <Logo logoUrl={logo_url} />
             <span className="sr-only">MR. BLONDE</span>
           </Link>
-          <AppNav isMobile={false} />
+          <AppNav isMobile={false} role={role} />
         </nav>
         <nav className="mt-auto flex flex-col items-center gap-6 px-2 py-8">
           <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/admin/settings"
-                  className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-all hover:text-primary hover:bg-primary/5 active:scale-95"
-                  )}
-                >
-                  <Settings className="h-5 w-5" />
-                  <span className="sr-only">Configuración</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Configuración</TooltipContent>
-            </Tooltip>
+            {role === "super_admin" ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    href="/admin/settings"
+                    className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-all hover:text-primary hover:bg-primary/5 active:scale-95"
+                    )}
+                  >
+                    <Settings className="h-5 w-5" />
+                    <span className="sr-only">Configuración</span>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right">Configuración</TooltipContent>
+              </Tooltip>
+            ) : (
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href="/admin/operator-settings"
+                      className={cn(
+                        "flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-all hover:text-primary hover:bg-primary/5 active:scale-95"
+                      )}
+                    >
+                      <Settings className="h-5 w-5" />
+                      <span className="sr-only">Mi acceso</span>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Mi acceso</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <form action={lockOperatorSession}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-all hover:text-primary hover:bg-primary/5 active:scale-95"
+                        aria-label="Bloquear este dispositivo"
+                      >
+                        <LockKeyhole className="h-5 w-5" />
+                      </Button>
+                    </form>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Bloquear este dispositivo</TooltipContent>
+                </Tooltip>
+              </>
+            )}
             <Tooltip>
               <TooltipTrigger asChild>
                                   <form action={logout}>
@@ -145,11 +188,13 @@ export default async function AdminLayout({
           </div>
           <div className="ml-auto flex items-center gap-4">
             <ThemeToggle />
-            <Notifications
-              notifications={notifications}
-              error={notificationResult.error?.message}
-            />
-            <MobileAdminMenu />
+            {role === "super_admin" && (
+              <Notifications
+                notifications={notifications}
+                error={notificationResult?.error?.message}
+              />
+            )}
+            <MobileAdminMenu role={role} />
           </div>
         </header>
         <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 pb-24 sm:pb-4">

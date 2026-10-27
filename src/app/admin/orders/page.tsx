@@ -5,6 +5,7 @@ import { PageContainer } from "@/components/shared/page-container";
 import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardDescription, GlassCardContent } from "@/components/shared/glass-card";
 import { OrdersTable } from "./_components/orders-table";
 import { ErrorDisplay } from "@/components/shared/error-display";
+import { getCurrentAppRole } from "@/app/admin/actions/_helpers";
 
 export default async function OrdersHistoryPage({
   searchParams,
@@ -12,6 +13,7 @@ export default async function OrdersHistoryPage({
   searchParams?: Promise<{ status?: string; query?: string; overdue?: string; labels?: string; workflow?: string }>;
 }) {
   const filters = await searchParams;
+  const role = await getCurrentAppRole();
   const isPendingView = filters?.status === 'armado';
   const isOverdueView = isPendingView && filters?.overdue === 'true';
   const isUnprintedView = isPendingView && filters?.labels === 'pending';
@@ -79,7 +81,7 @@ export default async function OrdersHistoryPage({
           </GlassCardDescription>
         </GlassCardHeader>
         <GlassCardContent className="p-0">
-          <OrdersTable orders={orders || []} />
+          <OrdersTable orders={orders || []} operatorMode={role === "operario"} />
         </GlassCardContent>
       </GlassCard>
     </PageContainer>

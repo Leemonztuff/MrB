@@ -1,9 +1,9 @@
 
-"use server";
-
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { ActionResponse } from "@/types";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { requireOperatorPinSession } from "@/lib/operator-pin-server";
+import type { ActionResponse, AppRole } from "@/types";
 
 // --- Generic Helpers ---
 
@@ -11,16 +11,41 @@ import { ActionResponse } from "@/types";
  * Gets an authenticated Supabase client for admin actions.
  * Throws an error if the user is not authenticated as an admin.
  */
-export async function getSupabaseClientWithAuth() {
+export async function getSupabaseClientWithAuth(allowedRoles: AppRole[] = ["super_admin"]) {
     const supabase = await createClient();
     const {
         data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user || user.app_metadata?.role !== 'super_admin') {
-        throw new Error("No tienes permisos de administrador para realizar esta acción.");
+    if (!user || !allowedRoles.includes(user.app_metadata?.role)) {
+        throw new Error("No tienes permisos para realizar esta acción.");
     }
     return supabase;
+}
+
+export async function getCurrentAppRole(): Promise<AppRole> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const role = user?.app_metadata?.role;
+    if (role !== "super_admin" && role !== "operario") {
+        throw new Error("No tienes permisos para acceder a esta sección.");
+    }
+    return role;
+}
+
+export async function getOrderOperationsContext() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const role = user?.app_metadata?.role;
+    if (!user || (role !== "super_admin" && role !== "operario")) {
+        throw new Error("No tienes permisos para gestionar pedidos.");
+    }
+    if (role === "operario") {
+        if (!supabaseAdmin) throw new Error("Configuración del servidor incompleta.");
+        await requireOperatorPinSession(user.id);
+        return { supabase: supabaseAdmin, role };
+    }
+    return { supabase, role };
 }
 
 /**

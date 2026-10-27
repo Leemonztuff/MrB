@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import type { AppRole } from "@/types";
 type NavItem = {
   href: string;
   icon: React.ElementType;
@@ -36,11 +37,16 @@ const navItems: NavItem[] = [
 export function AppNav({
   isMobile,
   onNavigate,
+  role,
 }: {
   isMobile: boolean;
   onNavigate?: () => void;
+  role: AppRole;
 }) {
   const pathname = usePathname();
+  const visibleNavItems = role === "operario"
+    ? navItems.filter(item => item.href === "/admin" || item.href === "/admin/orders")
+    : navItems;
 
   const renderNavItem = (item: NavItem) => {
     const isActive = pathname.startsWith(item.href) && (item.href !== '/admin' || pathname === '/admin');
@@ -89,7 +95,7 @@ export function AppNav({
   if (isMobile) {
     return (
       <nav className="grid gap-6 text-base font-medium">
-        {navItems.map(renderNavItem)}
+        {visibleNavItems.map(renderNavItem)}
       </nav>
     );
   }
@@ -97,7 +103,7 @@ export function AppNav({
   return (
     <TooltipProvider>
       <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
-        {navItems.map(renderNavItem)}
+        {visibleNavItems.map(renderNavItem)}
       </nav>
     </TooltipProvider>
   );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import type { Order } from '@/types';
+import type { OperationalOrder } from '@/types';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { DataTableHeader } from '@/components/shared/data-table-header';
 import { formatDate, formatCurrency } from '@/lib/formatters';
@@ -9,12 +9,13 @@ import { ShippingLabelButton } from '../../_components/shipping-label-button';
 import { ReprintLabelButton } from '../../_components/reprint-label-button';
 import { OrderStatusBadge } from '../../_components/order-status-badge';
 import { Input } from '@/components/ui/input';
-import { Printer, CheckCircle2, Truck, AlertTriangle, MessageCircle, PackageCheck } from 'lucide-react';
+import { Printer, CheckCircle2, Truck, AlertTriangle, MessageCircle, PackageCheck, ClipboardList } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { markOrderWorkflowStep, updateOrderStatus } from '@/app/admin/actions/orders.actions';
 import { useToast } from '@/hooks/use-toast';
 import { getOrderDispatchBlocker } from '@/lib/order-workflow';
+import { aggregateOrderItems } from '@/lib/curated-order';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,18 +26,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 type OrdersTableProps = {
-  orders: Order[];
+  orders: OperationalOrder[];
+  operatorMode?: boolean;
 };
 
-export function OrdersTable({ orders }: OrdersTableProps) {
+export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const [bundles, setBundles] = useState<Record<string, number>>({});
-  const [orderNeedingLabel, setOrderNeedingLabel] = useState<Order | null>(null);
+  const [orderNeedingLabel, setOrderNeedingLabel] = useState<OperationalOrder | null>(null);
 
   const getBundles = (orderId: string) => bundles[orderId] || 1;
+  const getProductLines = (order: OperationalOrder) => aggregateOrderItems(order.order_items);
 
   const handleBundlesChange = (orderId: string, value: number) => {
     setBundles(prev => ({
@@ -45,7 +56,7 @@ export function OrdersTable({ orders }: OrdersTableProps) {
     }));
   };
 
-  const handleDispatch = (order: Order) => {
+  const handleDispatch = (order: OperationalOrder) => {
     startTransition(async () => {
       const { error } = await updateOrderStatus(order.id, 'transito');
       if (error) {
@@ -68,7 +79,7 @@ export function OrdersTable({ orders }: OrdersTableProps) {
     });
   };
 
-  const handleWorkflowStep = (order: Order, step: 'whatsapp' | 'preparation') => {
+  const handleWorkflowStep = (order: OperationalOrder, step: 'whatsapp' | 'preparation') => {
     startTransition(async () => {
       const { error } = await markOrderWorkflowStep(order.id, step);
       if (error) {
@@ -96,7 +107,7 @@ export function OrdersTable({ orders }: OrdersTableProps) {
           <TableRow className="border-white/5 hover:bg-transparent">
             <DataTableHeader>Fecha</DataTableHeader>
             <DataTableHeader>Cliente</DataTableHeader>
-            <DataTableHeader>Monto</DataTableHeader>
+            {!operatorMode && <DataTableHeader>Monto</DataTableHeader>}
             <DataTableHeader>Estado</DataTableHeader>
             <DataTableHeader align="right">
               <span className="sr-only">Acciones</span>
@@ -106,7 +117,7 @@ export function OrdersTable({ orders }: OrdersTableProps) {
         <TableBody>
           {!orders || orders.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-12 text-muted-foreground italic">
+              <TableCell colSpan={operatorMode ? 4 : 5} className="text-center py-12 text-muted-foreground italic">
                 No se encontraron pedidos.
               </TableCell>
             </TableRow>
@@ -119,9 +130,11 @@ export function OrdersTable({ orders }: OrdersTableProps) {
                 <TableCell className="font-black italic tracking-tighter text-base group-hover:text-primary transition-colors">
                   {order.client_name_cache}
                 </TableCell>
-                <TableCell className="font-headline font-black text-primary/80">
-                  {formatCurrency(order.total_amount)}
-                </TableCell>
+                {!operatorMode && (
+                  <TableCell className="font-headline font-black text-primary/80">
+                    {order.total_amount == null ? '—' : formatCurrency(order.total_amount)}
+                  </TableCell>
+                )}
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <OrderStatusBadge status={order.status} />
@@ -145,6 +158,43 @@ export function OrdersTable({ orders }: OrdersTableProps) {
                 </TableCell>
                 <TableCell className="text-right pr-6">
                   <div className="flex items-center justify-end gap-2">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-11 gap-2">
+                          <ClipboardList className="h-4 w-4" />
+                          Ver pedido
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
+                        <DialogHeader>
+                          <DialogTitle>Pedido #{order.id.slice(-6).toUpperCase()}</DialogTitle>
+                          <DialogDescription>
+                            {order.client_name_cache} · {formatDate(order.created_at)}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-2">
+                          <h3 className="text-sm font-semibold">Productos y cantidades totales</h3>
+                          <ul className="divide-y rounded-lg border px-3">
+                            {getProductLines(order).map(item => (
+                              <li key={item.id} className="flex min-h-12 items-center justify-between gap-4 py-2 text-sm">
+                                <span>{item.name}</span>
+                                <span className="rounded-md bg-muted px-2 py-1 font-bold tabular-nums">
+                                  {item.quantity}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                          {order.notes && (
+                            <p className="rounded-lg bg-muted/50 p-3 text-sm">
+                              <span className="font-semibold">Nota: </span>{order.notes}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            Incluye las unidades promocionales para preparar el total físico.
+                          </p>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                     {order.status === 'armado' && (
                       <>
                         {!order.whatsapp_confirmed_at && (

@@ -1,8 +1,8 @@
 
 'use server';
 
-import { handleAction, getSupabaseClientWithAuth } from './_helpers';
-import type { Order, OrderWithItems, ActionResponse } from '@/types';
+import { getOrderOperationsContext, handleAction, getSupabaseClientWithAuth } from './_helpers';
+import type { Order, OrderWithItems, OperationalOrder, ShippingLabelOrder, ActionResponse } from '@/types';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getOrderDispatchBlocker, type OrderDispatchBlocker } from '@/lib/order-workflow';
 
@@ -54,10 +54,13 @@ export async function getOrders(filters?: {
     overdue?: boolean;
     unprinted?: boolean;
     workflow?: 'whatsapp' | 'preparation';
-}): Promise<ActionResponse<Order[]>> {
+}): Promise<ActionResponse<OperationalOrder[]>> {
     return handleAction(async () => {
-        const supabase = await getSupabaseClientWithAuth();
-        let queryBuilder = supabase.from('orders').select('*').order('created_at', { ascending: false });
+        const { supabase, role } = await getOrderOperationsContext();
+        let queryBuilder = supabase
+            .from('orders')
+            .select('id, created_at, total_amount, status, client_name_cache, notes, printed_at, whatsapp_confirmed_at, prepared_at, delivered_at, customer_confirmed_at, order_items(quantity, is_bonus, products(id, name))')
+            .order('created_at', { ascending: false });
 
         if (filters?.status && filters.status !== 'all') {
             queryBuilder = queryBuilder.eq('status', filters.status);
@@ -81,7 +84,16 @@ export async function getOrders(filters?: {
 
         const { data, error } = await queryBuilder;
         if (error) throw error;
-        return data || [];
+        const orders = (data ?? []).map(order => ({
+            ...order,
+            order_items: order.order_items.map(item => ({
+                ...item,
+                products: item.products?.[0] ?? null,
+            })),
+        }));
+        return role === 'operario'
+            ? orders.map(({ total_amount: _totalAmount, ...order }) => order)
+            : orders;
     });
 }
 
@@ -123,7 +135,10 @@ export async function getOrdersBatch(ids: string[]): Promise<ActionResponse<Orde
 
 export async function updateOrderStatus(orderId: string, status: 'armado' | 'transito' | 'entregado'): Promise<ActionResponse<null>> {
     return handleAction(async () => {
-        const supabase = await getSupabaseClientWithAuth();
+        const { supabase, role } = await getOrderOperationsContext();
+        if (status === 'armado' && role !== 'super_admin') {
+            throw new Error('El operario no puede devolver un pedido a preparación.');
+        }
 
         if (status === 'transito') {
             const { data: order, error: fetchError } = await supabase
@@ -147,6 +162,18 @@ export async function updateOrderStatus(orderId: string, status: 'armado' | 'tra
                 .maybeSingle();
             if (error) throw error;
             if (!updated) throw orderNotPendingError();
+        } else if (status === 'entregado') {
+            const { data: updated, error } = await supabase
+                .from('orders')
+                .update({ status, delivered_at: new Date().toISOString() })
+                .eq('id', orderId)
+                .eq('status', 'transito')
+                .select('id')
+                .maybeSingle();
+            if (error) throw error;
+            if (!updated) {
+                throw new Error('El pedido ya no está en tránsito. Actualizá la vista para ver su estado actual.');
+            }
         } else {
             const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
             if (error) throw error;
@@ -160,7 +187,7 @@ export async function markOrderWorkflowStep(
     step: 'whatsapp' | 'preparation'
 ): Promise<ActionResponse<null>> {
     return handleAction(async () => {
-        const supabase = await getSupabaseClientWithAuth();
+        const { supabase } = await getOrderOperationsContext();
         const { data: order, error: fetchError } = await supabase
             .from('orders')
             .select('status, whatsapp_confirmed_at, prepared_at')
@@ -227,16 +254,23 @@ export async function getPublicOrderDetails(orderId: string): Promise<ActionResp
     });
 }
 
-export async function getLabelData(ids: string[]): Promise<ActionResponse<OrderWithItems[]>> {
+export async function getLabelData(ids: string[]): Promise<ActionResponse<ShippingLabelOrder[]>> {
     return handleAction(async () => {
-        const supabase = await getSupabaseClientWithAuth();
+        const { supabase } = await getOrderOperationsContext();
         const { data, error } = await supabase
             .from('orders')
-            .select('*, order_items(quantity, price_per_unit, products(*)), clients(*)')
+            .select('id, status, client_name_cache, created_at, printed_at, notes, confirmation_token, order_items(quantity, price_per_unit, products(name)), clients(address, delivery_window)')
             .in('id', ids);
 
         if (error) throw error;
-        return data || [];
+        return (data ?? []).map(order => ({
+            ...order,
+            clients: order.clients?.[0] ?? null,
+            order_items: order.order_items.map(item => ({
+                ...item,
+                products: item.products?.[0] ?? null,
+            })),
+        }));
     });
 }
 
@@ -246,7 +280,7 @@ export async function publicConfirmOrder(orderId: string, token?: string): Promi
 
         const { data: order, error: fetchError } = await supabase
             .from('orders')
-            .select('id, status, confirmation_token')
+            .select('id, status, confirmation_token, delivered_at, customer_confirmed_at')
             .eq('id', orderId)
             .maybeSingle();
 
@@ -254,18 +288,23 @@ export async function publicConfirmOrder(orderId: string, token?: string): Promi
             throw new Error("Pedido no encontrado.");
         }
 
-        if (token && order.confirmation_token && order.confirmation_token !== token) {
+        if (!token || !order.confirmation_token || order.confirmation_token !== token) {
             throw new Error("Token de confirmación inválido.");
         }
 
-        if (order.status !== 'transito') {
+        if (order.status !== 'transito' && order.status !== 'entregado') {
             throw new Error("Este pedido aún no fue despachado.");
         }
 
         const { error } = await supabase
             .from('orders')
-            .update({ status: 'entregado' })
-            .eq('id', orderId);
+            .update({
+                status: 'entregado',
+                delivered_at: order.delivered_at ?? new Date().toISOString(),
+                customer_confirmed_at: order.customer_confirmed_at ?? new Date().toISOString(),
+            })
+            .eq('id', orderId)
+            .in('status', ['transito', 'entregado']);
         if (error) throw error;
         return null;
     }, ['/admin', '/admin/orders']);
@@ -320,7 +359,7 @@ export async function bulkUpdateOrderStatus(orderIds: string[], status: 'armado'
 
 export async function markOrdersAsPrinted(orderIds: string[]): Promise<ActionResponse<null>> {
     return handleAction(async () => {
-        const supabase = await getSupabaseClientWithAuth();
+        const { supabase } = await getOrderOperationsContext();
         const uniqueOrderIds = [...new Set(orderIds)];
         if (uniqueOrderIds.length === 0) {
             throw new Error("No hay pedidos para confirmar.");

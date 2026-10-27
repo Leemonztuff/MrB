@@ -10,9 +10,11 @@ import { openPrintPage } from "@/lib/print-helpers";
 export function ShippingLabelButton({
   orders,
   onClick,
+  compact = false,
 }: {
   orders: { id: string, bundles: number }[];
   onClick?: () => void;
+  compact?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -52,10 +54,16 @@ export function ShippingLabelButton({
       size="sm"
       onClick={handlePrint}
       disabled={loading}
-      className="gap-2 glass border-white/10 hover:bg-white/5 transition-all"
+      className={compact
+        ? "h-11 min-w-0 flex-1 gap-2 px-2 text-xs glass border-white/10 hover:bg-white/5 transition-all"
+        : "gap-2 glass border-white/10 hover:bg-white/5 transition-all"}
     >
       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
-      {loading ? "Generando..." : `Imprimir Rótulos de Envío (${orders.reduce((acc, o) => acc + o.bundles, 0)} bultos)`}
+      {loading
+        ? "Generando..."
+        : compact
+          ? "Imprimir rótulo"
+          : `Imprimir Rótulos de Envío (${orders.reduce((acc, o) => acc + o.bundles, 0)} bultos)`}
     </Button>
   );
 }

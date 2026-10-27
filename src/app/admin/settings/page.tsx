@@ -4,6 +4,9 @@ import { getSettings } from "@/app/admin/actions/settings.actions";
 import { SettingsForm } from "./_components/settings-form";
 import { BackupClient } from "./_components/backup-client";
 import { StorageMaintenance } from "./_components/StorageMaintenance";
+import { getOperatorAccounts } from "@/app/admin/actions/users.actions";
+import { OperatorAccessManagement } from "./_components/operator-access-management";
+import { ErrorDisplay } from "@/components/shared/error-display";
 import {
   Accordion,
   AccordionContent,
@@ -13,6 +16,7 @@ import {
 
 export default async function SettingsPage() {
   const settings = await getSettings();
+  const operatorAccounts = await getOperatorAccounts();
 
   return (
     <PageContainer>
@@ -38,6 +42,16 @@ export default async function SettingsPage() {
           <AccordionTrigger>Almacenamiento</AccordionTrigger>
           <AccordionContent>
             <StorageMaintenance />
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="operators">
+          <AccordionTrigger>Usuarios y operarios</AccordionTrigger>
+          <AccordionContent>
+            {operatorAccounts.error ? (
+              <ErrorDisplay message={operatorAccounts.error.message} />
+            ) : (
+              <OperatorAccessManagement accounts={operatorAccounts.data ?? []} />
+            )}
           </AccordionContent>
         </AccordionItem>
       </Accordion>

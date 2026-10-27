@@ -13,6 +13,7 @@ DROP FUNCTION IF EXISTS public.get_order_status_counts() CASCADE;
 DROP FUNCTION IF EXISTS public.increment_total_revenue(double precision) CASCADE;
 DROP TABLE IF EXISTS public.order_items CASCADE;
 DROP TABLE IF EXISTS public.orders CASCADE;
+DROP TABLE IF EXISTS public.operator_access_pins CASCADE;
 DROP TABLE IF EXISTS public.clients CASCADE;
 DROP TABLE IF EXISTS public.agreement_sales_conditions CASCADE;
 DROP TABLE IF EXISTS public.agreement_promotions CASCADE;
@@ -34,6 +35,7 @@ DROP TABLE IF EXISTS public.client_audit_log CASCADE;
 DROP TABLE IF EXISTS public.product_categories CASCADE;
 DROP FUNCTION IF EXISTS public.update_updated_at_column() CASCADE;
 DROP FUNCTION IF EXISTS public.enforce_order_dispatch_prerequisites() CASCADE;
+DROP FUNCTION IF EXISTS public.record_operator_pin_attempt(uuid, boolean) CASCADE;
 DROP TYPE IF EXISTS public.order_status CASCADE;
 DROP TYPE IF EXISTS public.client_status CASCADE;
 DROP TYPE IF EXISTS public.client_type CASCADE;
@@ -166,6 +168,8 @@ CREATE TABLE public.orders (
     printed_at timestamp with time zone,
     whatsapp_confirmed_at timestamp with time zone,
     prepared_at timestamp with time zone,
+    delivered_at timestamp with time zone,
+    customer_confirmed_at timestamp with time zone,
     payment_type public.payment_type,
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -312,6 +316,76 @@ CREATE TABLE public.client_audit_log (
 
 CREATE INDEX IF NOT EXISTS idx_client_audit_log_client_id ON public.client_audit_log(client_id, created_at DESC);
 
+CREATE TABLE public.operator_access_pins (
+    user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    pin_hash text NOT NULL,
+    pin_salt text NOT NULL,
+    failed_attempts integer NOT NULL DEFAULT 0 CHECK (failed_attempts >= 0),
+    locked_until timestamp with time zone,
+    updated_at timestamp with time zone NOT NULL DEFAULT now()
+);
+
+CREATE OR REPLACE FUNCTION public.record_operator_pin_attempt(
+    p_user_id uuid,
+    p_is_valid boolean
+)
+RETURNS text
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    pin_record public.operator_access_pins%ROWTYPE;
+    next_attempt integer;
+BEGIN
+    SELECT * INTO pin_record
+    FROM public.operator_access_pins
+    WHERE user_id = p_user_id
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RETURN 'missing';
+    END IF;
+
+    IF pin_record.locked_until > now() THEN
+        RETURN 'locked';
+    END IF;
+
+    IF pin_record.locked_until IS NOT NULL THEN
+        UPDATE public.operator_access_pins
+        SET failed_attempts = 0, locked_until = NULL
+        WHERE user_id = p_user_id;
+        pin_record.failed_attempts := 0;
+    END IF;
+
+    IF p_is_valid THEN
+        UPDATE public.operator_access_pins
+        SET failed_attempts = 0, locked_until = NULL
+        WHERE user_id = p_user_id;
+        RETURN 'accepted';
+    END IF;
+
+    next_attempt := pin_record.failed_attempts + 1;
+    IF next_attempt >= 5 THEN
+        UPDATE public.operator_access_pins
+        SET failed_attempts = 0, locked_until = now() + interval '15 minutes'
+        WHERE user_id = p_user_id;
+        RETURN 'locked';
+    END IF;
+
+    UPDATE public.operator_access_pins
+    SET failed_attempts = next_attempt
+    WHERE user_id = p_user_id;
+    RETURN 'invalid';
+END;
+$$;
+
+ALTER TABLE public.operator_access_pins ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.operator_access_pins FROM PUBLIC, anon, authenticated;
+GRANT ALL ON TABLE public.operator_access_pins TO service_role;
+REVOKE ALL ON FUNCTION public.record_operator_pin_attempt(uuid, boolean) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.record_operator_pin_attempt(uuid, boolean) TO service_role;
+
 -- Legacy single-promotion mapping; the app uses price_list_item_promotions.
 CREATE TABLE public.price_list_product_promotions (
     price_list_id uuid REFERENCES public.price_lists(id) ON DELETE CASCADE, -- [inferida]
@@ -342,15 +416,24 @@ FROM public.agreements a;
 
 CREATE OR REPLACE VIEW public.dashboard_stats AS
 SELECT
-    (SELECT COALESCE(SUM(total_amount), 0) FROM public.orders) as total_revenue,
-    (SELECT COALESCE(SUM(total_amount), 0) FROM public.orders WHERE created_at >= date_trunc('month', now())) as month_revenue,
-    (SELECT count(*) FROM public.clients WHERE status = 'active') as active_clients,
-    (SELECT count(*) FROM public.orders WHERE status = 'armado' AND created_at < now() - interval '48 hours') as overdue_orders_count,
-    (SELECT count(*) FROM public.clients) as total_clients,
-    (SELECT count(*) FROM public.price_lists) as total_pricelists,
-    (SELECT count(*) FROM public.promotions) as total_promotions,
-    (SELECT count(*) FROM public.sales_conditions) as total_sales_conditions,
-    (SELECT count(*) FROM public.orders WHERE status = 'armado') as pending_orders_count;
+    CASE WHEN (auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin'
+      THEN (SELECT COALESCE(SUM(total_amount), 0) FROM public.orders) ELSE 0 END as total_revenue,
+    CASE WHEN (auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin'
+      THEN (SELECT COALESCE(SUM(total_amount), 0) FROM public.orders WHERE created_at >= date_trunc('month', now())) ELSE 0 END as month_revenue,
+    CASE WHEN (auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin'
+      THEN (SELECT count(*) FROM public.clients WHERE status = 'active') ELSE 0 END as active_clients,
+    CASE WHEN (auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin'
+      THEN (SELECT count(*) FROM public.orders WHERE status = 'armado' AND created_at < now() - interval '48 hours') ELSE 0 END as overdue_orders_count,
+    CASE WHEN (auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin'
+      THEN (SELECT count(*) FROM public.clients) ELSE 0 END as total_clients,
+    CASE WHEN (auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin'
+      THEN (SELECT count(*) FROM public.price_lists) ELSE 0 END as total_pricelists,
+    CASE WHEN (auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin'
+      THEN (SELECT count(*) FROM public.promotions) ELSE 0 END as total_promotions,
+    CASE WHEN (auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin'
+      THEN (SELECT count(*) FROM public.sales_conditions) ELSE 0 END as total_sales_conditions,
+    CASE WHEN (auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin'
+      THEN (SELECT count(*) FROM public.orders WHERE status = 'armado') ELSE 0 END as pending_orders_count;
 
 CREATE OR REPLACE FUNCTION public.get_dashboard_period_metrics(p_period_days integer)
 RETURNS TABLE (
@@ -370,6 +453,9 @@ DECLARE
     period_start timestamptz;
     previous_start timestamptz;
 BEGIN
+    IF (auth.jwt() -> 'app_metadata' ->> 'role') IS DISTINCT FROM 'super_admin' THEN
+        RAISE EXCEPTION 'No tienes permisos para consultar métricas comerciales.';
+    END IF;
     IF p_period_days NOT IN (7, 30, 90) THEN
         RAISE EXCEPTION 'El período debe ser de 7, 30 o 90 días.';
     END IF;
@@ -409,6 +495,9 @@ GRANT EXECUTE ON FUNCTION public.get_dashboard_period_metrics(integer) TO authen
 CREATE OR REPLACE FUNCTION public.get_notification_counts()
 RETURNS json AS $$
 BEGIN
+    IF (auth.jwt() -> 'app_metadata' ->> 'role') IS DISTINCT FROM 'super_admin' THEN
+        RAISE EXCEPTION 'No tienes permisos para consultar las notificaciones administrativas.';
+    END IF;
     RETURN (
         SELECT json_build_object(
             'pending_orders_count', (SELECT count(*) FROM public.orders WHERE status = 'armado'),
@@ -422,6 +511,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION public.get_client_stats(p_client_id uuid)
 RETURNS json AS $$
 BEGIN
+    IF (auth.jwt() -> 'app_metadata' ->> 'role') IS DISTINCT FROM 'super_admin' THEN
+        RAISE EXCEPTION 'No tienes permisos para consultar estadísticas de clientes.';
+    END IF;
     RETURN (
         SELECT json_build_object(
             'total_spent', COALESCE(SUM(total_amount), 0),
@@ -453,6 +545,9 @@ AS $$
 DECLARE
     result JSONB;
 BEGIN
+    IF (auth.jwt() -> 'app_metadata' ->> 'role') IS DISTINCT FROM 'super_admin' THEN
+        RAISE EXCEPTION 'No tienes permisos para consultar estadísticas de pedidos.';
+    END IF;
     result := jsonb_build_object(
         'armado', (SELECT COUNT(*)::int FROM orders WHERE status = 'armado'),
         'transito', (SELECT COUNT(*)::int FROM orders WHERE status = 'transito'),
@@ -471,6 +566,9 @@ DECLARE
     result JSONB;
     m_start_of_month TIMESTAMP;
 BEGIN
+    IF (auth.jwt() -> 'app_metadata' ->> 'role') IS DISTINCT FROM 'super_admin' THEN
+        RAISE EXCEPTION 'No tienes permisos para consultar métricas administrativas.';
+    END IF;
     m_start_of_month := date_trunc('month', CURRENT_DATE);
 
     result := jsonb_build_object(
@@ -661,29 +759,53 @@ ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 -- /pedido/confirmar) corren del lado del servidor con el cliente service_role,
 -- que bypassa RLS. El rol `anon` no tiene acceso a ninguna tabla.
 
-CREATE POLICY "Allow all for authenticated" ON public.products FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Super admins full access" ON public.products
+    FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
 
-CREATE POLICY "Allow all for authenticated" ON public.price_lists FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Super admins full access" ON public.price_lists
+    FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
 
-CREATE POLICY "Allow all for authenticated" ON public.price_list_items FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Super admins full access" ON public.price_list_items
+    FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
 
-CREATE POLICY "Allow all for authenticated" ON public.promotions FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Super admins full access" ON public.promotions
+    FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
 
-CREATE POLICY "Allow all for authenticated" ON public.sales_conditions FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Super admins full access" ON public.sales_conditions
+    FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
 
-CREATE POLICY "Allow all for authenticated" ON public.agreements FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Super admins full access" ON public.agreements
+    FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
 
-CREATE POLICY "Allow all for authenticated" ON public.agreement_promotions FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Super admins full access" ON public.agreement_promotions
+    FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
 
-CREATE POLICY "Allow all for authenticated" ON public.agreement_sales_conditions FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Super admins full access" ON public.agreement_sales_conditions
+    FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
 
-CREATE POLICY "Allow all for authenticated" ON public.clients FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Super admins full access" ON public.clients
+    FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
 
-CREATE POLICY "Allow all for authenticated" ON public.orders FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Super admins full access" ON public.orders
+    FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
 
-CREATE POLICY "Allow all for authenticated" ON public.order_items FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Super admins full access" ON public.order_items
+    FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
 
-CREATE POLICY "Allow all for authenticated" ON public.app_settings FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Super admins full access" ON public.app_settings
+    FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
 
 -- RLS de tablas legacy. En la DB productiva news/inventory_movements/product_categories
 -- tenían policy abierta (public, using=true) => corregido a solo authenticated.
@@ -696,14 +818,22 @@ ALTER TABLE public.client_audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.price_list_product_promotions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.price_list_item_promotions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow all for authenticated" ON public.product_categories FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow all for authenticated" ON public.news FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow all for authenticated" ON public.inventory_movements FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow all for authenticated" ON public.client_audit_log FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Super admins full access" ON public.product_categories
+    FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
+CREATE POLICY "Super admins full access" ON public.news
+    FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
+CREATE POLICY "Super admins full access" ON public.inventory_movements
+    FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
+CREATE POLICY "Super admins full access" ON public.client_audit_log
+    FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
 
-CREATE POLICY "Allow all for authenticated" ON public.price_list_item_promotions
-    FOR ALL USING (auth.role() = 'authenticated')
-    WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Super admins full access" ON public.price_list_item_promotions
+    FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.price_list_item_promotions TO authenticated;
 

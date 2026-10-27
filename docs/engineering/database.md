@@ -5,6 +5,7 @@
 - `src/lib/supabase/schema.sql` es un script de reconstrucción, no una migración segura: elimina tablas, tipos y otros objetos con `DROP ... CASCADE`. Úsalo solo en una base vacía o cuando se haya aprobado explícitamente un reinicio con pérdida de datos.
 - Para una base existente, agrega una migración incremental bajo `src/lib/supabase/migrations/`. No reescribas migraciones ya aplicadas ni uses el esquema de reconstrucción para desplegar un cambio.
 - Antes de desplegar la asignación de promociones compra X y lleva Y por producto, aplica `20261027_add_price_list_product_promotions.sql`. La migración crea una relación múltiple lista/producto/promoción y conserva el alcance de promociones ya activas. No elimina pedidos ni modifica importes.
+- Antes de habilitar cuentas de operario en una base existente, aplica `20261027_add_operator_role_and_delivery_confirmation.sql` y `20261027_add_operator_pin_unlock.sql`. La segunda migración crea almacenamiento privado para PIN hasheados y un contador de intentos; no concede acceso directo a operarios.
 - Antes de aplicar una migración manualmente, confirma el entorno, revisa el SQL completo, prepara un respaldo y comunica si se requiere acción operativa. No ejecutes SQL remoto sin autorización explícita.
 - Actualiza los tipos y el código que dependan del esquema junto con la migración. Incluye pasos de aplicación y de reversión cuando sea razonable; si no es reversible, indícalo.
 - `seed.sql` es para datos de ejemplo y no debe ejecutarse en producción sin revisar su contenido.

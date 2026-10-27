@@ -57,6 +57,8 @@ export type Order = {
     printed_at?: string | null;
     whatsapp_confirmed_at?: string | null;
     prepared_at?: string | null;
+    delivered_at?: string | null;
+    customer_confirmed_at?: string | null;
     payment_type?: PaymentType | null;
     confirmation_token?: string | null;
 }
@@ -75,6 +77,49 @@ export type OrderWithItems = Order & {
     }[];
     clients?: Client | null;
 }
+
+export type OperationalOrder = Pick<
+    Order,
+    | "id"
+    | "created_at"
+    | "status"
+    | "client_name_cache"
+    | "notes"
+    | "printed_at"
+    | "whatsapp_confirmed_at"
+    | "prepared_at"
+    | "delivered_at"
+    | "customer_confirmed_at"
+> & {
+    total_amount?: number;
+    order_items: {
+        quantity: number;
+        is_bonus?: boolean;
+        products: { id: string; name: string } | null;
+    }[];
+};
+
+export type AppRole = "super_admin" | "operario";
+
+export type DashboardBoardOrder = Pick<
+    Order,
+    | "id"
+    | "created_at"
+    | "status"
+    | "client_name_cache"
+    | "notes"
+    | "whatsapp_confirmed_at"
+    | "prepared_at"
+    | "printed_at"
+    | "delivered_at"
+    | "customer_confirmed_at"
+> & {
+    total_amount?: number;
+    order_items: {
+        quantity: number;
+        products: { id: string; name: string } | null;
+    }[];
+};
 
 export type Client = {
     id: string;
@@ -198,7 +243,7 @@ export type LabelData = {
     status: Order['status'];
     client_name_cache: string;
     created_at: string;
-    total_amount: number;
+    total_amount?: number;
     printed_at?: string | null;
     notes?: string | null;
     confirmation_token?: string | null;
@@ -216,6 +261,18 @@ export type LabelData = {
     bundleIdx: number;
     totalBundles: number;
     _qrDataUrl?: string;
+};
+
+export type ShippingLabelOrder = Pick<
+    Order,
+    "id" | "status" | "client_name_cache" | "created_at" | "printed_at" | "notes" | "confirmation_token"
+> & {
+    clients?: Pick<Client, "address" | "delivery_window"> | null;
+    order_items: {
+        quantity: number;
+        price_per_unit: number;
+        products: { name: string } | null;
+    }[];
 };
 
 export type LabelFormat = 1 | 2 | 3;

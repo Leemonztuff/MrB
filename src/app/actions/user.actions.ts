@@ -8,6 +8,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { isSupabaseConfigured } from '@/lib/env';
 import type { CartItem, AuthState, AppSettingsRow, ActionResponse, Promotion } from '@/types';
 import { handleAction } from '@/app/admin/actions/_helpers';
+import { clearOperatorUnlockCookie } from '@/lib/operator-pin-server';
 import { onboardingSchema } from '@/lib/validations/client.schema';
 import { formatAddress, formatDeliveryWindow } from '@/lib/formatters';
 import { calculateCartTotals, DEFAULT_VOLUME_THRESHOLD } from '@/lib/logic/cart-calculations';
@@ -73,6 +74,7 @@ export async function signupSuperAdmin(prevState: AuthState, formData: FormData)
 }
 
 export async function logout() {
+    await clearOperatorUnlockCookie();
     const supabase = await createServerClient();
     await supabase.auth.signOut();
     redirect('/login');

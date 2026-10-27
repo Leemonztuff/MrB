@@ -18,11 +18,13 @@ ALTER TABLE public.price_list_item_promotions ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Allow all for authenticated"
     ON public.price_list_item_promotions;
-CREATE POLICY "Allow all for authenticated"
+DROP POLICY IF EXISTS "Super admins full access"
+    ON public.price_list_item_promotions;
+CREATE POLICY "Super admins full access"
     ON public.price_list_item_promotions
     FOR ALL
-    USING (auth.role() = 'authenticated')
-    WITH CHECK (auth.role() = 'authenticated');
+    USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'super_admin');
 
 REVOKE ALL ON TABLE public.price_list_item_promotions FROM PUBLIC, anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.price_list_item_promotions TO authenticated;
