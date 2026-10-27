@@ -5,7 +5,7 @@ import { OPERATOR_UNLOCK_COOKIE, verifyOperatorUnlockToken } from '@/lib/operato
 
 export const runtime = 'nodejs';
 
-const publicRoutes = ['/login', '/signup', '/auth/callback'];
+const publicRoutes = ['/login', '/signup', '/auth/callback', '/auth/activate'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -72,7 +72,7 @@ export async function middleware(request: NextRequest) {
     }
   }
   
-  if (session && (isPublicRoute || pathname === '/')) {
+  if (session && (isPublicRoute || pathname === '/') && !pathname.startsWith('/auth/')) {
     return NextResponse.redirect(new URL('/admin', request.url));
   }
   

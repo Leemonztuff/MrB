@@ -9,11 +9,13 @@ import {
   Link2,
   Loader2,
   ShieldCheck,
+  Trash2,
   UserRoundCheck,
   UserRoundX,
 } from "lucide-react";
 import {
   createOperatorActivationLink,
+  deleteOperatorAccount,
   resetOperatorPin,
   setOperatorAccess,
   type OperatorAccount,
@@ -48,6 +50,7 @@ export function OperatorAccessManagement({ accounts }: { accounts: OperatorAccou
   const [activation, setActivation] = useState<OperatorActivationLink | null>(null);
   const [copied, setCopied] = useState(false);
   const [accountToReset, setAccountToReset] = useState<OperatorAccount | null>(null);
+  const [accountToDelete, setAccountToDelete] = useState<OperatorAccount | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const { toast } = useToast();
@@ -134,6 +137,28 @@ export function OperatorAccessManagement({ accounts }: { accounts: OperatorAccou
         description: `${accountToReset.email} deberá configurar un PIN nuevo en el próximo acceso.`,
       });
       setAccountToReset(null);
+      router.refresh();
+    });
+  };
+
+  const handleDelete = () => {
+    if (!accountToDelete) return;
+    startTransition(async () => {
+      const result = await deleteOperatorAccount(accountToDelete.id);
+      if (result.error) {
+        toast({
+          title: "No se pudo eliminar la cuenta",
+          description: result.error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Cuenta eliminada",
+        description: `${accountToDelete.email} ya no tiene acceso. Podés volver a crearla con un enlace nuevo.`,
+      });
+      setAccountToDelete(null);
       router.refresh();
     });
   };
@@ -257,6 +282,17 @@ export function OperatorAccessManagement({ accounts }: { accounts: OperatorAccou
                         Pausar acceso
                       </Button>
                     ) : null}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="min-h-11 gap-2 text-destructive hover:text-destructive"
+                      disabled={isPending}
+                      onClick={() => setAccountToDelete(account)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Eliminar
+                    </Button>
                   </div>
                 </li>
               );
@@ -277,6 +313,29 @@ export function OperatorAccessManagement({ accounts }: { accounts: OperatorAccou
             <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleResetPin} disabled={isPending}>
               Restablecer PIN
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={Boolean(accountToDelete)} onOpenChange={open => !open && setAccountToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar esta cuenta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {accountToDelete && (accountToDelete.pendingActivation || !accountToDelete.confirmedAt)
+                ? `Se borrará la invitación de ${accountToDelete.email}. El enlace compartido dejará de funcionar y vas a poder volver a crear la cuenta.`
+                : `Se eliminará la cuenta de ${accountToDelete?.email}, se revocará su acceso y se borrará su PIN. Esta acción no se puede deshacer. Los pedidos históricos no se modifican.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isPending ? "Eliminando..." : "Eliminar cuenta"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -308,7 +367,7 @@ export function OperatorAccessManagement({ accounts }: { accounts: OperatorAccou
               className="font-mono text-xs"
             />
             <p className="text-xs leading-relaxed text-muted-foreground">
-              El enlace es de un solo uso. Si vence o ya se usó, generá uno nuevo desde la cuenta del operario.
+              El enlace es de un solo uso. Si generás otro para esta cuenta, este deja de funcionar. Si vence o ya se usó, generá uno nuevo.
             </p>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">

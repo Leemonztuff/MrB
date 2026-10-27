@@ -107,9 +107,9 @@ export async function createOperatorActivationLink(email: string) {
       if (error) throw error;
     }
 
-    const redirectTo = new URL("/auth/callback", appUrl).toString();
+    const redirectTo = new URL("/auth/activate", appUrl).toString();
     const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
-      type: "magiclink",
+      type: "recovery",
       email: validatedEmail,
       options: { redirectTo },
     });
@@ -118,9 +118,9 @@ export async function createOperatorActivationLink(email: string) {
     const tokenHash = linkData.properties?.hashed_token;
     if (!tokenHash) throw new Error("Supabase no generó el enlace de activación.");
 
-    const activationUrl = new URL("/auth/callback", appUrl);
+    const activationUrl = new URL("/auth/activate", appUrl);
     activationUrl.searchParams.set("token_hash", tokenHash);
-    activationUrl.searchParams.set("type", "magiclink");
+    activationUrl.searchParams.set("type", "recovery");
 
     revalidatePath("/admin/settings");
     return { email: validatedEmail, activationUrl: activationUrl.toString() };
@@ -145,6 +145,29 @@ export async function setOperatorAccess(userId: string, enabled: boolean) {
     const { error } = await admin.auth.admin.updateUserById(userId, {
       ban_duration: enabled ? "none" : "876000h",
     });
+    if (error) throw error;
+
+    revalidatePath("/admin/settings");
+    return null;
+  });
+}
+
+export async function deleteOperatorAccount(userId: string) {
+  return handleAction(async () => {
+    const supabase = await getSupabaseClientWithAuth();
+    const { data: { user: currentUser }, error: currentUserError } = await supabase.auth.getUser();
+    if (currentUserError) throw currentUserError;
+    if (!currentUser) throw new Error("Iniciá sesión nuevamente.");
+    if (currentUser.id === userId) throw new Error("No podés eliminar tu propia cuenta.");
+
+    const admin = requireSupabaseAdmin();
+    const { data: target, error: targetError } = await admin.auth.admin.getUserById(userId);
+    if (targetError) throw targetError;
+    if (target.user.app_metadata?.role !== "operario") {
+      throw new Error("Solo se pueden eliminar cuentas de operario.");
+    }
+
+    const { error } = await admin.auth.admin.deleteUser(userId);
     if (error) throw error;
 
     revalidatePath("/admin/settings");
