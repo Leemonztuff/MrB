@@ -1,116 +1,43 @@
-# Arquitectura y Mapa del Proyecto: Blonde Orders
+# Arquitectura y mapa del proyecto
 
-Este documento sirve como guía de referencia para la estructura, lógica y flujos de datos de la aplicación "Blonde Orders". Su propósito es mantener la coherencia y la lógica durante el desarrollo.
+Referencia breve de la estructura vigente. Las rutas y reglas se deben confirmar en el código antes de cualquier cambio.
 
-## 1. Stack Tecnológico
+## Stack
 
-- **Framework**: Next.js (App Router)
-- **Lenguaje**: TypeScript
-- **Base de Datos y Auth**: Supabase
-- **UI**: Tailwind CSS, shadcn/ui, Radix UI
-- **Gestión de Estado (Cliente)**: Zustand
-- **Validación de Formularios**: React Hook Form, Zod
+- Next.js 15 App Router y TypeScript.
+- Supabase para base de datos y autenticación.
+- Tailwind CSS y componentes shadcn/ui.
+- Zustand para el carrito; React Hook Form y Zod para formularios y validación.
+- Vitest para pruebas unitarias.
 
+## Directorios principales
 
-## 2. Mapa de Directorios Clave
+| Ruta | Responsabilidad |
+|---|---|
+| `src/app/(admin)/admin/` | Pantallas del panel administrativo |
+| `src/app/actions/` | Server Actions generales, autenticación y flujos públicos |
+| `src/app/admin/actions/` | Server Actions y helpers administrativos |
+| `src/app/pedido/[id]/` | Portal público para realizar pedidos |
+| `src/app/onboarding/[token]/` | Alta pública de clientes |
+| `src/lib/supabase/` | Clientes Supabase, esquema y migraciones |
+| `src/lib/logic/` | Cálculos compartidos de negocio |
+| `src/components/shared/` | Componentes reutilizables |
+| `src/components/ui/` | Componentes de interfaz |
+| `src/types/index.ts` | Tipos principales |
 
-```
-/
-├── src/
-│   ├── app/                # Rutas y lógica principal (Next.js App Router)
-│   │   ├── (admin)/        # Rutas protegidas del panel de administración
-│   │   │   ├── admin/
-│   │   │   │   ├── actions/      # Server Actions específicas del admin (separadas por entidad)
-│   │   │   │   ├── agreements/   # Gestión de convenios (crear, editar, asignar)
-│   │   │   │   ├── clients/      # CRUD de clientes
-│   │   │   │   ├── products/     # CRUD de productos
-│   │   │   │   └── commercial-settings/ # Pestañas para Listas de precios, Promociones, etc.
-│   │   │   └── layout.tsx      # Layout principal del panel de admin (navegación, notificaciones)
-│   │   │
-│   │   ├── (auth)/         # Rutas de autenticación
-│   │   │   ├── login/      # Página de login con email/contraseña
-│   │   │   └── signup/     # Página de registro del primer admin
-│   │   │
-│   │   ├── pedido/[id]/    # Página PÚBLICA para que los clientes realicen pedidos
-│   │   │
-│   │   ├── onboarding/[token]/ # Página PÚBLICA para que clientes completen su alta
-│   │   │
-│   │   ├── actions/        # Server Actions (lógica de backend general y de usuario)
-│   │   │   ├── user.actions.ts  # Acciones de usuario (auth, pedidos, onboarding)
-│   │   │   └── settings.actions.ts # Acciones para la configuración de la app
-│   │   │
-│   │   ├── globals.css     # Estilos globales y variables de tema (Tailwind)
-│   │   └── layout.tsx      # Layout raíz de la aplicación
-│   │
-│   ├── components/         # Componentes de UI reutilizables
-│   │   ├── shared/         # Componentes genéricos (e.g., PageHeader, EmptyState)
-│   │   └── ui/             # Componentes de shadcn/ui (Button, Card, etc.)
-│   │
-│   ├── hooks/              # Hooks de React personalizados
-│   │   └── use-cart-store.ts # Lógica del carrito de compras con Zustand
-│   │
-│   ├── lib/                # Utilidades y configuración
-│   │   ├── supabase/       # Clientes de Supabase (client, server, admin, middleware)
-│   │   └── utils.ts        # Funciones de utilidad (e.g., cn, formatDate)
-│   │
-│   └── types/              # Definiciones de tipos de TypeScript
-│       └── index.ts        # Tipos principales (Product, Agreement, etc.)
-│
-├── middleware.ts         # Middleware para gestionar el enrutamiento y la autenticación
-│
-└── INSTRUCCIONES.md      # Guía de configuración con el script SQL de la DB
-```
+El alias `@/*` apunta a `src/*`.
 
-## 3. Flujos Lógicos Principales
+## Patrones importantes
 
-### a. Flujo de Primer Uso (Registro de Administrador)
+- Usa `src/lib/logic/cart-calculations.ts` para cálculos de carrito y promociones.
+- Usa `src/lib/order-workflow.ts` para determinar el próximo bloqueo de despacho.
+- Las acciones administrativas usan el helper de autorización de `src/app/admin/actions/_helpers.ts`. Mantén el formato `ActionResponse` de extremo a extremo.
+- La base de datos es la autoridad para permisos y persistencia; valida en servidor toda entrada pública. Consulta [reglas de negocio](./docs/engineering/business-rules.md) y [base de datos y seguridad](./docs/engineering/database.md).
 
-1.  **Acceso a `/login`**: El usuario visita la página de login por primera vez.
-2.  **Verificación en la Página**: La `Server Component` de `/login/page.tsx` llama a la `Server Action` `hasUsers()` de `user.actions.ts`.
-3.  **`hasUsers()`**: Esta función usa el cliente de Supabase con `SERVICE_ROLE_KEY` (`supabaseAdmin`) para comprobar si existe algún usuario en la tabla `auth.users`. Es la única función que requiere estos privilegios.
-4.  **Redirección Condicional**:
-    -   Si `hasUsers()` devuelve `false`, la página de login redirige inmediatamente a `/signup`.
-    -   Si `hasUsers()` devuelve `true`, la página de login se renderiza normalmente.
-5.  **Acceso a `/signup`**: De manera similar, la página de `/signup` también llama a `hasUsers()`. Si devuelve `true`, redirige a `/login` para impedir nuevos registros.
-6.  **Registro**: El formulario en `/signup` llama a la `Server Action` `signupSuperAdmin`. Esta acción crea el primer usuario administrador con el email y contraseña proporcionados.
-7.  **Redirección Post-Registro**: Tras el éxito, redirige a `/login` para que el administrador inicie sesión por primera vez.
+## Acceso a rutas
 
-### b. Flujo de Autenticación de Administrador
+- Autenticación: `/login` y `/signup`.
+- Pedidos y onboarding por token: rutas públicas.
+- Panel `/admin/*`: acceso administrativo protegido.
 
-1.  **Acceso a `/login`**: El administrador accede a la página de login e introduce su email y contraseña.
-2.  **Acción de Login**: El formulario llama a la `Server Action` `login()`.
-3.  **Validación y Sesión**: `login()` verifica las credenciales usando `signInWithPassword` de Supabase para establecer una sesión.
-4.  **Redirección a Admin**: Con una sesión válida, el `middleware` redirige al usuario a `/admin`. Las rutas dentro de `/admin` están protegidas y requieren una sesión activa.
-
-### c. Flujo de Creación de Cliente
-
-Existen dos maneras de crear un cliente:
-
-**1. Creación Manual (por el Admin):**
-1.  El admin va a la sección "Clientes" y hace clic en "Agregar Cliente".
-2.  Elige la opción "Crear Manualmente".
-3.  Se abre un formulario completo donde el admin introduce todos los datos del cliente (nombre, CUIT, dirección, etc.) y puede asignarle un convenio existente.
-4.  Al enviar, la `server action` `upsertClient` crea el cliente en la base de datos con estado "active" (si se asignó convenio) o "pending_agreement" (si no).
-
-**2. Creación por Invitación (auto-gestionado por el cliente):**
-1.  El admin va a la sección "Clientes" y hace clic en "Agregar Cliente".
-2.  Elige la opción "Generar Enlace de Invitación".
-3.  Puede (opcionalmente) pre-asignar un convenio.
-4.  La `server action` `createClientForInvitation` crea un cliente con estado `pending_onboarding` y devuelve un token único.
-5.  El admin copia el enlace `/onboarding/[token]` y se lo envía al cliente.
-6.  El cliente abre el enlace, ve un formulario de alta y completa sus datos.
-7.  Al enviar, la `server action` `submitOnboardingForm` actualiza los datos del cliente y cambia su estado a `active` o `pending_agreement`.
-
-### d. Flujo de Envío de Pedido del Cliente
-
-1.  **Admin Genera Link**: En el panel de admin (`/admin/agreements`), el admin copia el enlace único para un convenio. Este enlace contiene el ID del convenio (e.g., `/pedido/uuid-del-convenio`).
-2.  **Cliente Accede al Link**: El cliente abre el enlace. La página `/pedido/[id]/page.tsx` se renderiza en el servidor.
-3.  **Obtención de Datos**: La página llama a la `Server Action` `getOrderPageData(id)`. Esta acción consulta la base de datos para obtener los detalles del convenio, los productos asignados con sus precios específicos y las promociones aplicables.
-4.  **Renderizado de la Página**: La página se muestra al cliente con los productos agrupados por categoría.
-5.  **Interacción del Cliente**:
-    -   El cliente añade o quita productos. El estado del carrito se gestiona en el cliente con `useCartStore` (Zustand) para una experiencia instantánea.
-    -   El `store` del carrito recalcula automáticamente las promociones (ej. 2x1) y descuentos por volumen o monto mínimo.
-6.  **Finalización del Pedido**:
-    -   El cliente revisa el `OrderSummary`.
-    -   Al hacer clic en "Enviar", la `server action` `submitOrder` guarda el pedido en la base de datos.
-    -   Luego, la función `formatWhatsAppMessage` construye un texto pre-formateado y abre la URL de WhatsApp para enviar el pedido al número de la empresa.
+El middleware y las páginas pueden completar o redirigir los flujos de autenticación; revisa su implementación antes de cambiar el comportamiento. No dependas de descripciones antiguas de middleware.

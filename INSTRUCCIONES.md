@@ -1,57 +1,46 @@
-# Guía de Configuración y Uso
+# Configuración y uso local
 
-Este documento contiene las instrucciones para configurar y poner en marcha la aplicación.
+## Requisitos
 
-## 1. Configuración de Variables de Entorno
+- Node.js compatible con Next.js 15 (se recomienda Node 20).
+- npm.
+- Un proyecto Supabase para ejecutar la aplicación con datos.
 
-Antes de nada, crea un archivo llamado `.env.local` en la raíz del proyecto. Copia el contenido del archivo `.env` (que está vacío) y rellénalo con las siguientes claves de tu proyecto de Supabase:
+## Variables de entorno
 
-```bash
-# Variables de Supabase (las encuentras en Project Settings > API)
-NEXT_PUBLIC_SUPABASE_URL="tu-url-de-supabase"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="tu-anon-key-publica"
-SUPABASE_SERVICE_ROLE_KEY="tu-service-role-key-secreta"
+Crea `.env.local` en la raíz y configura las credenciales de tu proyecto Supabase:
 
-# Clave de Google Maps (opcional, para la funcionalidad de mapas)
-# Encuéntrala en tu consola de Google Cloud Platform.
-# NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="tu-api-key-de-google-maps"
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-## 2. Configuración de la Base de Datos
+La clave `SUPABASE_SERVICE_ROLE_KEY` es secreta: no la compartas ni la incluyas en código del navegador.
 
-El paso más importante es configurar la base de datos para que coincida con la aplicación.
+## Base de datos
 
-### a. Ejecutar el Script de Esquema
+**No ejecutes `src/lib/supabase/schema.sql` sobre una base existente.** El archivo contiene `DROP TABLE ... CASCADE` y elimina datos y objetos relacionados. Solo se puede usar para crear/reiniciar una base vacía cuando se haya confirmado la pérdida de datos.
 
-El script SQL en `src/lib/supabase/schema.sql` está diseñado para ser **idempotente**, lo que significa que puedes ejecutarlo de forma segura en cualquier momento, ya sea en una base de datos nueva o en una existente. Se encargará de limpiar y reconfigurar las tablas automáticamente.
+Para una base ya utilizada, revisa el estado y aplica únicamente las migraciones incrementales necesarias de `src/lib/supabase/migrations/`, tras verificar el SQL, el entorno y contar con un respaldo. No apliques cambios remotos sin autorización. Consulta [la guía de base de datos](./docs/engineering/database.md).
 
-1.  **Abre el archivo `src/lib/supabase/schema.sql`** en este proyecto.
-2.  **Copia todo el contenido** de ese archivo.
-3.  **Ve al "SQL Editor"** en tu panel de Supabase.
-4.  **Pega el script** en el editor y haz clic en **"RUN"**.
+`src/lib/supabase/seed.sql` contiene datos de ejemplo; no lo ejecutes en producción sin revisar su contenido.
 
-Esto creará todas las tablas, vistas, funciones y políticas de seguridad necesarias.
+## Instalar y ejecutar
 
-### b. (Opcional) Cargar Datos de Ejemplo
+```bash
+npm ci
+npm run dev
+```
 
-Si quieres empezar con productos, precios y promociones de ejemplo, puedes ejecutar el script de "seed".
+Abre `http://localhost:9003`.
 
-1.  **Abre el archivo `src/lib/supabase/seed.sql`**.
-2.  **Copia todo el contenido**.
-3.  **Pega el script** en el SQL Editor de Supabase y haz clic en **"RUN"**.
+## Verificaciones
 
-## 3. Iniciar la Aplicación
+```bash
+npm run lint
+npm run typecheck
+npm test
+```
 
-1.  **Instala las dependencias**: `npm install`
-2.  **Inicia la aplicación** en modo de desarrollo: `npm run dev`.
-3.  Abre tu navegador y ve a `http://localhost:9003`.
-
-## 4. Crear el Usuario Administrador
-
-La aplicación te guiará para crear el primer usuario administrador la primera vez que la ejecutes.
-
-1.  Al visitar `http://localhost:9003`, serás redirigido a la página de registro (`/signup`).
-2.  **Crea la cuenta** con tu email y una contraseña segura.
-3.  Una vez creada, serás redirigido a `/login`, donde podrás iniciar sesión.
-
-Con esto, tu aplicación estará lista para usarse.
+La aplicación guía la creación del primer administrador si el entorno aún no tiene uno.

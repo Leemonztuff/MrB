@@ -1,76 +1,35 @@
-# Agent Instructions: MrB (Blonde Orders)
+# Instrucciones del proyecto MrB
 
-## What This Is
+Este es el punto de entrada canónico para agentes de código. Las instrucciones específicas de Copilot, Claude, Gemini y Cursor solo remiten a este archivo; no mantengas reglas duplicadas en esos adaptadores.
 
-B2B order management app for beauty product suppliers. Single Next.js 15 package (not a monorepo). UI text and code comments are in **Spanish**.
+## Reglas generales
 
-## Quick Commands
+- Antes de cambiar código, inspecciona la implementación actual y lee la documentación aplicable en [`docs/engineering/`](./docs/engineering/). El código y las pruebas vigentes prevalecen sobre documentos históricos.
+- MrB es una aplicación B2B de pedidos, construida con Next.js 15 App Router, TypeScript, Supabase, Tailwind/shadcn, Zustand, React Hook Form, Zod y Vitest.
+- La interfaz y los comentarios nuevos van en español. Sigue los patrones existentes y evita cambios no relacionados.
+- Reutiliza la lógica compartida para reglas de negocio. No dupliques cálculos de carrito ni reglas del flujo de despacho en componentes.
+- Las Server Actions administrativas deben autenticar con `getSupabaseClientWithAuth` y devolver el formato `ActionResponse` mediante `handleAction` cuando sigan ese patrón. Los consumidores deben comprobar `success` y desempaquetar `data`/`error`; no envuelvas una respuesta `ActionResponse` dentro de otra.
+- Nunca expongas credenciales `service_role` al cliente. Los flujos públicos que requieran privilegios elevados deben permanecer exclusivamente del lado servidor y validar los datos de entrada.
+- **Base de datos:** `src/lib/supabase/schema.sql` elimina tablas y tipos con `DROP ... CASCADE`. Solo sirve para una base nueva o un reinicio intencional; no lo ejecutes sobre una base existente ni de producción. Para cambios de una base existente, crea una migración incremental y documenta su aplicación y riesgos.
+- No afirmes que una operación externa (por ejemplo, el envío de WhatsApp) ocurrió si la aplicación solo prepara un enlace o requiere confirmación manual.
+
+## Verificación
+
+Ejecuta los chequeos afectados y, como mínimo, los siguientes para cambios de lógica o componentes:
 
 ```bash
-npm install          # install deps
-npm run dev          # dev server on http://localhost:9003
-npm run build        # production build
-npm run lint         # eslint (flat config, eslint.config.mjs)
-npm run typecheck    # tsc --noEmit
-npm test             # vitest run
+npm run lint
+npm run typecheck
+npm test
 ```
 
-Tests live next to the code as `*.test.ts` (Vitest, node environment, `@/*` alias configured in `vitest.config.mts`). No CI workflows exist.
+`npm run build` no reemplaza esos chequeos. No agregues dependencias para tareas que puedan cubrirse con las herramientas existentes.
 
-## Build Quirks
+## Documentación vigente
 
-- `next.config.ts` sets `typescript.ignoreBuildErrors: true` and `eslint.ignoreDuringBuilds: true` — builds will succeed even with type/lint errors. Do not rely on `npm run build` to catch issues; run `npm run lint` manually.
-- Server Actions body limit is 5 MB (`experimental.serverActions.bodySizeLimit`).
+- [Arquitectura y mapa](./ARCHITECTURE.md)
+- [Reglas de negocio e invariantes](./docs/engineering/business-rules.md)
+- [Base de datos y seguridad](./docs/engineering/database.md)
+- [Configuración local](./INSTRUCCIONES.md)
 
-## Environment Setup
-
-Create `.env.local` with:
-```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-```
-
-After setting env vars, run `src/lib/supabase/schema.sql` in Supabase SQL Editor (idempotent). Optionally run `src/lib/supabase/seed.sql` for sample data.
-
-## Path Alias
-
-`@/*` maps to `./src/*` (configured in `tsconfig.json`).
-
-## Architecture
-
-- **Framework**: Next.js 15 App Router
-- **DB & Auth**: Supabase (4 clients: `client.ts`, `server.ts`, `admin.ts`, `middleware.ts` in `src/lib/supabase/`)
-- **UI**: Tailwind CSS + shadcn/ui (components in `src/components/ui/`), dark-mode only (class-based, always applied)
-- **State**: Zustand (`src/hooks/use-cart-store.ts` — shopping cart)
-- **Forms**: React Hook Form + Zod
-- **PDF**: `@react-pdf/renderer` for shipping labels
-
-### Route Structure
-
-| Route | Access | Purpose |
-|---|---|---|
-| `/login`, `/signup` | Public | Auth (signup blocked after first admin created) |
-| `/pedido/[token]` | Public | Customer order page (token = `clients.order_token`) |
-| `/onboarding/[token]` | Public | Customer onboarding |
-| `/admin/*` | Protected | Admin dashboard |
-
-### Middleware Logic (`middleware.ts`)
-
-- On first run (no users in DB), all routes redirect to `/signup`.
-- After first admin exists, `/signup` redirects to `/login`.
-- `/pedido/*` and `/onboarding/*` are always public.
-- Authenticated users on public routes redirect to `/admin`.
-
-### Key Directories
-
-- `src/app/(admin)/admin/` — Admin pages, sub-routes for clients, products, agreements, orders, promotions, price lists
-- `src/app/actions/` — Server Actions (user auth, settings)
-- `src/app/admin/actions/` — Admin-specific Server Actions (per entity)
-- `src/components/shared/` — Reusable UI components
-- `src/types/index.ts` — Main TypeScript type definitions
-
-## Conventions
-
-- shadcn/ui components: use `npx shadcn@latest add <component>` to add new ones
-- Custom font: Century Gothic (loaded via `next/font/local` in root layout)
+`PLAN_LOGICA_NEGOCIO.md` y `PENDIENTES.md` son registros históricos, no fuentes del estado actual. Verifica siempre los archivos y pruebas actuales antes de usar sus ejemplos.

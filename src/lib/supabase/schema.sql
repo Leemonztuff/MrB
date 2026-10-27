@@ -1,6 +1,7 @@
 
--- MR. BLONDE - AUTHORITATIVE SCHEMA SCRIPT
--- This script is designed to be idempotent and unifies the logistics workflow.
+-- MR. BLONDE - FULL SCHEMA RESET SCRIPT
+-- DESTRUCTIVE: drops and recreates application tables and types.
+-- Use only for a new/empty database or an explicitly approved reset.
 
 -- 1. CLEANUP
 DROP VIEW IF EXISTS public.agreements_with_counts CASCADE;

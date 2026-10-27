@@ -1,4 +1,6 @@
-# Pendientes y hallazgos — MrB (Blonde Orders)
+# ARCHIVO HISTÓRICO — Pendientes y hallazgos de MrB (Blonde Orders)
+
+> Este documento es una instantánea de auditoría fechada; commits, estados y pendientes pueden estar desactualizados. No lo uses como estado actual ni como guía de migración. Verifica el repositorio y consulta [AGENTS.md](./AGENTS.md), [reglas de negocio](./docs/engineering/business-rules.md) y [base de datos](./docs/engineering/database.md).
 
 Fecha de la auditoría: 2026-10-15
 

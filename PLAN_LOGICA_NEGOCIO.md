@@ -1,4 +1,6 @@
-# Plan de Corrección: Issues de Lógica de Negocio
+# ARCHIVO HISTÓRICO — Plan de corrección: issues de lógica de negocio
+
+> Este documento conserva notas y ejemplos de una auditoría anterior; no representa necesariamente el estado actual del código. No lo uses como especificación ni ejecutes sus ejemplos sin verificarlos. Las reglas vigentes están en [AGENTS.md](./AGENTS.md), [arquitectura](./ARCHITECTURE.md), [reglas de negocio](./docs/engineering/business-rules.md) y [base de datos](./docs/engineering/database.md).
 
 **Fecha original:** 24 de Junio, 2026
 **Última revisión:** 25 de Junio, 2026
