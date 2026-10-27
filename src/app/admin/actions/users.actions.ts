@@ -38,7 +38,7 @@ export async function getOperatorAccounts() {
           id: user.id,
           email: user.email ?? "",
           confirmedAt: user.email_confirmed_at ?? null,
-          bannedUntil: user.banned_until ?? null,
+          bannedUntil: (user as typeof user & { banned_until?: string | null }).banned_until ?? null,
           lastSignInAt: user.last_sign_in_at ?? null,
         }));
       accounts.push(...operatorUsers);
