@@ -29,7 +29,11 @@ export function AccountPasswordForm() {
     startTransition(async () => {
       const { error } = await createClient().auth.updateUser({ password });
       if (error) {
-        setErrorMessage("No se pudo guardar la contraseña. Volvé a abrir el enlace de invitación o solicitá uno nuevo al administrador.");
+        if (error.message.toLowerCase().includes("session")) {
+          setErrorMessage("La invitación se abrió sin una sesión activa. Volvé a abrir el enlace del correo en este navegador o solicitá una nueva invitación.");
+        } else {
+          setErrorMessage(`Supabase no aceptó la contraseña: ${error.message}`);
+        }
         return;
       }
 

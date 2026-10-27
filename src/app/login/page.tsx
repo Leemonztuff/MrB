@@ -34,9 +34,13 @@ export default async function LoginPage({
           </div>
           <CardTitle className="text-2xl">Admin Login</CardTitle>
           <CardDescription>
-            {params?.error === 'invite'
+            {params?.error === 'invite_expired'
               ? 'El enlace de invitación no es válido o venció. Solicitá uno nuevo al administrador.'
-              : 'Ingresa tus credenciales para acceder al panel.'}
+              : params?.error === 'invite_session'
+                ? 'El enlace se verificó, pero no se pudo iniciar la sesión. Volvé a abrirlo o solicitá una nueva invitación.'
+                : params?.error === 'invite_role'
+                  ? 'No se pudo habilitar el acceso de operario. Contactá al administrador para que revise o reenvíe la invitación.'
+                  : 'Ingresa tus credenciales para acceder al panel.'}
           </CardDescription>
         </CardHeader>
         <CardContent>

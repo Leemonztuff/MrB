@@ -21,6 +21,14 @@ La clave `SUPABASE_SERVICE_ROLE_KEY` es secreta: no la compartas ni la incluyas 
 
 Para invitar operarios, configura `NEXT_PUBLIC_APP_URL` con el origen público de la aplicación (por ejemplo, `https://pedidos.ejemplo.com`, sin una ruta). En Supabase, agrega `<origen>/auth/callback` a **Authentication → URL Configuration → Redirect URLs** y verifica que el proveedor de correo tenga habilitadas las invitaciones. En producción, usa la URL HTTPS real; no reutilices la URL local.
 
+En **Authentication → Email Templates → Invite user**, el enlace debe enviar el hash del código al callback de la aplicación para que pueda crear la sesión de forma segura. Usá este destino en el enlace de aceptación:
+
+```html
+<a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=invite">Aceptar invitación</a>
+```
+
+No uses solo `{{ .TokenHash }}` como texto ni elimines `type=invite`. El callback valida ese código y luego abre el formulario para crear la contraseña.
+
 ## Base de datos
 
 **No ejecutes `src/lib/supabase/schema.sql` sobre una base existente.** El archivo contiene `DROP TABLE ... CASCADE` y elimina datos y objetos relacionados. Solo se puede usar para crear/reiniciar una base vacía cuando se haya confirmado la pérdida de datos.

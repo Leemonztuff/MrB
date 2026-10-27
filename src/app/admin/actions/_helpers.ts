@@ -1,5 +1,6 @@
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { requireOperatorPinSession } from "@/lib/operator-pin-server";
@@ -70,6 +71,7 @@ export async function handleAction<T>(
 
         return { success: true, data };
     } catch (error: any) {
+        unstable_rethrow(error);
         console.error("Action error:", error.message);
         return {
             success: false,

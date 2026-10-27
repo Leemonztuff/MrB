@@ -7,7 +7,7 @@ import { AccountPasswordForm } from "./_components/account-password-form";
 export default async function CompleteOperatorAccountPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/login?error=invite_session");
   if (user.app_metadata?.role !== "operario") redirect("/admin");
 
   return (
