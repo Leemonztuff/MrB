@@ -8,6 +8,12 @@ export type OrderItemInput = {
   is_bonus?: boolean;
 };
 
+export function hasInvalidPaidPrice(items: OrderItemInput[]): boolean {
+  return items.some(
+    (item) => !item.is_bonus && (!Number.isFinite(item.price_per_unit) || item.price_per_unit <= 0)
+  );
+}
+
 export function buildOrderItems(
   items: CartItem[],
   bonusInfo: BonusInfo,

@@ -640,7 +640,27 @@ DECLARE
     v_db_price numeric;
     v_db_volume numeric;
     v_order jsonb;
+    v_volume_threshold integer := 150;
 BEGIN
+    IF p_total_amount IS NULL
+       OR p_total_amount::text = 'NaN'
+       OR p_total_amount < 0
+       OR p_total_amount <> round(p_total_amount, 2) THEN
+        RAISE EXCEPTION 'Total del pedido inválido.';
+    END IF;
+
+    SELECT CASE
+        WHEN value #>> '{}' ~ '^[0-9]+$' THEN (value #>> '{}')::integer
+        ELSE 150
+    END
+    INTO v_volume_threshold
+    FROM public.app_settings
+    WHERE key = 'volume_threshold';
+
+    IF v_volume_threshold IS NULL OR v_volume_threshold <= 0 THEN
+        v_volume_threshold := 150;
+    END IF;
+
     -- 1) Cliente + convenio deben existir y coincidir entre sí.
     SELECT a.price_list_id INTO v_price_list_id
     FROM public.clients c
@@ -662,6 +682,10 @@ BEGIN
 
         IF v_product_id IS NULL OR v_quantity IS NULL OR v_quantity <= 0 THEN
             RAISE EXCEPTION 'Producto o cantidad inválida en el pedido.';
+        END IF;
+
+        IF v_unit_price IS NULL OR v_unit_price::text = 'NaN' THEN
+            RAISE EXCEPTION 'Precio inválido en el pedido.';
         END IF;
 
         IF NOT EXISTS (
@@ -689,7 +713,7 @@ BEGIN
 
     -- 3) Re-computar el precio efectivo de cada línea paga contra la lista
     --    (mismo criterio que el cliente: umbral de volumen por unidades totales).
-    v_volume_active := v_total_items >= 150;
+    v_volume_active := v_total_items >= v_volume_threshold;
 
     FOR v_item IN SELECT * FROM jsonb_array_elements(p_items)
     LOOP
@@ -740,6 +764,33 @@ BEGIN
     RETURN v_order;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.create_order_with_items(uuid, uuid, public.payment_type, text, text, numeric, jsonb) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.create_order_with_items(uuid, uuid, public.payment_type, text, text, numeric, jsonb) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.prevent_agreement_delete_with_clients()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM public.clients WHERE agreement_id = OLD.id
+    ) THEN
+        RAISE EXCEPTION 'No se puede eliminar un convenio con clientes asignados.';
+    END IF;
+
+    RETURN OLD;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.prevent_agreement_delete_with_clients() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS prevent_agreement_delete_with_clients ON public.agreements;
+CREATE TRIGGER prevent_agreement_delete_with_clients
+BEFORE DELETE ON public.agreements
+FOR EACH ROW EXECUTE FUNCTION public.prevent_agreement_delete_with_clients();
 
 -- 7. RLS (Row Level Security)
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;

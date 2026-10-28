@@ -112,7 +112,7 @@ export function PriceListItemEditDialog({
               name="volume_price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Precio por Volumen (&gt;150 unidades)</FormLabel>
+                  <FormLabel>Precio por Volumen</FormLabel>
                   <FormControl>
                     <Input 
                         type="number" 

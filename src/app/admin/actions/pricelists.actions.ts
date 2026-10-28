@@ -5,15 +5,10 @@ import { revalidatePath } from "next/cache";
 import { handleAction, getSupabaseClientWithAuth, upsertEntity, deleteEntity } from "./_helpers";
 import type { PriceList, DetailedPriceList, PriceListItem, ActionResponse } from "@/types";
 import { assignProductsSchema } from "@/lib/validations/pricelist.schema";
-
-const MISSING_PROMOTIONS_TABLE_CODES = new Set(["42P01", "PGRST205"]);
-
-function isMissingPromotionsTableError(error: { code?: string } | null): boolean {
-    return Boolean(error?.code && MISSING_PROMOTIONS_TABLE_CODES.has(error.code));
-}
+import { isMissingTableError } from "@/lib/supabase/errors";
 
 function throwIfPromotionsTableError(error: { code?: string; message?: string } | null): void {
-    if (isMissingPromotionsTableError(error)) {
+    if (isMissingTableError(error)) {
         throw new Error("Falta aplicar la migración 20261027_add_price_list_product_promotions.sql para guardar promociones por producto.");
     }
     if (error) throw error;
@@ -101,7 +96,7 @@ export async function getPriceListById(id: string): Promise<ActionResponse<Detai
             .eq("price_list_id", id);
         if (assignmentsError) {
             console.warn("No se pudieron cargar las promociones por producto:", assignmentsError.message);
-            promotionsLoadWarning = isMissingPromotionsTableError(assignmentsError)
+            promotionsLoadWarning = isMissingTableError(assignmentsError)
                 ? "Las promociones por producto no están disponibles. Aplicá la migración 20261027_add_price_list_product_promotions.sql para habilitarlas."
                 : "No se pudieron cargar las promociones por producto. La lista y sus precios siguen disponibles.";
         } else {

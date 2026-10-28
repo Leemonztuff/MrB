@@ -12,8 +12,9 @@ import { clearOperatorUnlockCookie } from '@/lib/operator-pin-server';
 import { onboardingSchema } from '@/lib/validations/client.schema';
 import { formatAddress, formatDeliveryWindow } from '@/lib/formatters';
 import { calculateCartTotals, DEFAULT_VOLUME_THRESHOLD } from '@/lib/logic/cart-calculations';
-import { buildOrderItems } from '@/lib/order-items';
+import { buildOrderItems, hasInvalidPaidPrice } from '@/lib/order-items';
 import { scopePromotionsToPriceListProducts } from '@/lib/price-list-promotions';
+import { isMissingTableError } from '@/lib/supabase/errors';
 import { z } from 'zod';
 
 const cartQuantitySchema = z.number().int().positive().max(10000);
@@ -201,7 +202,9 @@ export async function getOrderPageData(token: string): Promise<ActionResponse<an
             .select('product_id, promotion_id')
             .eq('price_list_id', agreement.price_lists.id);
 
-        if (promotionAssignmentsError) throw new Error("Error al cargar promociones por producto.");
+        if (promotionAssignmentsError && !isMissingTableError(promotionAssignmentsError)) {
+            throw new Error("Error al cargar promociones por producto.");
+        }
 
         const agreementPromotions = (agreement.agreement_promotions || [])
             .map((item: any) => item.promotions)
@@ -216,7 +219,8 @@ export async function getOrderPageData(token: string): Promise<ActionResponse<an
             if (!product) return [];
 
             return [{ ...product, price: pli.price, volume_price: pli.volume_price }];
-        }).sort((a, b) => a.name.localeCompare(b.name));
+        }).filter((product: any) => Number(product.price) > 0)
+          .sort((a, b) => a.name.localeCompare(b.name));
 
         const productsByCategory = products.reduce((acc, p) => {
             const cat = p.category || 'Sin Categoría';
@@ -313,7 +317,7 @@ export async function submitOrder(payload: {
                 .select('product_id, promotion_id')
                 .eq('price_list_id', priceListId);
 
-            if (promotionAssignmentsError) {
+            if (promotionAssignmentsError && !isMissingTableError(promotionAssignmentsError)) {
                 throw new Error("No se pudieron validar las promociones del convenio. Intenta nuevamente.");
             }
 
@@ -378,6 +382,10 @@ export async function submitOrder(payload: {
         }
 
         const orderItems = buildOrderItems(items, totals.bonusInfo, totals.isVolumePricingActive);
+
+        if (hasInvalidPaidPrice(orderItems)) {
+            throw new Error("Hay productos sin precio configurado en la lista. Contactá al administrador para que actualice los precios.");
+        }
 
         if (orderItems.some(oi => !oi.product_id || !Number.isFinite(oi.quantity) || !Number.isFinite(oi.price_per_unit))) {
             throw new Error("El pedido contiene productos con precios inválidos. Recargá la página e intenta nuevamente.");

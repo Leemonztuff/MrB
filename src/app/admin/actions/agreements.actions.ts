@@ -1,7 +1,7 @@
 
 "use server";
 
-import { handleAction, getSupabaseClientWithAuth, upsertEntity, deleteEntity } from "./_helpers";
+import { handleAction, getSupabaseClientWithAuth, upsertEntity } from "./_helpers";
 import type { Agreement, DetailedAgreement, AgreementWithCount, AgreementSalesCondition, ActionResponse } from "@/types";
 
 // --- Agreement Actions ---
@@ -81,7 +81,22 @@ export async function upsertAgreement(payload: UpsertAgreementPayload): Promise<
 }
 
 export async function deleteAgreement(id: string): Promise<ActionResponse<null>> {
-    return await deleteEntity("agreements", id, ["/admin/agreements"]);
+    return await handleAction(async () => {
+        const supabase = await getSupabaseClientWithAuth();
+        const { count, error: countError } = await supabase
+            .from("clients")
+            .select("id", { count: "exact", head: true })
+            .eq("agreement_id", id);
+
+        if (countError) throw countError;
+        if ((count ?? 0) > 0) {
+            throw new Error(`No se puede eliminar el convenio porque tiene ${count} cliente(s) asignado(s). Reasigná esos clientes antes de continuar.`);
+        }
+
+        const { error } = await supabase.from("agreements").delete().eq("id", id);
+        if (error) throw error;
+        return null;
+    }, ["/admin/agreements"]);
 }
 
 // --- Relationship Management ---

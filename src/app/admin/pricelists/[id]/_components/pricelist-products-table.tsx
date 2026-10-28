@@ -90,7 +90,7 @@ export function PriceListProductsTable({
             </TableHead>
             <TableHead>Nombre</TableHead>
             <TableHead>Precio Lista</TableHead>
-            <TableHead>Precio Volumen (&gt;150)</TableHead>
+            <TableHead>Precio Volumen</TableHead>
             <TableHead>Promociones</TableHead>
             <TableHead>
               <span className="sr-only">Acciones</span>

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { CartItem, ProductWithPrice, Promotion } from '@/types';
 import { calculateCartTotals } from '@/lib/logic/cart-calculations';
 import { aggregateOrderItems } from '@/lib/curated-order';
-import { buildOrderItems } from '@/lib/order-items';
+import { buildOrderItems, hasInvalidPaidPrice } from '@/lib/order-items';
 
 const product: ProductWithPrice = {
   id: 'product-1',
@@ -43,6 +43,21 @@ describe('buildOrderItems', () => {
     expect(printableLines).toEqual([
       { id: product.id, name: product.name, quantity: 165 },
     ]);
+  });
+
+  it('detecta líneas pagas sin precio válido pero permite bonificaciones en cero', () => {
+    expect(hasInvalidPaidPrice([
+      { product_id: product.id, quantity: 1, price_per_unit: 100 },
+      { product_id: product.id, quantity: 1, price_per_unit: 0, is_bonus: true },
+    ])).toBe(false);
+
+    expect(hasInvalidPaidPrice([
+      { product_id: product.id, quantity: 1, price_per_unit: 0 },
+    ])).toBe(true);
+
+    expect(hasInvalidPaidPrice([
+      { product_id: product.id, quantity: 1, price_per_unit: Number.NaN },
+    ])).toBe(true);
   });
 
   it('acumula bonificaciones de varias promociones para el mismo producto', () => {

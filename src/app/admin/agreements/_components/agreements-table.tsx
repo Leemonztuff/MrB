@@ -104,7 +104,7 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
                 </EntityDialog>
                 <ConfirmActionDialog
                   title="¿Estás seguro?"
-                  description="Esta acción no se puede deshacer. Eliminará permanentemente el convenio y sus reglas."
+                  description="Esta acción no se puede deshacer. Solo se puede eliminar un convenio sin clientes asignados."
                   confirmLabel="Eliminar"
                   pendingLabel="Eliminando..."
                   onConfirm={() => handleDelete(agreement.id)}
@@ -178,7 +178,7 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
                           <DropdownMenuSeparator className="bg-white/5" />
                           <ConfirmActionDialog
                             title="¿Estás seguro?"
-                            description="Esta acción no se puede deshacer. Eliminará permanentemente el convenio y sus asignaciones."
+                            description="Esta acción no se puede deshacer. Solo se puede eliminar un convenio sin clientes asignados."
                             confirmLabel="Eliminar"
                             pendingLabel="Eliminando..."
                             onConfirm={() => handleDelete(agreement.id)}
