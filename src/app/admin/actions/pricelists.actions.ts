@@ -46,9 +46,23 @@ export async function getPriceListById(id: string): Promise<ActionResponse<Detai
 
         const { data: items, error: itemsError } = await supabase
             .from("price_list_items")
-            .select("*, products ( * )")
+            .select("*")
             .eq("price_list_id", id);
         if (itemsError) throw itemsError;
+
+        const productIds = [...new Set((items ?? []).map(item => item.product_id))];
+        const productsById = new Map<string, PriceListItem["products"]>();
+        if (productIds.length > 0) {
+            const { data: products, error: productsError } = await supabase
+                .from("products")
+                .select("*")
+                .in("id", productIds);
+            if (productsError) throw productsError;
+
+            for (const product of products ?? []) {
+                productsById.set(product.id, product);
+            }
+        }
 
         const { data: agreements, error: agreementsError } = await supabase
             .from("agreements")
@@ -105,10 +119,16 @@ export async function getPriceListById(id: string): Promise<ActionResponse<Detai
 
         return {
             ...data,
-            price_list_items: (items ?? []).map((item: PriceListItem) => ({
-                ...item,
-                assigned_promotion_ids: productPromotionIds.get(item.product_id) || [],
-            })),
+            price_list_items: (items ?? []).flatMap((item: PriceListItem) => {
+                const product = productsById.get(item.product_id);
+                if (!product) return [];
+
+                return [{
+                    ...item,
+                    products: product,
+                    assigned_promotion_ids: productPromotionIds.get(item.product_id) || [],
+                }];
+            }),
             available_buy_x_promotions: availableBuyPromotions,
             promotions_load_warning: promotionsLoadWarning,
         };
