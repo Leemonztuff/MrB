@@ -486,7 +486,7 @@ export function OrdersKanbanBoard({
             Actualizar
           </Button>
           <Button asChild variant="outline" size="sm" className="h-10 gap-2">
-            <Link href="/admin/orders">
+            <Link href="/admin/orders?view=all">
               Ver todos
               <ArrowRight className="h-4 w-4" />
             </Link>

@@ -50,6 +50,7 @@ function orderNotPendingError(count = 1) {
 
 export async function getOrders(filters?: {
     status?: string;
+    view?: 'active' | 'completed' | 'all';
     query?: string;
     overdue?: boolean;
     unprinted?: boolean;
@@ -64,6 +65,10 @@ export async function getOrders(filters?: {
 
         if (filters?.status && filters.status !== 'all') {
             queryBuilder = queryBuilder.eq('status', filters.status);
+        } else if (filters?.view === 'active') {
+            queryBuilder = queryBuilder.in('status', ['armado', 'transito']);
+        } else if (filters?.view === 'completed') {
+            queryBuilder = queryBuilder.eq('status', 'entregado');
         }
         if (filters?.query) {
             queryBuilder = queryBuilder.ilike('client_name_cache', `%${filters.query}%`);
@@ -94,6 +99,35 @@ export async function getOrders(filters?: {
         return role === 'operario'
             ? orders.map(({ total_amount: _totalAmount, ...order }) => order)
             : orders;
+    });
+}
+
+export async function getOrderViewCounts(): Promise<ActionResponse<{
+    active: number;
+    completed: number;
+    all: number;
+}>> {
+    return handleAction(async () => {
+        const { supabase } = await getOrderOperationsContext();
+
+        const [activeResult, completedResult] = await Promise.all([
+            supabase
+                .from('orders')
+                .select('id', { count: 'exact', head: true })
+                .in('status', ['armado', 'transito']),
+            supabase
+                .from('orders')
+                .select('id', { count: 'exact', head: true })
+                .eq('status', 'entregado'),
+        ]);
+
+        if (activeResult.error) throw activeResult.error;
+        if (completedResult.error) throw completedResult.error;
+
+        const active = activeResult.count ?? 0;
+        const completed = completedResult.count ?? 0;
+
+        return { active, completed, all: active + completed };
     });
 }
 
