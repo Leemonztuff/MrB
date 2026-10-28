@@ -13,7 +13,7 @@ export default async function HomePage() {
     redirect('/admin');
   }
 
-  // Si no hay sesión, la página de login se encargará de determinar
-  // si debe mostrar el formulario de login o el enlace de registro.
-  redirect('/login');
+  // Los clientes no deben ver el login del panel: los derivamos a la
+  // pantalla pública de ayuda, que explica cómo volver a su pedido.
+  redirect('/ayuda');
 }

@@ -22,6 +22,26 @@ const operatorPasswordSchema = z
     .min(8, "La contraseña debe tener al menos 8 caracteres.")
     .max(72, "La contraseña no puede superar los 72 caracteres.");
 
+function getLoginErrorMessage(error: { code?: string; status?: number }) {
+    if (error.code === "invalid_credentials") {
+        return "Email o contraseña incorrectos. Revisá que el correo no tenga espacios y que la contraseña sea la misma que usaste en la computadora.";
+    }
+    if (error.code === "email_not_confirmed") {
+        return "Tu email todavía no está confirmado. Pedile al administrador que genere un nuevo enlace de activación.";
+    }
+    if (error.code === "user_banned") {
+        return "Tu acceso está pausado. Contactá al administrador.";
+    }
+    if (
+        error.status === 429
+        || error.code === "over_request_rate_limit"
+        || error.code === "too_many_requests"
+    ) {
+        return "Demasiados intentos. Esperá unos minutos y volvé a probar.";
+    }
+    return "No se pudo iniciar sesión. Revisá tu conexión e intentá de nuevo.";
+}
+
 // Los flujos públicos corren del lado del servidor, por lo que usan el cliente
 // con service_role (bypassa RLS). El service_role NUNCA se expone al navegador.
 function requireAdmin() {
@@ -71,11 +91,16 @@ export async function updateOperatorPassword(password: string): Promise<ActionRe
 
 export async function login(prevState: AuthState, formData: FormData): Promise<AuthState> {
     const supabase = await createServerClient();
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    if (!email || !password) return { error: { message: 'Requeridos.' } };
+    const email = String(formData.get('email') ?? '').trim().toLowerCase();
+    const password = String(formData.get('password') ?? '');
+    if (!email || !password) return { error: { message: 'Email y contraseña requeridos.' } };
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { error: { message: 'Error de acceso.' } };
+    if (error) {
+        console.error("Login error:", error.code, error.status, error.message);
+        return { error: { message: getLoginErrorMessage(error) } };
+    }
+
     revalidatePath('/admin');
     redirect('/admin');
 }

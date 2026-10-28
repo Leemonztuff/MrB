@@ -28,21 +28,28 @@ export function LoginForm() {
     <form action={formAction} className="grid gap-4">
       <div className="grid gap-2">
         <Label htmlFor="email">Email</Label>
-        <Input 
-            id="email" 
-            type="email" 
+        <Input
+            id="email"
+            type="email"
             name="email"
-            placeholder="admin@ejemplo.com" 
-            required 
+            placeholder="admin@ejemplo.com"
+            autoComplete="email"
+            inputMode="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            required
         />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="password">Contraseña</Label>
-        <Input 
-            id="password" 
-            type="password" 
-            name="password" 
-            required 
+        <Input
+            id="password"
+            type="password"
+            name="password"
+            autoComplete="current-password"
+            autoCapitalize="none"
+            required
         />
       </div>
         {state?.error?.message && (

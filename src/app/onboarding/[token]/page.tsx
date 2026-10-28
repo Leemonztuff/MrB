@@ -25,8 +25,11 @@ export default async function OnboardingPage({ params }: { params: Promise<{ tok
               Enlace Inválido
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <p className="text-muted-foreground">El enlace de invitación no es válido o ha expirado.</p>
+            <Button asChild className="w-full">
+              <Link href="/ayuda">Necesito ayuda</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>

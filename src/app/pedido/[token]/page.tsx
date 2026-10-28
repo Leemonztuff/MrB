@@ -65,7 +65,7 @@ export default async function OrderPage({
           {errorMessage}
         </p>
         <Button asChild>
-          <Link href="/">Volver al inicio</Link>
+          <Link href="/ayuda">Necesito ayuda</Link>
         </Button>
       </div>
     );
