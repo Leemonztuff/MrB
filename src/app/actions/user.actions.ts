@@ -176,10 +176,25 @@ export async function getOrderPageData(token: string): Promise<ActionResponse<an
         // 3. Obtener productos con precios de la lista del convenio
         const { data: priceListItems, error: itemsError } = await supabase
             .from('price_list_items')
-            .select('price, volume_price, products(*)')
+            .select('product_id, price, volume_price')
             .eq('price_list_id', agreement.price_lists.id);
 
         if (itemsError) throw new Error("Error al cargar productos.");
+
+        const productIds = (priceListItems ?? []).map(item => item.product_id);
+        const productsById = new Map<string, any>();
+        if (productIds.length > 0) {
+            const { data: productRows, error: productsError } = await supabase
+                .from('products')
+                .select('*')
+                .in('id', productIds);
+
+            if (productsError) throw new Error("Error al cargar productos.");
+
+            for (const product of productRows ?? []) {
+                productsById.set(product.id, product);
+            }
+        }
 
         const { data: promotionAssignments, error: promotionAssignmentsError } = await supabase
             .from('price_list_item_promotions')
@@ -196,10 +211,12 @@ export async function getOrderPageData(token: string): Promise<ActionResponse<an
             promotionAssignments || []
         );
 
-        const products = priceListItems.map((pli: any) => {
-            const product = Array.isArray(pli.products) ? pli.products[0] : pli.products;
-            return { ...product, price: pli.price, volume_price: pli.volume_price };
-        }).filter(p => !!p).sort((a, b) => a.name.localeCompare(b.name));
+        const products = (priceListItems ?? []).flatMap((pli: any) => {
+            const product = productsById.get(pli.product_id);
+            if (!product) return [];
+
+            return [{ ...product, price: pli.price, volume_price: pli.volume_price }];
+        }).sort((a, b) => a.name.localeCompare(b.name));
 
         const productsByCategory = products.reduce((acc, p) => {
             const cat = p.category || 'Sin Categoría';
