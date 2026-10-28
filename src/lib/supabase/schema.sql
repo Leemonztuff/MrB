@@ -842,3 +842,4 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.price_list_item_promotions TO aut
 INSERT INTO public.app_settings (key, value) VALUES ('vat_percentage', '21'::jsonb) ON CONFLICT (key) DO NOTHING;
 INSERT INTO public.app_settings (key, value) VALUES ('whatsapp_number', '"5491144276120"'::jsonb) ON CONFLICT (key) DO NOTHING;
 INSERT INTO public.app_settings (key, value) VALUES ('volume_threshold', '150'::jsonb) ON CONFLICT (key) DO NOTHING;
+INSERT INTO public.app_settings (key, value) VALUES ('wizard_enabled', 'true'::jsonb) ON CONFLICT (key) DO NOTHING;

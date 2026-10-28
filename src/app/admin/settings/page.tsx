@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { PageContainer } from "@/components/shared/page-container";
 import { getSettings } from "@/app/admin/actions/settings.actions";
 import { SettingsForm } from "./_components/settings-form";
+import { WizardSetting } from "./_components/wizard-setting";
 import { BackupClient } from "./_components/backup-client";
 import { StorageMaintenance } from "./_components/StorageMaintenance";
 import { getOperatorAccounts } from "@/app/admin/actions/users.actions";
@@ -30,6 +31,12 @@ export default async function SettingsPage() {
           <AccordionTrigger>Ajustes Generales</AccordionTrigger>
           <AccordionContent>
             <SettingsForm settings={settings} />
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="wizard">
+          <AccordionTrigger>Guía de inicio</AccordionTrigger>
+          <AccordionContent>
+            <WizardSetting enabled={settings.wizard_enabled} />
           </AccordionContent>
         </AccordionItem>
         <AccordionItem value="backup">

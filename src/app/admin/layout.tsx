@@ -21,6 +21,8 @@ import { AppNav } from "./_components/app-nav";
 import { AutoRefresh } from "./_components/auto-refresh";
 import { ThemeToggle } from "./_components/theme-toggle";
 import { MobileAdminMenu } from "./_components/mobile-admin-menu";
+import { WizardGuide } from "./_components/wizard-guide";
+import { getWizardGuideData } from "./actions/wizard.actions";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { getCurrentAppRole } from "@/app/admin/actions/_helpers";
@@ -81,12 +83,14 @@ export default async function AdminLayout({
   if (role === "operario" && !(await isCurrentOperatorPinSessionUnlocked())) {
     redirect("/operator/unlock");
   }
-  const [notificationResult, logoResult] = await Promise.all([
+  const [notificationResult, logoResult, wizardResult] = await Promise.all([
     role === "super_admin" ? getNotificationData() : Promise.resolve(null),
     getPublicLogoUrl(),
+    role === "super_admin" ? getWizardGuideData() : Promise.resolve(null),
   ]);
   const notificationData = notificationResult?.data;
   const logo_url = logoResult.data;
+  const wizardData = wizardResult?.data;
 
   const notifications = notificationData
     ? createNotifications(
@@ -201,6 +205,9 @@ export default async function AdminLayout({
           {children}
         </main>
       </div>
+      {role === "super_admin" && wizardResult?.success && wizardData?.enabled && (
+        <WizardGuide steps={wizardData.steps} />
+      )}
     </div>
   );
 }

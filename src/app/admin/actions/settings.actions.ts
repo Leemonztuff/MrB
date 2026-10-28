@@ -20,7 +20,13 @@ export async function getSettings(): Promise<AppSettings> {
 
     if (error) {
         console.error("getSettings error:", error.message);
-        return { whatsapp_number: "", vat_percentage: 21, logo_url: null, label_logo_url: null };
+        return {
+            whatsapp_number: "",
+            vat_percentage: 21,
+            logo_url: null,
+            label_logo_url: null,
+            wizard_enabled: true,
+        };
     }
 
     const settings = (data || []).reduce((acc: any, { key, value }: { key: string, value: any }) => {
@@ -33,6 +39,9 @@ export async function getSettings(): Promise<AppSettings> {
         vat_percentage: settings.vat_percentage || 21,
         logo_url: settings.logo_url || null,
         label_logo_url: settings.label_logo_url || null,
+        wizard_enabled: typeof settings.wizard_enabled === "boolean"
+            ? settings.wizard_enabled
+            : settings.wizard_enabled !== "false",
     };
 }
 

@@ -172,6 +172,7 @@ export type AppSettings = {
     vat_percentage: number;
     logo_url: string | null;
     label_logo_url: string | null;
+    wizard_enabled: boolean;
 }
 
 export type AppSettingsRow = {
