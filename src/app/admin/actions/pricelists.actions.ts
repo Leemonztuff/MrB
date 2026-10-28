@@ -38,17 +38,17 @@ export async function getPriceListById(id: string): Promise<ActionResponse<Detai
         const supabase = await getSupabaseClientWithAuth();
         const { data, error } = await supabase
             .from("price_lists")
-            .select(`
-                *,
-                price_list_items (
-                    *,
-                    products ( * )
-                )
-            `)
+            .select("*")
             .eq("id", id)
             .maybeSingle();
         if (error) throw error;
         if (!data) throw new Error("Price list not found.");
+
+        const { data: items, error: itemsError } = await supabase
+            .from("price_list_items")
+            .select("*, products ( * )")
+            .eq("price_list_id", id);
+        if (itemsError) throw itemsError;
 
         const { data: agreements, error: agreementsError } = await supabase
             .from("agreements")
@@ -105,7 +105,7 @@ export async function getPriceListById(id: string): Promise<ActionResponse<Detai
 
         return {
             ...data,
-            price_list_items: (data.price_list_items ?? []).map((item: PriceListItem) => ({
+            price_list_items: (items ?? []).map((item: PriceListItem) => ({
                 ...item,
                 assigned_promotion_ids: productPromotionIds.get(item.product_id) || [],
             })),
