@@ -1,7 +1,8 @@
 
 import Link from "next/link";
-import { ArrowLeft, Edit, FileWarning, Package, PlusCircle } from "lucide-react";
+import { ArrowLeft, Edit, FileWarning, PlusCircle, TriangleAlert } from "lucide-react";
 import { getPriceListById } from "@/app/admin/actions/pricelists.actions";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/shared/page-container";
 import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardDescription, GlassCardContent } from "@/components/shared/glass-card";
@@ -24,10 +25,10 @@ export default async function PriceListDetailPage({
         <div className="flex flex-col items-center gap-1 text-center">
           <FileWarning className="w-12 h-12 text-muted-foreground" />
           <h3 className="text-2xl font-bold tracking-tight">
-            Lista de Precios no encontrada
+            {error ? "No se pudo cargar la lista" : "Lista de Precios no encontrada"}
           </h3>
-          <p className="text-sm text-muted-foreground">
-            No se pudo encontrar la lista solicitada.
+          <p className="max-w-md text-sm text-muted-foreground">
+            {error ? error.message : "No se pudo encontrar la lista solicitada."}
           </p>
           <Button asChild className="mt-4">
             <Link href="/admin/commercial-settings?tab=pricelists">Volver a Listas</Link>
@@ -58,6 +59,13 @@ export default async function PriceListDetailPage({
           </EntityDialog>
         </div>
       </div>
+      {priceList.promotions_load_warning && (
+        <Alert variant="destructive">
+          <TriangleAlert className="h-4 w-4" />
+          <AlertTitle>Promociones no disponibles</AlertTitle>
+          <AlertDescription>{priceList.promotions_load_warning}</AlertDescription>
+        </Alert>
+      )}
       <GlassCard>
         <GlassCardHeader className="flex flex-row items-center">
           <div className="flex-grow">

@@ -227,6 +227,7 @@ export type PriceList = {
 export type DetailedPriceList = PriceList & {
     price_list_items: PriceListItem[];
     available_buy_x_promotions: Promotion[];
+    promotions_load_warning?: string | null;
 };
 
 export type PriceListItem = {
