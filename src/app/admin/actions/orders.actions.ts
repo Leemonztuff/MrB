@@ -1,10 +1,17 @@
-
 'use server';
 
 import { getOrderOperationsContext, handleAction, getSupabaseClientWithAuth } from './_helpers';
 import type { Order, OrderWithItems, OperationalOrder, ShippingLabelOrder, ActionResponse } from '@/types';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getOrderDispatchBlocker, type OrderDispatchBlocker } from '@/lib/order-workflow';
+
+// Helper robusto para normalizar relaciones de Supabase/PostgREST
+// (tolera si PostgREST devuelve un objeto o un array de 1 elemento)
+function normalizeRelation<T>(value: T | T[] | null | undefined): T | null {
+    if (!value) return null;
+    if (Array.isArray(value)) return value[0] ?? null;
+    return value;
+}
 
 // Los flujos públicos corren del lado del servidor, por lo que usan el cliente
 // con service_role (bypassa RLS). El service_role NUNCA se expone al navegador.
@@ -58,6 +65,7 @@ export async function getOrders(filters?: {
 }): Promise<ActionResponse<OperationalOrder[]>> {
     return handleAction(async () => {
         const { supabase, role } = await getOrderOperationsContext();
+
         let queryBuilder = supabase
             .from('orders')
             .select('id, created_at, total_amount, status, client_name_cache, notes, printed_at, whatsapp_confirmed_at, prepared_at, delivered_at, customer_confirmed_at, order_items(quantity, is_bonus, products(id, name))')
@@ -91,9 +99,9 @@ export async function getOrders(filters?: {
         if (error) throw error;
         const orders = (data ?? []).map(order => ({
             ...order,
-            order_items: order.order_items.map(item => ({
+            order_items: (order.order_items ?? []).map((item: any) => ({
                 ...item,
-                products: item.products?.[0] ?? null,
+                products: normalizeRelation(item.products),
             })),
         }));
         return role === 'operario'
@@ -136,19 +144,28 @@ export async function getOrderWithDetails(orderId: string): Promise<ActionRespon
         const supabase = await getSupabaseClientWithAuth();
         const { data, error } = await supabase
             .from('orders')
-            .select('*, order_items(quantity, price_per_unit, products(*)), clients(*)')
+            .select('*, order_items(quantity, price_per_unit, is_bonus, products(*)), clients(*)')
             .eq('id', orderId)
             .single();
 
         if (error) throw error;
 
-        const calculatedTotal = data.order_items?.reduce(
+        const order = {
+            ...data,
+            clients: normalizeRelation(data.clients),
+            order_items: (data.order_items ?? []).map((item: any) => ({
+                ...item,
+                products: normalizeRelation(item.products),
+            })),
+        };
+
+        const calculatedTotal = order.order_items?.reduce(
             (sum: number, item: any) => sum + (item.quantity * item.price_per_unit), 0
         ) ?? 0;
 
         return {
-            ...data,
-            hasDiscrepancy: Math.abs(data.total_amount - calculatedTotal) > 0.01,
+            ...order,
+            hasDiscrepancy: Math.abs(order.total_amount - calculatedTotal) > 0.01,
             calculatedTotal,
         };
     });
@@ -159,11 +176,18 @@ export async function getOrdersBatch(ids: string[]): Promise<ActionResponse<Orde
         const supabase = await getSupabaseClientWithAuth();
         const { data, error } = await supabase
             .from('orders')
-            .select('*, order_items(quantity, price_per_unit, products(*)), clients(*)')
+            .select('*, order_items(quantity, price_per_unit, is_bonus, products(*)), clients(*)')
             .in('id', ids);
 
         if (error) throw error;
-        return data || [];
+        return (data || []).map((order: any) => ({
+            ...order,
+            clients: normalizeRelation(order.clients),
+            order_items: (order.order_items ?? []).map((item: any) => ({
+                ...item,
+                products: normalizeRelation(item.products),
+            })),
+        }));
     });
 }
 
@@ -268,9 +292,7 @@ export async function markOrderWorkflowStep(
             if (step === 'preparation' && !current?.whatsapp_confirmed_at) {
                 throw dispatchPrerequisiteError('whatsapp');
             }
-            throw new Error('No se pudo guardar la etapa del pedido. Actualizá la vista e intentá nuevamente.');
         }
-
         return null;
     }, ['/admin', '/admin/orders']);
 }
@@ -280,11 +302,18 @@ export async function getPublicOrderDetails(orderId: string): Promise<ActionResp
         const supabase = requireAdmin();
         const { data, error } = await supabase
             .from('orders')
-            .select('*, order_items(quantity, products(name))')
+            .select('*, order_items(quantity, price_per_unit, is_bonus, products(id, name, category, image_url)), clients(*)')
             .eq('id', orderId)
             .single();
         if (error) throw error;
-        return data;
+        return {
+            ...data,
+            clients: normalizeRelation(data.clients),
+            order_items: (data.order_items ?? []).map((item: any) => ({
+                ...item,
+                products: normalizeRelation(item.products),
+            })),
+        };
     });
 }
 
@@ -297,12 +326,12 @@ export async function getLabelData(ids: string[]): Promise<ActionResponse<Shippi
             .in('id', ids);
 
         if (error) throw error;
-        return (data ?? []).map(order => ({
+        return (data ?? []).map((order: any) => ({
             ...order,
-            clients: order.clients?.[0] ?? null,
-            order_items: order.order_items.map(item => ({
+            clients: normalizeRelation(order.clients),
+            order_items: (order.order_items ?? []).map((item: any) => ({
                 ...item,
-                products: item.products?.[0] ?? null,
+                products: normalizeRelation(item.products),
             })),
         }));
     });

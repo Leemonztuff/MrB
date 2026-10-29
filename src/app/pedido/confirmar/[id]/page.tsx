@@ -1,4 +1,3 @@
-
 import { getPublicOrderDetails } from "@/app/admin/actions/orders.actions";
 import { Logo } from "@/app/logo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,8 +51,10 @@ export default async function OrderConfirmationPortal({
             <div className="flex justify-center mb-4 text-destructive">
               <AlertTriangle className="h-12 w-12" />
             </div>
-            <CardTitle>Pedido no encontrado</CardTitle>
-            <CardDescription>El enlace podría ser inválido o el pedido ya no existe.</CardDescription>
+            <CardTitle>Pedido No Encontrado</CardTitle>
+            <CardDescription>
+              El enlace que utilizaste es inválido o el pedido ya no existe.
+            </CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -61,17 +62,14 @@ export default async function OrderConfirmationPortal({
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-muted/20">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
       <Logo showText={true} className="mb-8" />
-      <Card className="w-full max-w-md text-center border-primary/20 shadow-xl overflow-hidden">
-        <div className="h-2 bg-primary w-full" />
+      <Card className="w-full max-w-md text-center shadow-xl border-white/10 glass">
         <CardHeader>
-          <div className="flex justify-center mb-6 text-primary drop-shadow-sm">
-            <div className="bg-primary/10 p-4 rounded-full">
-              <CheckCircle2 className="h-12 w-12" />
-            </div>
+          <div className="flex justify-center mb-4 text-primary">
+            <CheckCircle2 className="h-16 w-16" />
           </div>
-          <CardTitle className="text-2xl font-headline tracking-tight">¡Pedido Conformado!</CardTitle>
+          <CardTitle className="text-2xl font-black italic tracking-tight">¡Muchas Gracias!</CardTitle>
           <CardDescription className="text-base">
             Hemos registrado la recepción de tu mercadería correctamente.
           </CardDescription>
@@ -90,16 +88,20 @@ export default async function OrderConfirmationPortal({
                 Revisa el pedido aquí:
               </p>
               <ul className="space-y-2">
-                {order.order_items.map((item, idx) => (
-                  <li key={idx} className="flex items-center gap-3 bg-muted/40 rounded-lg px-3 py-2">
-                    <span className="shrink-0 min-w-7 h-6 px-1.5 bg-primary/10 text-primary rounded-md text-xs font-black flex items-center justify-center tabular-nums">
-                      {item.quantity}
-                    </span>
-                    <span className="text-sm text-foreground/90 truncate">
-                      {item.products?.name ?? 'Producto'}
-                    </span>
-                  </li>
-                ))}
+                {order.order_items.map((item, idx) => {
+                  const product = Array.isArray(item.products) ? item.products[0] : item.products;
+                  const productName = product?.name ?? 'Producto';
+                  return (
+                    <li key={idx} className="flex items-center gap-3 bg-muted/40 rounded-lg px-3 py-2">
+                      <span className="shrink-0 min-w-7 h-6 px-1.5 bg-primary/10 text-primary rounded-md text-xs font-black flex items-center justify-center tabular-nums">
+                        {item.quantity}
+                      </span>
+                      <span className="text-sm text-foreground/90 truncate">
+                        {productName}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
