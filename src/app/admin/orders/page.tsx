@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { PageContainer } from "@/components/shared/page-container";
 import { GlassCard, GlassCardHeader, GlassCardTitle, GlassCardDescription, GlassCardContent } from "@/components/shared/glass-card";
 import { OrdersTable } from "./_components/orders-table";
+import { OrdersSearchFilter } from "./_components/orders-search-filter";
 import { ErrorDisplay } from "@/components/shared/error-display";
 import { getCurrentAppRole } from "@/app/admin/actions/_helpers";
 import { Button } from "@/components/ui/button";
@@ -110,8 +111,9 @@ export default async function OrdersHistoryPage({
     <PageContainer>
       <PageHeader title={pageTitle} description={pageDescription} />
 
+      {/* Selector de Vistas y Conteo */}
       <div className="flex flex-wrap items-center gap-2" aria-label="Vistas de pedidos">
-        {views.map(view => {
+        {views.map((view) => {
           const isActive = activeView === view.key;
           const count = counts?.[view.key];
 
@@ -151,6 +153,9 @@ export default async function OrdersHistoryPage({
           </Link>
         </p>
       )}
+
+      {/* Barra de Búsqueda y Chips de Filtros Activos */}
+      <OrdersSearchFilter />
 
       <GlassCard>
         <GlassCardHeader className="pb-4">

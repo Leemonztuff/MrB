@@ -17,8 +17,11 @@ import {
   MessageCircle,
   PackageCheck,
   ClipboardList,
-  Circle,
   Clock,
+  Loader2,
+  CheckSquare,
+  Square,
+  RotateCcw,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -51,11 +54,33 @@ type OrdersTableProps = {
   operatorMode?: boolean;
 };
 
+type ActiveAction = {
+  id: string;
+  action: 'whatsapp' | 'preparation' | 'dispatch';
+};
+
 export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) {
   const [isPending, startTransition] = useTransition();
+  const [pendingAction, setPendingAction] = useState<ActiveAction | null>(null);
   const { toast } = useToast();
   const [bundles, setBundles] = useState<Record<string, number>>({});
   const [orderNeedingLabel, setOrderNeedingLabel] = useState<OperationalOrder | null>(null);
+
+  // Checklist interactivo de preparación en el modal de productos
+  const [packedItems, setPackedItems] = useState<Record<string, boolean>>({});
+
+  const togglePacked = (orderId: string, itemId: string) => {
+    const key = `${orderId}-${itemId}`;
+    setPackedItems((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const resetPacked = (orderId: string, itemIds: string[]) => {
+    setPackedItems((prev) => {
+      const copy = { ...prev };
+      itemIds.forEach((id) => delete copy[`${orderId}-${id}`]);
+      return copy;
+    });
+  };
 
   const getBundles = (orderId: string) => bundles[orderId] || 1;
   const getProductLines = (order: OperationalOrder) => aggregateOrderItems(order.order_items);
@@ -68,47 +93,57 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
   };
 
   const handleDispatch = (order: OperationalOrder) => {
+    setPendingAction({ id: order.id, action: 'dispatch' });
     startTransition(async () => {
-      const { error } = await updateOrderStatus(order.id, 'transito');
-      if (error) {
-        if (error.code === 'NOT_PRINTED') {
-          setOrderNeedingLabel(order);
-        } else {
-          toast({
-            title: 'No se pudo despachar el pedido',
-            description: error.message,
-            variant: 'destructive',
-          });
+      try {
+        const { error } = await updateOrderStatus(order.id, 'transito');
+        if (error) {
+          if (error.code === 'NOT_PRINTED') {
+            setOrderNeedingLabel(order);
+          } else {
+            toast({
+              title: 'No se pudo despachar el pedido',
+              description: error.message,
+              variant: 'destructive',
+            });
+          }
+          return;
         }
-        return;
-      }
 
-      toast({
-        title: 'Pedido despachado',
-        description: `El pedido de ${order.client_name_cache} se marcó como despachado.`,
-      });
+        toast({
+          title: 'Pedido despachado',
+          description: `El pedido de ${order.client_name_cache} se marcó como despachado.`,
+        });
+      } finally {
+        setPendingAction(null);
+      }
     });
   };
 
   const handleWorkflowStep = (order: OperationalOrder, step: 'whatsapp' | 'preparation') => {
+    setPendingAction({ id: order.id, action: step });
     startTransition(async () => {
-      const { error } = await markOrderWorkflowStep(order.id, step);
-      if (error) {
-        toast({
-          title: 'No se pudo actualizar el pedido',
-          description: error.message,
-          variant: 'destructive',
-        });
-        return;
-      }
+      try {
+        const { error } = await markOrderWorkflowStep(order.id, step);
+        if (error) {
+          toast({
+            title: 'No se pudo actualizar el pedido',
+            description: error.message,
+            variant: 'destructive',
+          });
+          return;
+        }
 
-      toast({
-        title: step === 'whatsapp' ? 'Recepción confirmada' : 'Pedido preparado',
-        description:
-          step === 'whatsapp'
-            ? 'Quedó registrada la verificación manual de recepción del mensaje.'
-            : `El pedido de ${order.client_name_cache} quedó marcado como preparado.`,
-      });
+        toast({
+          title: step === 'whatsapp' ? 'Recepción confirmada' : 'Pedido preparado',
+          description:
+            step === 'whatsapp'
+              ? 'Quedó registrada la verificación manual de recepción del mensaje.'
+              : `El pedido de ${order.client_name_cache} quedó marcado como preparado.`,
+        });
+      } finally {
+        setPendingAction(null);
+      }
     });
   };
 
@@ -129,18 +164,43 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
         {orders.map((order) => {
           const blocker = getOrderDispatchBlocker(order);
           const isArmed = order.status === 'armado';
+          const isOverdue =
+            isArmed && Date.now() - new Date(order.created_at).getTime() > 48 * 60 * 60 * 1000;
+
+          const isActionPending = (act: 'whatsapp' | 'preparation' | 'dispatch') =>
+            isPending && pendingAction?.id === order.id && pendingAction.action === act;
+
+          const productLines = getProductLines(order);
+          const packedCount = productLines.filter(
+            (item) => packedItems[`${order.id}-${item.id}`]
+          ).length;
+          const isAllPacked = productLines.length > 0 && packedCount === productLines.length;
 
           return (
             <div
               key={order.id}
-              className="glass rounded-xl border border-white/10 p-4 transition-all hover:border-primary/30"
+              className={cn(
+                'glass rounded-xl border p-4 transition-all',
+                isOverdue
+                  ? 'border-red-500/40 bg-red-500/[0.03]'
+                  : 'border-white/10 hover:border-primary/30'
+              )}
             >
-              {/* Encabezado: Fecha y Estado */}
+              {/* Encabezado: Fecha, Alertas y Estado */}
               <div className="flex items-center justify-between gap-2 border-b border-white/5 pb-2.5">
                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
                   {formatDate(order.created_at)}
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                  {isOverdue && (
+                    <Badge
+                      variant="outline"
+                      className="border-red-500/40 bg-red-500/10 text-[10px] text-red-400 gap-1"
+                    >
+                      <Clock className="h-2.5 w-2.5" />
+                      Demorado +48h
+                    </Badge>
+                  )}
                   <OrderStatusBadge status={order.status} />
                   {order.printed_at && (
                     <Badge
@@ -177,7 +237,6 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
               {/* Indicador de Pasos del Workflow para pedidos en armado */}
               {isArmed && (
                 <div className="mt-3 grid grid-cols-3 gap-1.5 rounded-lg bg-black/20 p-2 border border-white/5">
-                  {/* Paso 1: WhatsApp */}
                   <div
                     className={cn(
                       'flex items-center gap-1 text-[11px] font-medium truncate',
@@ -196,7 +255,6 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                     <span className="truncate">WhatsApp</span>
                   </div>
 
-                  {/* Paso 2: Preparación */}
                   <div
                     className={cn(
                       'flex items-center gap-1 text-[11px] font-medium truncate',
@@ -215,7 +273,6 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                     <span className="truncate">Preparado</span>
                   </div>
 
-                  {/* Paso 3: Rótulo */}
                   <div
                     className={cn(
                       'flex items-center gap-1 text-[11px] font-medium truncate',
@@ -243,11 +300,11 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                 </p>
               )}
 
-              {/* Zona de Botones Táctiles Móviles */}
+              {/* Zona de Acciones Táctiles Móviles */}
               <div className="mt-4 space-y-2.5 border-t border-white/5 pt-3">
                 {isArmed && (
                   <>
-                    {/* Botón de Acción Principal Destacada según el Paso Pendiente */}
+                    {/* Botón Acción Principal: WhatsApp */}
                     {!order.whatsapp_confirmed_at && (
                       <Button
                         size="sm"
@@ -255,11 +312,20 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                         disabled={isPending}
                         className="h-11 w-full gap-2 bg-sky-700 text-white hover:bg-sky-800 shadow-sm transition-all"
                       >
-                        <MessageCircle className="h-4 w-4" />
-                        Confirmar recepción en WhatsApp
+                        {isActionPending('whatsapp') ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <MessageCircle className="h-4 w-4" />
+                        )}
+                        <span>
+                          {isActionPending('whatsapp')
+                            ? 'Confirmando recepción...'
+                            : 'Confirmar recepción en WhatsApp'}
+                        </span>
                       </Button>
                     )}
 
+                    {/* Botón Acción Principal: Preparación */}
                     {order.whatsapp_confirmed_at && !order.prepared_at && (
                       <Button
                         size="sm"
@@ -267,25 +333,56 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                         disabled={isPending}
                         className="h-11 w-full gap-2 bg-violet-700 text-white hover:bg-violet-800 shadow-sm transition-all"
                       >
-                        <PackageCheck className="h-4 w-4" />
-                        Marcar como preparado
+                        {isActionPending('preparation') ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <PackageCheck className="h-4 w-4" />
+                        )}
+                        <span>
+                          {isActionPending('preparation')
+                            ? 'Marcando como preparado...'
+                            : 'Marcar como preparado'}
+                        </span>
                       </Button>
                     )}
 
+                    {/* Selector Stepper Táctil y Botón de Rótulo si está preparado */}
                     {order.prepared_at && !order.printed_at && (
                       <div className="flex items-center gap-2">
-                        <div className="flex shrink-0 items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 h-11">
-                          <Printer className="h-4 w-4 text-muted-foreground" />
-                          <Input
-                            type="number"
-                            min={1}
-                            max={20}
-                            value={getBundles(order.id)}
-                            onChange={(e) => handleBundlesChange(order.id, parseInt(e.target.value) || 1)}
-                            className="h-8 w-10 border-none bg-transparent p-0 text-center text-sm font-bold focus-visible:ring-0"
-                            aria-label={`Cantidad de bultos para ${order.client_name_cache}`}
-                          />
+                        {/* Stepper Táctil (- / +) */}
+                        <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 p-1 h-11 shrink-0">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleBundlesChange(order.id, getBundles(order.id) - 1)}
+                            disabled={getBundles(order.id) <= 1}
+                            className="h-9 w-9 text-base font-bold hover:bg-white/10"
+                            aria-label="Restar un bulto"
+                          >
+                            -
+                          </Button>
+                          <div className="flex flex-col items-center justify-center min-w-8 px-1">
+                            <span className="text-xs font-black tabular-nums">
+                              {getBundles(order.id)}
+                            </span>
+                            <span className="text-[8px] uppercase tracking-wider text-muted-foreground leading-none">
+                              bulto{getBundles(order.id) > 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleBundlesChange(order.id, getBundles(order.id) + 1)}
+                            disabled={getBundles(order.id) >= 20}
+                            className="h-9 w-9 text-base font-bold hover:bg-white/10"
+                            aria-label="Sumar un bulto"
+                          >
+                            +
+                          </Button>
                         </div>
+
                         <ShippingLabelButton
                           orders={[{ id: order.id, bundles: getBundles(order.id) }]}
                           className="h-11 flex-1 bg-amber-600 text-white hover:bg-amber-700 border-transparent shadow-sm"
@@ -293,6 +390,7 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                       </div>
                     )}
 
+                    {/* Botón Acción Principal: Despacho */}
                     {blocker === null && (
                       <Button
                         size="sm"
@@ -300,12 +398,18 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                         disabled={isPending}
                         className="h-11 w-full gap-2 bg-emerald-700 text-white hover:bg-emerald-800 shadow-sm transition-all"
                       >
-                        <Truck className="h-4 w-4" />
-                        Despachar pedido
+                        {isActionPending('dispatch') ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Truck className="h-4 w-4" />
+                        )}
+                        <span>
+                          {isActionPending('dispatch') ? 'Despachando...' : 'Despachar pedido'}
+                        </span>
                       </Button>
                     )}
 
-                    {/* Acciones Secundarias: Ver pedido y Gestión de Rótulo complementario */}
+                    {/* Acciones Secundarias: Ver Productos con Checklist */}
                     <div className="flex items-center gap-2">
                       <Dialog>
                         <DialogTrigger asChild>
@@ -315,58 +419,122 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                             className="h-10 flex-1 gap-2 border-white/15 bg-white/5 hover:bg-white/10 text-xs"
                           >
                             <ClipboardList className="h-4 w-4" />
-                            Ver productos
+                            <span>Ver productos</span>
+                            {packedCount > 0 && (
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  'ml-1 text-[10px] px-1.5 py-0 border-transparent',
+                                  isAllPacked
+                                    ? 'bg-emerald-500/20 text-emerald-400'
+                                    : 'bg-primary/20 text-primary'
+                                )}
+                              >
+                                {packedCount}/{productLines.length}
+                              </Badge>
+                            )}
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
                           <DialogHeader>
-                            <DialogTitle>Pedido #{order.id.slice(-6).toUpperCase()}</DialogTitle>
+                            <DialogTitle className="flex items-center justify-between gap-2">
+                              <span>Pedido #{order.id.slice(-6).toUpperCase()}</span>
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  'text-xs font-semibold',
+                                  isAllPacked
+                                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                                    : 'border-white/10 text-muted-foreground'
+                                )}
+                              >
+                                {isAllPacked
+                                  ? '✓ Todo embalado'
+                                  : `${packedCount} de ${productLines.length} listos`}
+                              </Badge>
+                            </DialogTitle>
                             <DialogDescription>
                               {order.client_name_cache} · {formatDate(order.created_at)}
                             </DialogDescription>
                           </DialogHeader>
-                          <div className="space-y-2">
-                            <h3 className="text-sm font-semibold">Productos y cantidades totales</h3>
-                            <ul className="divide-y rounded-lg border px-3">
-                              {getProductLines(order).map((item) => (
-                                <li
-                                  key={item.id}
-                                  className="flex min-h-12 items-center justify-between gap-4 py-2 text-sm"
+
+                          <div className="space-y-3 pt-2">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-sm font-semibold text-foreground">
+                                Checklist de preparación
+                              </h3>
+                              {packedCount > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    resetPacked(
+                                      order.id,
+                                      productLines.map((i) => i.id)
+                                    )
+                                  }
+                                  className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1"
                                 >
-                                  <span>{item.name}</span>
-                                  <span className="rounded-md bg-muted px-2 py-1 font-bold tabular-nums">
-                                    {item.quantity}
-                                  </span>
-                                </li>
-                              ))}
+                                  <RotateCcw className="h-3 w-3" />
+                                  Reiniciar
+                                </button>
+                              )}
+                            </div>
+
+                            <ul className="divide-y divide-white/10 rounded-lg border border-white/10 overflow-hidden">
+                              {productLines.map((item) => {
+                                const isPacked = Boolean(
+                                  packedItems[`${order.id}-${item.id}`]
+                                );
+                                return (
+                                  <li
+                                    key={item.id}
+                                    onClick={() => togglePacked(order.id, item.id)}
+                                    className={cn(
+                                      'flex min-h-12 items-center justify-between gap-3 p-3 text-sm cursor-pointer select-none transition-colors',
+                                      isPacked
+                                        ? 'bg-emerald-500/10 text-muted-foreground line-through'
+                                        : 'hover:bg-white/5 text-foreground'
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      {isPacked ? (
+                                        <CheckSquare className="h-5 w-5 text-emerald-400 shrink-0" />
+                                      ) : (
+                                        <Square className="h-5 w-5 text-muted-foreground shrink-0" />
+                                      )}
+                                      <span className="truncate">{item.name}</span>
+                                    </div>
+                                    <span
+                                      className={cn(
+                                        'rounded-md px-2.5 py-1 font-bold tabular-nums text-xs shrink-0',
+                                        isPacked
+                                          ? 'bg-emerald-500/20 text-emerald-300 no-underline'
+                                          : 'bg-muted text-foreground'
+                                      )}
+                                    >
+                                      {item.quantity} u.
+                                    </span>
+                                  </li>
+                                );
+                              })}
                             </ul>
+
                             {order.notes && (
-                              <p className="rounded-lg bg-muted/50 p-3 text-sm">
-                                <span className="font-semibold">Nota: </span>
+                              <p className="rounded-lg bg-muted/50 p-3 text-sm border border-white/5">
+                                <span className="font-semibold text-foreground">Nota: </span>
                                 {order.notes}
                               </p>
                             )}
-                            <p className="text-xs text-muted-foreground">
-                              Incluye las unidades promocionales para preparar el total físico.
+                            <p className="text-[11px] text-muted-foreground italic">
+                              Incluye unidades promocionales. Tocá cada producto para tildarlo mientras armás la caja.
                             </p>
                           </div>
                         </DialogContent>
                       </Dialog>
 
-                      {/* Si ya imprimió rótulo pero quiere re-imprimir o ajustar bultos */}
+                      {/* Reimpresión si ya tiene rótulo */}
                       {order.printed_at && (
                         <div className="flex items-center gap-1">
-                          <div className="flex shrink-0 items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2 h-10">
-                            <Input
-                              type="number"
-                              min={1}
-                              max={20}
-                              value={getBundles(order.id)}
-                              onChange={(e) => handleBundlesChange(order.id, parseInt(e.target.value) || 1)}
-                              className="h-7 w-8 border-none bg-transparent p-0 text-center text-xs font-bold focus-visible:ring-0"
-                              aria-label={`Bultos`}
-                            />
-                          </div>
                           <ShippingLabelButton
                             orders={[{ id: order.id, bundles: getBundles(order.id) }]}
                             compact
@@ -376,7 +544,7 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                       )}
                     </div>
 
-                    {/* Mensaje de Ayuda/Bloqueo */}
+                    {/* Mensaje de Ayuda si está bloqueado */}
                     {blocker !== null && (
                       <p className="text-[11px] text-center text-muted-foreground pt-1">
                         {blocker === 'whatsapp'
@@ -413,7 +581,7 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                         <div className="space-y-2">
                           <h3 className="text-sm font-semibold">Productos y cantidades totales</h3>
                           <ul className="divide-y rounded-lg border px-3">
-                            {getProductLines(order).map((item) => (
+                            {productLines.map((item) => (
                               <li
                                 key={item.id}
                                 className="flex min-h-12 items-center justify-between gap-4 py-2 text-sm"
@@ -438,7 +606,7 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
       </div>
 
       {/* ======================================================== */}
-      {/* VISTA ESCRITORIO: Tabla Completa con Colores Unificados   */}
+      {/* VISTA ESCRITORIO: Tabla Completa con Feedback Visual      */}
       {/* ======================================================== */}
       <div className="hidden md:block w-full overflow-x-auto">
         <Table className="min-w-[800px]">
@@ -457,14 +625,39 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
             {orders.map((order) => {
               const blocker = getOrderDispatchBlocker(order);
               const isArmed = order.status === 'armado';
+              const isOverdue =
+                isArmed && Date.now() - new Date(order.created_at).getTime() > 48 * 60 * 60 * 1000;
+
+              const isActionPending = (act: 'whatsapp' | 'preparation' | 'dispatch') =>
+                isPending && pendingAction?.id === order.id && pendingAction.action === act;
+
+              const productLines = getProductLines(order);
+              const packedCount = productLines.filter(
+                (item) => packedItems[`${order.id}-${item.id}`]
+              ).length;
+              const isAllPacked = productLines.length > 0 && packedCount === productLines.length;
 
               return (
                 <TableRow
                   key={order.id}
-                  className="border-white/5 hover:bg-white/5 transition-colors group"
+                  className={cn(
+                    'border-white/5 hover:bg-white/5 transition-colors group',
+                    isOverdue && 'bg-red-500/[0.02]'
+                  )}
                 >
                   <TableCell className="pl-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
-                    {formatDate(order.created_at)}
+                    <div className="flex flex-col gap-1">
+                      <span>{formatDate(order.created_at)}</span>
+                      {isOverdue && (
+                        <Badge
+                          variant="outline"
+                          className="border-red-500/40 bg-red-500/10 text-[9px] text-red-400 gap-1 w-fit px-1.5 py-0"
+                        >
+                          <Clock className="h-2.5 w-2.5" />
+                          +48h
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="font-black italic tracking-tighter text-base group-hover:text-primary transition-colors">
                     {order.client_name_cache}
@@ -516,7 +709,7 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                   </TableCell>
                   <TableCell className="text-right pr-4 sm:pr-6">
                     <div className="flex flex-wrap items-center justify-end gap-2">
-                      {/* Botón Ver pedido */}
+                      {/* Botón Ver pedido con Checklist */}
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button
@@ -525,39 +718,114 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                             className="h-9 gap-2 whitespace-nowrap border-white/15 bg-white/5 hover:bg-white/10"
                           >
                             <ClipboardList className="h-4 w-4" />
-                            Ver pedido
+                            <span>Ver pedido</span>
+                            {packedCount > 0 && (
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  'text-[10px] px-1 py-0 border-transparent',
+                                  isAllPacked
+                                    ? 'bg-emerald-500/20 text-emerald-400'
+                                    : 'bg-primary/20 text-primary'
+                                )}
+                              >
+                                {packedCount}/{productLines.length}
+                              </Badge>
+                            )}
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
                           <DialogHeader>
-                            <DialogTitle>Pedido #{order.id.slice(-6).toUpperCase()}</DialogTitle>
+                            <DialogTitle className="flex items-center justify-between gap-2">
+                              <span>Pedido #{order.id.slice(-6).toUpperCase()}</span>
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  'text-xs font-semibold',
+                                  isAllPacked
+                                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                                    : 'border-white/10 text-muted-foreground'
+                                )}
+                              >
+                                {isAllPacked
+                                  ? '✓ Todo embalado'
+                                  : `${packedCount} de ${productLines.length} listos`}
+                              </Badge>
+                            </DialogTitle>
                             <DialogDescription>
                               {order.client_name_cache} · {formatDate(order.created_at)}
                             </DialogDescription>
                           </DialogHeader>
-                          <div className="space-y-2">
-                            <h3 className="text-sm font-semibold">Productos y cantidades totales</h3>
-                            <ul className="divide-y rounded-lg border px-3">
-                              {getProductLines(order).map((item) => (
-                                <li
-                                  key={item.id}
-                                  className="flex min-h-12 items-center justify-between gap-4 py-2 text-sm"
+
+                          <div className="space-y-3 pt-2">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-sm font-semibold text-foreground">
+                                Checklist de preparación
+                              </h3>
+                              {packedCount > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    resetPacked(
+                                      order.id,
+                                      productLines.map((i) => i.id)
+                                    )
+                                  }
+                                  className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1"
                                 >
-                                  <span>{item.name}</span>
-                                  <span className="rounded-md bg-muted px-2 py-1 font-bold tabular-nums">
-                                    {item.quantity}
-                                  </span>
-                                </li>
-                              ))}
+                                  <RotateCcw className="h-3 w-3" />
+                                  Reiniciar
+                                </button>
+                              )}
+                            </div>
+
+                            <ul className="divide-y divide-white/10 rounded-lg border border-white/10 overflow-hidden">
+                              {productLines.map((item) => {
+                                const isPacked = Boolean(
+                                  packedItems[`${order.id}-${item.id}`]
+                                );
+                                return (
+                                  <li
+                                    key={item.id}
+                                    onClick={() => togglePacked(order.id, item.id)}
+                                    className={cn(
+                                      'flex min-h-12 items-center justify-between gap-3 p-3 text-sm cursor-pointer select-none transition-colors',
+                                      isPacked
+                                        ? 'bg-emerald-500/10 text-muted-foreground line-through'
+                                        : 'hover:bg-white/5 text-foreground'
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      {isPacked ? (
+                                        <CheckSquare className="h-5 w-5 text-emerald-400 shrink-0" />
+                                      ) : (
+                                        <Square className="h-5 w-5 text-muted-foreground shrink-0" />
+                                      )}
+                                      <span className="truncate">{item.name}</span>
+                                    </div>
+                                    <span
+                                      className={cn(
+                                        'rounded-md px-2.5 py-1 font-bold tabular-nums text-xs shrink-0',
+                                        isPacked
+                                          ? 'bg-emerald-500/20 text-emerald-300 no-underline'
+                                          : 'bg-muted text-foreground'
+                                      )}
+                                    >
+                                      {item.quantity} u.
+                                    </span>
+                                  </li>
+                                );
+                              })}
                             </ul>
+
                             {order.notes && (
-                              <p className="rounded-lg bg-muted/50 p-3 text-sm">
-                                <span className="font-semibold">Nota: </span>
+                              <p className="rounded-lg bg-muted/50 p-3 text-sm border border-white/5">
+                                <span className="font-semibold text-foreground">Nota: </span>
                                 {order.notes}
                               </p>
                             )}
-                            <p className="text-xs text-muted-foreground">
-                              Incluye las unidades promocionales para preparar el total físico.
+                            <p className="text-[11px] text-muted-foreground italic">
+                              Hacé clic en cada producto para tildarlo mientras armás la caja.
                             </p>
                           </div>
                         </DialogContent>
@@ -565,7 +833,7 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
 
                       {isArmed && (
                         <>
-                          {/* Botón Paso 1: WhatsApp (Sky) */}
+                          {/* Paso 1: WhatsApp */}
                           {!order.whatsapp_confirmed_at && (
                             <Button
                               size="sm"
@@ -573,12 +841,18 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                               disabled={isPending}
                               className="gap-2 h-9 whitespace-nowrap bg-sky-700 text-white hover:bg-sky-800 shadow-sm"
                             >
-                              <MessageCircle className="h-4 w-4" />
-                              Confirmar recepción
+                              {isActionPending('whatsapp') ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <MessageCircle className="h-4 w-4" />
+                              )}
+                              <span>
+                                {isActionPending('whatsapp') ? 'Confirmando...' : 'Confirmar recepción'}
+                              </span>
                             </Button>
                           )}
 
-                          {/* Botón Paso 2: Preparación (Violet) */}
+                          {/* Paso 2: Preparación */}
                           {order.whatsapp_confirmed_at && !order.prepared_at && (
                             <Button
                               size="sm"
@@ -586,8 +860,14 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                               disabled={isPending}
                               className="gap-2 h-9 whitespace-nowrap bg-violet-700 text-white hover:bg-violet-800 shadow-sm"
                             >
-                              <PackageCheck className="h-4 w-4" />
-                              Marcar preparado
+                              {isActionPending('preparation') ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <PackageCheck className="h-4 w-4" />
+                              )}
+                              <span>
+                                {isActionPending('preparation') ? 'Marcando...' : 'Marcar preparado'}
+                              </span>
                             </Button>
                           )}
 
@@ -607,7 +887,7 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                             />
                           </div>
 
-                          {/* Botón Paso 3: Rótulos (Amber si falta rótulo) */}
+                          {/* Paso 3: Rótulos */}
                           <ShippingLabelButton
                             orders={[{ id: order.id, bundles: getBundles(order.id) }]}
                             className={
@@ -617,7 +897,7 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                             }
                           />
 
-                          {/* Botón Despachar (Emerald si listo) */}
+                          {/* Despachar */}
                           <div className="flex items-center gap-2">
                             <Button
                               size="sm"
@@ -630,8 +910,14 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                                   : 'opacity-50 cursor-not-allowed'
                               )}
                             >
-                              <Truck className="h-4 w-4" />
-                              Despachar
+                              {isActionPending('dispatch') ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Truck className="h-4 w-4" />
+                              )}
+                              <span>
+                                {isActionPending('dispatch') ? 'Despachando...' : 'Despachar'}
+                              </span>
                             </Button>
                             <p className="hidden xl:block max-w-44 text-right text-[10px] leading-tight text-muted-foreground">
                               {blocker === 'whatsapp'
