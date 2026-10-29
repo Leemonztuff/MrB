@@ -64,21 +64,23 @@ export function QuantitySelector({ product }: { product: ProductWithPrice }) {
   }
 
   return (
-    <div className="flex items-center justify-center gap-3">
+    <div className="flex items-center justify-center gap-2 sm:gap-3">
       <Button
         variant="outline"
         size="icon"
-        className="h-11 w-11 shrink-0"
+        className="h-9 w-9 sm:h-11 sm:w-11 shrink-0"
         onClick={() => removeItem(product.id)}
+        aria-label="Disminuir cantidad"
       >
         <Minus className="h-4 w-4" />
       </Button>
-      <span className="w-10 text-center font-bold text-lg tabular-nums">{quantity}</span>
+      <span className="w-8 sm:w-10 text-center font-bold text-base sm:text-lg tabular-nums">{quantity}</span>
       <Button
         variant="outline"
         size="icon"
-        className="h-11 w-11 shrink-0"
+        className="h-9 w-9 sm:h-11 sm:w-11 shrink-0"
         onClick={handleAdd}
+        aria-label="Aumentar cantidad"
       >
         <Plus className="h-4 w-4" />
       </Button>

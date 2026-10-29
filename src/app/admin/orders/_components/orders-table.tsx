@@ -102,18 +102,19 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
 
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow className="border-white/5 hover:bg-transparent">
-            <DataTableHeader>Fecha</DataTableHeader>
-            <DataTableHeader>Cliente</DataTableHeader>
-            {!operatorMode && <DataTableHeader>Monto</DataTableHeader>}
-            <DataTableHeader>Estado</DataTableHeader>
-            <DataTableHeader align="right">
-              <span className="sr-only">Acciones</span>
-            </DataTableHeader>
-          </TableRow>
-        </TableHeader>
+      <div className="w-full overflow-x-auto">
+        <Table className="min-w-[720px]">
+          <TableHeader>
+            <TableRow className="border-white/5 hover:bg-transparent">
+              <DataTableHeader className="whitespace-nowrap">Fecha</DataTableHeader>
+              <DataTableHeader className="whitespace-nowrap">Cliente</DataTableHeader>
+              {!operatorMode && <DataTableHeader className="whitespace-nowrap">Monto</DataTableHeader>}
+              <DataTableHeader className="whitespace-nowrap">Estado</DataTableHeader>
+              <DataTableHeader align="right" className="whitespace-nowrap">
+                <span className="sr-only">Acciones</span>
+              </DataTableHeader>
+            </TableRow>
+          </TableHeader>
         <TableBody>
           {!orders || orders.length === 0 ? (
             <TableRow>
@@ -156,15 +157,15 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                     </div>
                   )}
                 </TableCell>
-                <TableCell className="text-right pr-6">
-                  <div className="flex items-center justify-end gap-2">
+                <TableCell className="text-right pr-4 sm:pr-6">
+                  <div className="flex flex-wrap items-center justify-end gap-2">
                     <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-11 gap-2">
-                          <ClipboardList className="h-4 w-4" />
-                          Ver pedido
-                        </Button>
-                      </DialogTrigger>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-9 gap-2 whitespace-nowrap">
+                        <ClipboardList className="h-4 w-4" />
+                        Ver pedido
+                      </Button>
+                    </DialogTrigger>
                       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
                         <DialogHeader>
                           <DialogTitle>Pedido #{order.id.slice(-6).toUpperCase()}</DialogTitle>
@@ -198,28 +199,28 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                     {order.status === 'armado' && (
                       <>
                         {!order.whatsapp_confirmed_at && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleWorkflowStep(order, 'whatsapp')}
-                            disabled={isPending}
-                            className="gap-2"
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                            Confirmar recepción
-                          </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleWorkflowStep(order, 'whatsapp')}
+                          disabled={isPending}
+                          className="gap-2 h-9 whitespace-nowrap"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          Confirmar recepción
+                        </Button>
                         )}
                         {order.whatsapp_confirmed_at && !order.prepared_at && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleWorkflowStep(order, 'preparation')}
-                            disabled={isPending}
-                            className="gap-2"
-                          >
-                            <PackageCheck className="h-4 w-4" />
-                            Marcar preparado
-                          </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleWorkflowStep(order, 'preparation')}
+                          disabled={isPending}
+                          className="gap-2 h-9 whitespace-nowrap"
+                        >
+                          <PackageCheck className="h-4 w-4" />
+                          Marcar preparado
+                        </Button>
                         )}
                         <div className="flex items-center gap-1">
                           <Printer className="h-3 w-3 text-muted-foreground" />
@@ -234,28 +235,30 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
                           />
                         </div>
                         <ShippingLabelButton orders={[{ id: order.id, bundles: getBundles(order.id) }]} />
-                        <Button
-                          size="sm"
-                          onClick={() => handleDispatch(order)}
-                          disabled={
-                            isPending
-                            || getOrderDispatchBlocker(order) === 'whatsapp'
-                            || getOrderDispatchBlocker(order) === 'preparation'
-                          }
-                          className="gap-2"
-                        >
-                          <Truck className="h-4 w-4" />
-                          Despachar
-                        </Button>
-                        <p className="max-w-48 text-right text-[10px] leading-tight text-muted-foreground">
-                          {getOrderDispatchBlocker(order) === 'whatsapp'
-                            ? 'Confirmá la recepción del pedido por WhatsApp.'
-                            : getOrderDispatchBlocker(order) === 'preparation'
-                              ? 'Marcá el pedido como preparado.'
-                              : getOrderDispatchBlocker(order) === 'label'
-                                ? 'El despacho requiere imprimir y confirmar el rótulo de envío.'
-                                : 'El pedido cumple los requisitos para despachar.'}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleDispatch(order)}
+                            disabled={
+                              isPending
+                              || getOrderDispatchBlocker(order) === 'whatsapp'
+                              || getOrderDispatchBlocker(order) === 'preparation'
+                            }
+                            className="gap-2 h-9 whitespace-nowrap"
+                          >
+                            <Truck className="h-4 w-4" />
+                            Despachar
+                          </Button>
+                          <p className="hidden lg:block max-w-44 text-right text-[10px] leading-tight text-muted-foreground">
+                            {getOrderDispatchBlocker(order) === 'whatsapp'
+                              ? 'Confirmá la recepción del pedido por WhatsApp.'
+                              : getOrderDispatchBlocker(order) === 'preparation'
+                                ? 'Marcá el pedido como preparado.'
+                                : getOrderDispatchBlocker(order) === 'label'
+                                  ? 'El despacho requiere imprimir y confirmar el rótulo de envío.'
+                                  : 'El pedido cumple los requisitos para despachar.'}
+                          </p>
+                        </div>
                       </>
                     )}
                     {order.status !== 'armado' && (
@@ -267,7 +270,8 @@ export function OrdersTable({ orders, operatorMode = false }: OrdersTableProps) 
             ))
           )}
         </TableBody>
-      </Table>
+        </Table>
+      </div>
 
       <AlertDialog open={Boolean(orderNeedingLabel)} onOpenChange={(open) => !open && setOrderNeedingLabel(null)}>
         <AlertDialogContent>

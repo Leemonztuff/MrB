@@ -96,11 +96,11 @@ export default async function OrderPage({
   return (
     <div className="min-h-screen bg-transparent">
       <header className="sticky top-0 z-40 glass border-b border-white/5 backdrop-blur-md">
-        <div className="container mx-auto flex h-16 sm:h-20 items-center justify-between px-4 sm:px-6">
+        <div className="container mx-auto flex h-16 sm:h-20 items-center justify-between gap-3 px-4 sm:px-6">
           <Logo showText={true} logoUrl={logoUrl} />
-          <div className="text-right">
-            <p className="text-xs sm:text-sm font-black italic tracking-tighter text-foreground">{client?.contact_name ?? "Cliente"}</p>
-            <p className="text-[9px] sm:text-[10px] uppercase font-black tracking-widest text-primary/70">{agreement.agreement_name}</p>
+          <div className="text-right min-w-0">
+            <p className="text-xs sm:text-sm font-black italic tracking-tighter text-foreground truncate max-w-[160px] sm:max-w-xs">{client?.contact_name ?? "Cliente"}</p>
+            <p className="text-[9px] sm:text-[10px] uppercase font-black tracking-widest text-primary/70 truncate max-w-[160px] sm:max-w-xs">{agreement.agreement_name}</p>
           </div>
         </div>
       </header>

@@ -165,15 +165,15 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
 
       {/* Desktop View: Table */}
       <GlassCard className="hidden sm:block">
-        <GlassCardContent className="p-0">
-          <Table>
+        <GlassCardContent className="p-0 overflow-x-auto">
+          <Table className="min-w-[640px]">
             <TableHeader>
               <TableRow className="border-white/5 hover:bg-transparent">
-                <DataTableHeader>Nombre</DataTableHeader>
-                <DataTableHeader>Email</DataTableHeader>
-                <DataTableHeader>Convenio</DataTableHeader>
-                <DataTableHeader>Estado</DataTableHeader>
-                <DataTableHeaderActions />
+                <DataTableHeader className="whitespace-nowrap">Nombre</DataTableHeader>
+                <DataTableHeader className="whitespace-nowrap">Email</DataTableHeader>
+                <DataTableHeader className="whitespace-nowrap">Convenio</DataTableHeader>
+                <DataTableHeader className="whitespace-nowrap">Estado</DataTableHeader>
+                <DataTableHeaderActions className="whitespace-nowrap" />
               </TableRow>
             </TableHeader>
             <TableBody>

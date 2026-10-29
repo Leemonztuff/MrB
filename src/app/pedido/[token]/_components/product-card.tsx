@@ -72,7 +72,7 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
 
         <div className="flex flex-col justify-between w-full gap-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-sm sm:text-lg font-black italic tracking-tighter leading-tight group-hover:text-primary transition-colors truncate">{product.name}</h3>
+            <h3 className="text-sm sm:text-lg font-black italic tracking-tighter leading-tight group-hover:text-primary transition-colors line-clamp-2 min-w-0">{product.name}</h3>
             {product.category && (
               <Badge variant="outline" className="text-[9px] sm:text-[8px] uppercase font-black tracking-widest py-0 px-1.5 sm:px-2 bg-primary/5 border-primary/20 text-primary shrink-0 hidden sm:inline-flex">
                 {product.category}
@@ -84,7 +84,7 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
             {product.description || "Sin descripcion disponible."}
           </p>
 
-          <div className="flex items-center justify-between gap-2 mt-1">
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-1">
             <div className="flex items-baseline gap-1.5">
               <p className={cn(
                 "font-headline font-black text-base sm:text-xl",
@@ -99,7 +99,7 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
               )}
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 ml-auto">
               {applicablePromos.length > 0 && (
                 <div className="hidden sm:flex items-center gap-1">
                   {applicablePromos.map(promo => (
@@ -107,7 +107,7 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
                   ))}
                 </div>
               )}
-              <div className="w-28 sm:w-32 flex-shrink-0">
+              <div className="w-20 sm:w-32 flex-shrink-0">
                 <QuantitySelector product={product} />
               </div>
             </div>

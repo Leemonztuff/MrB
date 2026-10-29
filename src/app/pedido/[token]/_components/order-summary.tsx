@@ -471,11 +471,11 @@ export function OrderSummary({
               <Button
                 onClick={handleSend}
                 size="lg"
-                className="w-full h-14 gap-3 font-black uppercase tracking-widest rounded-xl shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground group"
+                className="w-full h-14 gap-2 sm:gap-3 font-black uppercase tracking-widest rounded-xl shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground group whitespace-normal break-words text-xs sm:text-sm"
                 disabled={isPending || items.length === 0}
               >
-                {isPending ? "Registrando pedido..." : "Continuar por WhatsApp"}
-                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <span className="text-center leading-tight">{isPending ? "Registrando pedido..." : "Continuar por WhatsApp"}</span>
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform shrink-0" />
               </Button>
               <p className="text-xs leading-relaxed text-muted-foreground" role="note">
                 Al continuar, guardamos el pedido y abrimos WhatsApp con el mensaje listo.
