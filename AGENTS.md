@@ -29,6 +29,7 @@ npm test
 
 - [Arquitectura y mapa](./ARCHITECTURE.md)
 - [Reglas de negocio e invariantes](./docs/engineering/business-rules.md)
+- [Biblia de diseño y UI (Design System)](./docs/engineering/design-system.md)
 - [Base de datos y seguridad](./docs/engineering/database.md)
 - [Configuración local](./INSTRUCCIONES.md)
 

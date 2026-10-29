@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -6,15 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Printer, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { openPrintPage } from "@/lib/print-helpers";
+import { cn } from "@/lib/utils";
 
 export function ShippingLabelButton({
   orders,
   onClick,
   compact = false,
+  className,
+  variant = "outline",
 }: {
-  orders: { id: string, bundles: number }[];
+  orders: { id: string; bundles: number }[];
   onClick?: () => void;
   compact?: boolean;
+  className?: string;
+  variant?: "outline" | "default" | "secondary" | "destructive" | "ghost" | "link";
 }) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -27,7 +31,7 @@ export function ShippingLabelButton({
         toast({
           title: "No se abrió la vista de rótulos",
           description: "Permití las ventanas emergentes para este sitio y volvé a intentarlo.",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
@@ -41,7 +45,7 @@ export function ShippingLabelButton({
       toast({
         title: "Error",
         description: "No se pudo generar el flujo de impresión.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -50,13 +54,16 @@ export function ShippingLabelButton({
 
   return (
     <Button
-      variant="outline"
+      variant={variant}
       size="sm"
       onClick={handlePrint}
       disabled={loading}
-      className={compact
-        ? "h-11 min-w-0 flex-1 gap-2 px-2 text-xs glass border-white/10 hover:bg-white/5 transition-all"
-        : "gap-2 glass border-white/10 hover:bg-white/5 transition-all"}
+      className={cn(
+        compact
+          ? "h-11 min-w-0 flex-1 gap-2 px-2 text-xs glass border-white/10 hover:bg-white/5 transition-all"
+          : "gap-2 glass border-white/10 hover:bg-white/5 transition-all",
+        className
+      )}
     >
       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
       {loading
